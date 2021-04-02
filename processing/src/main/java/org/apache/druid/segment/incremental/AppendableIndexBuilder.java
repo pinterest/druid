@@ -34,6 +34,7 @@ public abstract class AppendableIndexBuilder
   protected boolean sortFacts = true;
   protected int maxRowCount = 0;
   protected long maxBytesInMemory = 0;
+  private boolean enableInMemoryBitmap = false;
 
   protected final Logger log = new Logger(this.getClass());
 
@@ -79,6 +80,12 @@ public abstract class AppendableIndexBuilder
   public AppendableIndexBuilder setDeserializeComplexMetrics(final boolean deserializeComplexMetrics)
   {
     this.deserializeComplexMetrics = deserializeComplexMetrics;
+    return this;
+  }
+
+  public AppendableIndexBuilder setEnableInMemoryBitmap(final boolean enableInMemoryBitmap)
+  {
+    this.enableInMemoryBitmap = enableInMemoryBitmap;
     return this;
   }
 

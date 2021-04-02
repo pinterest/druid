@@ -38,6 +38,9 @@ import org.apache.druid.query.Result;
 import org.apache.druid.query.SegmentDescriptor;
 import org.apache.druid.query.aggregation.LongSumAggregatorFactory;
 import org.apache.druid.query.context.ResponseContext;
+import org.apache.druid.query.filter.AndDimFilter;
+import org.apache.druid.query.filter.DimFilter;
+import org.apache.druid.query.filter.SelectorDimFilter;
 import org.apache.druid.query.scan.ScanQuery;
 import org.apache.druid.query.scan.ScanResultValue;
 import org.apache.druid.query.spec.MultipleSpecificSegmentSpec;
@@ -164,6 +167,7 @@ public class StreamAppenderatorTest extends InitializedNullHandlingTest
             true,
             new SimpleRowIngestionMeters(),
             true,
+            null,
             false
         )
     ) {
@@ -217,6 +221,7 @@ public class StreamAppenderatorTest extends InitializedNullHandlingTest
             true,
             new SimpleRowIngestionMeters(),
             true,
+            null,
             false
         )
     ) {
@@ -403,6 +408,7 @@ public class StreamAppenderatorTest extends InitializedNullHandlingTest
             true,
             new SimpleRowIngestionMeters(),
             true,
+            null,
             false
         )
     ) {
@@ -1195,6 +1201,89 @@ public class StreamAppenderatorTest extends InitializedNullHandlingTest
           new Object[]{DateTimes.of("2001T03").getMillis(), "foo", 1L, 64L},
           ((List<Object>) ((List<Object>) results4.get(1).getEvents()).get(0)).toArray()
       );
+    }
+  }
+
+  private void testQueryByIntervalsInMemoryBitmapHelper(DimFilter filters,
+                                                        Map<String, Object> expectedResult,
+                                                        List<String> dimensionNamesInSchema,
+                                                        boolean enableInMemoryBitmapInIngestionSpec,
+                                                        boolean useInMemoryBitmapInQueryContext) throws Exception
+  {
+    // Use a large enough threshold to make sure persist doesn't trigger
+    int maxRowsInMemory = 8;
+
+    try (final StreamAppenderatorTester tester = new StreamAppenderatorTester(maxRowsInMemory, -1, null, true, new SimpleRowIngestionMeters(), true, dimensionNamesInSchema, enableInMemoryBitmapInIngestionSpec)) {
+      final Appenderator appenderator = tester.getAppenderator();
+
+      appenderator.startJob();
+      appenderator.add(IDENTIFIERS.get(0), ir("2000", "foo2", "bar", 1), Suppliers.ofInstance(Committers.nil()));
+      appenderator.add(IDENTIFIERS.get(0), ir("2000", "foo1", "bar1", 2), Suppliers.ofInstance(Committers.nil()));
+      appenderator.add(IDENTIFIERS.get(0), ir("2000", "foo2", "bar3", 1), Suppliers.ofInstance(Committers.nil()));
+      appenderator.add(IDENTIFIERS.get(0), ir("2000", "foo1", "bar", 1), Suppliers.ofInstance(Committers.nil()));
+
+      final TimeseriesQuery query1 = Druids.newTimeseriesQueryBuilder()
+                                           .dataSource(StreamAppenderatorTester.DATASOURCE)
+                                           .intervals(ImmutableList.of(Intervals.of("2000/2001")))
+                                           .aggregators(
+                                               Arrays.asList(
+                                                   new LongSumAggregatorFactory("count", "count"),
+                                                   new LongSumAggregatorFactory("met", "met")
+                                               )
+                                           )
+                                           .filters(filters)
+                                           .granularity(Granularities.DAY)
+                                           .context(ImmutableMap.of("useInMemoryBitmapInQuery", useInMemoryBitmapInQueryContext))
+                                           .build();
+
+      final List<Result<TimeseriesResultValue>> results1 =
+          QueryPlus.wrap(query1).run(appenderator, ResponseContext.createEmpty()).toList();
+      Assert.assertEquals(
+          ImmutableList.of(
+              new Result<>(
+                  DateTimes.of("2000"),
+                  new TimeseriesResultValue(expectedResult)
+              )
+          ),
+          results1
+      );
+    }
+  }
+
+  @Test
+  public void testQueryByIntervalsInMemoryBitmap() throws Exception
+  {
+    // Test auto discovered dimensions and explicitly defined dimensions in schema in ingestion spec
+    for (List<String> dimensionNamesInSchema : Arrays.asList(null, ImmutableList.of("dim1", "dim2"))) {
+      // Test turn on/off in memory bitmap during index
+      for (boolean enableInMemoryBitmapInIngestionSpec : Arrays.asList(false, true)) {
+        // Test query using/not using in memory bitmap
+        for (boolean useInMemoryBitmapInQueryContext : Arrays.asList(false, true)) {
+          // Test filtering on existing dimension values
+          testQueryByIntervalsInMemoryBitmapHelper(
+              new AndDimFilter(
+                  new SelectorDimFilter("dim1", "foo2", null),
+                  new SelectorDimFilter("dim2", "bar3", null)
+              ),
+              ImmutableMap.of("count", 1L, "met", 1L),
+              dimensionNamesInSchema,
+              enableInMemoryBitmapInIngestionSpec,
+              useInMemoryBitmapInQueryContext
+          );
+
+          // Test filtering on non existing dimension values
+          testQueryByIntervalsInMemoryBitmapHelper(
+              new AndDimFilter(
+                  new SelectorDimFilter("dim1", "foo2", null),
+                  new SelectorDimFilter("dim2", "bar4", null)
+              ),
+              ImmutableMap.of("count", 0L, "met", 0L),
+              dimensionNamesInSchema,
+              enableInMemoryBitmapInIngestionSpec,
+              useInMemoryBitmapInQueryContext
+          );
+        }
+      }
     }
   }
 

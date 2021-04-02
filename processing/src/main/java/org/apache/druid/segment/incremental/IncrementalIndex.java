@@ -52,6 +52,7 @@ import org.apache.druid.query.dimension.DimensionSpec;
 import org.apache.druid.query.monomorphicprocessing.RuntimeShapeInspector;
 import org.apache.druid.segment.AbstractIndex;
 import org.apache.druid.segment.ColumnInspector;
+import org.apache.druid.segment.ColumnSelector;
 import org.apache.druid.segment.ColumnSelectorFactory;
 import org.apache.druid.segment.ColumnValueSelector;
 import org.apache.druid.segment.DimensionHandler;
@@ -104,7 +105,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
-public abstract class IncrementalIndex extends AbstractIndex implements Iterable<Row>, Closeable, ColumnInspector
+public abstract class IncrementalIndex extends AbstractIndex implements Iterable<Row>, Closeable, ColumnInspector, ColumnSelector
 {
   /**
    * Column selector used at ingestion time for inputs to aggregators.
@@ -453,7 +454,7 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
     return rollup;
   }
 
-  /*@Override*/
+  @Override
   @Nullable
   public ColumnHolder getColumnHolder(String columnName)
   {
@@ -580,12 +581,27 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
           continue;
         }
         boolean wasNewDim = false;
+        ColumnCapabilities capabilities;
         DimensionDesc desc = dimensionDescs.get(dimension);
         if (desc != null) {
+          capabilities = desc.getCapabilities();
           absentDimensions.remove(dimension);
         } else {
           wasNewDim = true;
-          desc = addNewDimension(
+
+          capabilities = timeAndMetricsColumnCapabilities.get(dimension);
+          if (capabilities == null) {
+            capabilities = new ColumnCapabilitiesImpl();
+            // For schemaless type discovery, assume everything is a String for now, can change later.
+            ((ColumnCapabilitiesImpl) capabilities).setType(ColumnType.STRING);
+            ((ColumnCapabilitiesImpl) capabilities).setDictionaryEncoded(true);
+            ((ColumnCapabilitiesImpl) capabilities).setHasBitmapIndexes(true);
+            timeAndMetricsColumnCapabilities.put(dimension, capabilities);
+          }
+          DimensionHandler handler = DimensionHandlerUtils.getHandlerFromCapabilities(dimension, capabilities, null, enableInMemoryBitmap);
+
+
+              desc = addNewDimension(
               dimension,
               DimensionHandlerUtils.getHandlerFromCapabilities(
                   dimension,
@@ -596,6 +612,21 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
                   enableInMemoryBitmap
               )
           );
+
+          if (enableInMemoryBitmap) {
+            columns.put(
+                dimension,
+                new SimpleColumnHolder(
+                    capabilities,
+                    null,
+                    new IncrementalIndexBitmapIndexSupplier(
+                        inMemoryBitmapFactory,
+                        (StringDimensionIndexer) desc.getIndexer()
+                    ),
+                    null
+                )
+            );
+          }
         }
         DimensionIndexer indexer = desc.getIndexer();
         Object dimsKey = null;
