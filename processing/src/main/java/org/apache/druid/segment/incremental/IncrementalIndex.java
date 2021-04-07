@@ -335,7 +335,9 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
                   dimName,
                   new SimpleColumnHolder(
                           capabilities,
-                          null,
+                          new IncrementalIndexDictionaryEncodedColumnSupplier(
+                                  (StringDimensionIndexer) desc.getIndexer()
+                          ),
                           new IncrementalIndexBitmapIndexSupplier(
                                   inMemoryBitmapFactory,
                                   (StringDimensionIndexer) desc.getIndexer()
@@ -351,6 +353,19 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
               ColumnHolder.TIME_COLUMN_NAME,
               ColumnCapabilitiesImpl.createSimpleNumericColumnCapabilities(ColumnType.LONG)
       );
+      if (enableInMemoryBitmap) {
+        columns.put(
+                ColumnHolder.TIME_COLUMN_NAME,
+                new SimpleColumnHolder(
+                        ColumnCapabilitiesImpl.createSimpleNumericColumnCapabilities(ColumnType.LONG),
+                        new IncrementalIndexLongNumericColumnSupplier(
+                                () -> getFacts()
+                        ),
+                        null,
+                        null
+                )
+        );
+      }
 
       // This should really be more generic
       List<SpatialDimensionSchema> spatialDimensions = dimensionsSpec.getSpatialDimensions();
@@ -618,7 +633,9 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
                 dimension,
                 new SimpleColumnHolder(
                     capabilities,
-                    null,
+                    new IncrementalIndexDictionaryEncodedColumnSupplier(
+                        (StringDimensionIndexer) desc.getIndexer()
+                    ),
                     new IncrementalIndexBitmapIndexSupplier(
                         inMemoryBitmapFactory,
                         (StringDimensionIndexer) desc.getIndexer()

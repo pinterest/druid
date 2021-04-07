@@ -39,8 +39,11 @@ import org.apache.druid.query.SegmentDescriptor;
 import org.apache.druid.query.aggregation.LongSumAggregatorFactory;
 import org.apache.druid.query.context.ResponseContext;
 import org.apache.druid.query.filter.AndDimFilter;
+import org.apache.druid.query.filter.BoundDimFilter;
 import org.apache.druid.query.filter.DimFilter;
+import org.apache.druid.query.filter.NotDimFilter;
 import org.apache.druid.query.filter.SelectorDimFilter;
+import org.apache.druid.query.ordering.StringComparators;
 import org.apache.druid.query.scan.ScanQuery;
 import org.apache.druid.query.scan.ScanResultValue;
 import org.apache.druid.query.spec.MultipleSpecificSegmentSpec;
@@ -1253,13 +1256,13 @@ public class StreamAppenderatorTest extends InitializedNullHandlingTest
   @Test
   public void testQueryByIntervalsInMemoryBitmap() throws Exception
   {
-    // Test auto discovered dimensions and explicitly defined dimensions in schema in ingestion spec
+    // Test schemaless and explicitly defined schema
     for (List<String> dimensionNamesInSchema : Arrays.asList(null, ImmutableList.of("dim1", "dim2"))) {
       // Test turn on/off in memory bitmap during index
       for (boolean enableInMemoryBitmapInIngestionSpec : Arrays.asList(false, true)) {
         // Test query using/not using in memory bitmap
         for (boolean useInMemoryBitmapInQueryContext : Arrays.asList(false, true)) {
-          // Test filtering on existing dimension values
+          // Test filtering with select filter on existing values on dimension with in memory bitmap
           testQueryByIntervalsInMemoryBitmapHelper(
               new AndDimFilter(
                   new SelectorDimFilter("dim1", "foo2", null),
@@ -1271,13 +1274,33 @@ public class StreamAppenderatorTest extends InitializedNullHandlingTest
               useInMemoryBitmapInQueryContext
           );
 
-          // Test filtering on non existing dimension values
+          // Test filtering with select filter on non existing values on dimension with in memory bitmap
           testQueryByIntervalsInMemoryBitmapHelper(
               new AndDimFilter(
                   new SelectorDimFilter("dim1", "foo2", null),
                   new SelectorDimFilter("dim2", "bar4", null)
               ),
               ImmutableMap.of("count", 0L, "met", 0L),
+              dimensionNamesInSchema,
+              enableInMemoryBitmapInIngestionSpec,
+              useInMemoryBitmapInQueryContext
+          );
+
+          // Test filtering with not filter on dimension with in memory bitmap
+          testQueryByIntervalsInMemoryBitmapHelper(
+              new NotDimFilter(
+                  new SelectorDimFilter("dim1", "foo2", null)
+              ),
+              ImmutableMap.of("count", 2L, "met", 3L),
+              dimensionNamesInSchema,
+              enableInMemoryBitmapInIngestionSpec,
+              useInMemoryBitmapInQueryContext
+          );
+
+          // Test filtering with bound filter on dimension with in memory bitmap
+          testQueryByIntervalsInMemoryBitmapHelper(
+              new BoundDimFilter("dim2", "bar", null, true, false, null, null, StringComparators.ALPHANUMERIC),
+              ImmutableMap.of("count", 2L, "met", 3L),
               dimensionNamesInSchema,
               enableInMemoryBitmapInIngestionSpec,
               useInMemoryBitmapInQueryContext
