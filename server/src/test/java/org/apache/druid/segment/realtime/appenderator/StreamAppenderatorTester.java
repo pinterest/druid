@@ -125,7 +125,7 @@ public class StreamAppenderatorTester implements AutoCloseable
       final boolean enablePushFailure
   )
   {
-    this(maxRowsInMemory, maxSizeInBytes, basePersistDirectory, enablePushFailure, new SimpleRowIngestionMeters(), false, null, false);
+    this(maxRowsInMemory, maxSizeInBytes, basePersistDirectory, enablePushFailure, new SimpleRowIngestionMeters(), false, null, false, true);
   }
 
   public StreamAppenderatorTester(
@@ -136,7 +136,7 @@ public class StreamAppenderatorTester implements AutoCloseable
       final RowIngestionMeters rowIngestionMeters
   )
   {
-    this(maxRowsInMemory, maxSizeInBytes, basePersistDirectory, enablePushFailure, rowIngestionMeters, false, null, false);
+    this(maxRowsInMemory, maxSizeInBytes, basePersistDirectory, enablePushFailure, rowIngestionMeters, false, null, false, true);
   }
 
   public StreamAppenderatorTester(
@@ -147,7 +147,8 @@ public class StreamAppenderatorTester implements AutoCloseable
       final RowIngestionMeters rowIngestionMeters,
       final boolean skipBytesInMemoryOverheadCheck,
       List<String> dimensionNames,
-      final boolean enableInMemoryBitmap
+      final boolean enableInMemoryBitmap,
+      final boolean rollup
   )
   {
     objectMapper = new DefaultObjectMapper();
@@ -173,7 +174,7 @@ public class StreamAppenderatorTester implements AutoCloseable
             new CountAggregatorFactory("count"),
             new LongSumAggregatorFactory("met", "met")
         },
-        new UniformGranularitySpec(Granularities.MINUTE, Granularities.NONE, null),
+        new UniformGranularitySpec(Granularities.MINUTE, Granularities.NONE, rollup, null),
         null,
         objectMapper
     );

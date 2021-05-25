@@ -171,7 +171,8 @@ public class StreamAppenderatorTest extends InitializedNullHandlingTest
             new SimpleRowIngestionMeters(),
             true,
             null,
-            false
+            false,
+            true
         )
     ) {
       final Appenderator appenderator = tester.getAppenderator();
@@ -225,7 +226,8 @@ public class StreamAppenderatorTest extends InitializedNullHandlingTest
             new SimpleRowIngestionMeters(),
             true,
             null,
-            false
+            false,
+            true
         )
     ) {
       final Appenderator appenderator = tester.getAppenderator();
@@ -412,7 +414,8 @@ public class StreamAppenderatorTest extends InitializedNullHandlingTest
             new SimpleRowIngestionMeters(),
             true,
             null,
-            false
+            false,
+            true
         )
     ) {
       final Appenderator appenderator = tester.getAppenderator();
@@ -1211,12 +1214,13 @@ public class StreamAppenderatorTest extends InitializedNullHandlingTest
                                                         Map<String, Object> expectedResult,
                                                         List<String> dimensionNamesInSchema,
                                                         boolean enableInMemoryBitmapInIngestionSpec,
-                                                        boolean useInMemoryBitmapInQueryContext) throws Exception
+                                                        boolean useInMemoryBitmapInQueryContext,
+                                                        boolean rollup) throws Exception
   {
     // Use a large enough threshold to make sure persist doesn't trigger
     int maxRowsInMemory = 8;
 
-    try (final StreamAppenderatorTester tester = new StreamAppenderatorTester(maxRowsInMemory, -1, null, true, new SimpleRowIngestionMeters(), true, dimensionNamesInSchema, enableInMemoryBitmapInIngestionSpec)) {
+    try (final StreamAppenderatorTester tester = new StreamAppenderatorTester(maxRowsInMemory, -1, null, true, new SimpleRowIngestionMeters(), true, dimensionNamesInSchema, enableInMemoryBitmapInIngestionSpec, rollup)) {
       final Appenderator appenderator = tester.getAppenderator();
 
       appenderator.startJob();
@@ -1258,53 +1262,60 @@ public class StreamAppenderatorTest extends InitializedNullHandlingTest
   {
     // Test schemaless and explicitly defined schema
     for (List<String> dimensionNamesInSchema : Arrays.asList(null, ImmutableList.of("dim1", "dim2"))) {
-      // Test turn on/off in memory bitmap during index
-      for (boolean enableInMemoryBitmapInIngestionSpec : Arrays.asList(false, true)) {
-        // Test query using/not using in memory bitmap
-        for (boolean useInMemoryBitmapInQueryContext : Arrays.asList(false, true)) {
-          // Test filtering with select filter on existing values on dimension with in memory bitmap
-          testQueryByIntervalsInMemoryBitmapHelper(
-              new AndDimFilter(
-                  new SelectorDimFilter("dim1", "foo2", null),
-                  new SelectorDimFilter("dim2", "bar3", null)
-              ),
-              ImmutableMap.of("count", 1L, "met", 1L),
-              dimensionNamesInSchema,
-              enableInMemoryBitmapInIngestionSpec,
-              useInMemoryBitmapInQueryContext
-          );
+      // Test roll up rows during ingestion
+      for (boolean rollup : Arrays.asList(false, true)) {
+        // Test turn on/off in memory bitmap during index
+        for (boolean enableInMemoryBitmapInIngestionSpec : Arrays.asList(false, true)) {
+          // Test query using/not using in memory bitmap
+          for (boolean useInMemoryBitmapInQueryContext : Arrays.asList(false, true)) {
+            // Test filtering with select filter on existing values on dimension with in memory bitmap
+            testQueryByIntervalsInMemoryBitmapHelper(
+                new AndDimFilter(
+                    new SelectorDimFilter("dim1", "foo2", null),
+                    new SelectorDimFilter("dim2", "bar3", null)
+                ),
+                ImmutableMap.of("count", 1L, "met", 1L),
+                dimensionNamesInSchema,
+                enableInMemoryBitmapInIngestionSpec,
+                useInMemoryBitmapInQueryContext,
+                rollup
+            );
 
-          // Test filtering with select filter on non existing values on dimension with in memory bitmap
-          testQueryByIntervalsInMemoryBitmapHelper(
-              new AndDimFilter(
-                  new SelectorDimFilter("dim1", "foo2", null),
-                  new SelectorDimFilter("dim2", "bar4", null)
-              ),
-              ImmutableMap.of("count", 0L, "met", 0L),
-              dimensionNamesInSchema,
-              enableInMemoryBitmapInIngestionSpec,
-              useInMemoryBitmapInQueryContext
-          );
+            // Test filtering with select filter on non existing values on dimension with in memory bitmap
+            testQueryByIntervalsInMemoryBitmapHelper(
+                new AndDimFilter(
+                    new SelectorDimFilter("dim1", "foo2", null),
+                    new SelectorDimFilter("dim2", "bar4", null)
+                ),
+                ImmutableMap.of("count", 0L, "met", 0L),
+                dimensionNamesInSchema,
+                enableInMemoryBitmapInIngestionSpec,
+                useInMemoryBitmapInQueryContext,
+                rollup
+            );
 
-          // Test filtering with not filter on dimension with in memory bitmap
-          testQueryByIntervalsInMemoryBitmapHelper(
-              new NotDimFilter(
-                  new SelectorDimFilter("dim1", "foo2", null)
-              ),
-              ImmutableMap.of("count", 2L, "met", 3L),
-              dimensionNamesInSchema,
-              enableInMemoryBitmapInIngestionSpec,
-              useInMemoryBitmapInQueryContext
-          );
+            // Test filtering with not filter on dimension with in memory bitmap
+            testQueryByIntervalsInMemoryBitmapHelper(
+                new NotDimFilter(
+                    new SelectorDimFilter("dim1", "foo2", null)
+                ),
+                ImmutableMap.of("count", 2L, "met", 3L),
+                dimensionNamesInSchema,
+                enableInMemoryBitmapInIngestionSpec,
+                useInMemoryBitmapInQueryContext,
+                rollup
+            );
 
-          // Test filtering with bound filter on dimension with in memory bitmap
-          testQueryByIntervalsInMemoryBitmapHelper(
-              new BoundDimFilter("dim2", "bar", null, true, false, null, null, StringComparators.ALPHANUMERIC),
-              ImmutableMap.of("count", 2L, "met", 3L),
-              dimensionNamesInSchema,
-              enableInMemoryBitmapInIngestionSpec,
-              useInMemoryBitmapInQueryContext
-          );
+            // Test filtering with bound filter on dimension with in memory bitmap
+            testQueryByIntervalsInMemoryBitmapHelper(
+                new BoundDimFilter("dim2", "bar", null, true, false, null, null, StringComparators.ALPHANUMERIC),
+                ImmutableMap.of("count", 2L, "met", 3L),
+                dimensionNamesInSchema,
+                enableInMemoryBitmapInIngestionSpec,
+                useInMemoryBitmapInQueryContext,
+                rollup
+            );
+          }
         }
       }
     }
