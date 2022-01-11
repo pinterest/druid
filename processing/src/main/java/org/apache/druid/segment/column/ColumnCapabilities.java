@@ -106,6 +106,12 @@ public interface ColumnCapabilities extends TypeSignature<ValueType>
     return ColumnTypeFactory.ofType(this);
   }
 
+  @Override
+  default <T> TypeStrategy<T> getStrategy()
+  {
+    return ColumnTypeFactory.getInstance().getTypeStrategy(toColumnType());
+  }
+
   enum Capable
   {
     FALSE,
