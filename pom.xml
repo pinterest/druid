@@ -126,6 +126,8 @@
 
         <!-- Allow the handful of flaky tests with transient failures to pass. -->
         <surefire.rerunFailingTestsCount>3</surefire.rerunFailingTestsCount>
+        <!-- Pinterest docker registry -->
+        <docker.repository>998131032990.dkr.ecr.us-east-1.amazonaws.com/</docker.repository>
     </properties>
 
     <modules>
