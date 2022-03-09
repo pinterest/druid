@@ -522,7 +522,7 @@
                                         </echo>
 
                                     </target>
-                                    <skip>${docker.build.skip}</skip>
+                                    <skip>false</skip>
                                 </configuration>
                                 <goals>
                                     <goal>run</goal>
