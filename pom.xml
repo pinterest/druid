@@ -198,6 +198,11 @@
         <module>extensions-contrib/gce-extensions</module>
         <module>extensions-contrib/aliyun-oss-extensions</module>
         <module>extensions-contrib/prometheus-emitter</module>
+        <module>extensions-contrib/name-numbered-shard-spec</module>
+        <module>extensions-contrib/knox-password-provider</module>
+        <module>extensions-contrib/hash-name-numbered-shard-spec</module>
+        <module>extensions-contrib/bloomfilter-name-numbered-shard-spec</module>
+        <module>extensions-contrib/serverset-password-provider</module>
         <!-- distribution packaging -->
         <module>distribution</module>
     </modules>
