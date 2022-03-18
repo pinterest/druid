@@ -1,0 +1,17 @@
+{
+  "__default": {
+    "insertion_candidate_features_user_gender": {
+      "version": "v1",
+      "lookupExtractorFactory": {
+        "type": "map",
+        "map": {
+          "": "unknown",
+          "0": "unknown",
+          "1": "female",
+          "2": "male",
+          "3": "all"
+        }
+      }
+    }
+  }
+}

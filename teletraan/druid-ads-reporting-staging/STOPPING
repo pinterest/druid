@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ -e /tmp/deploy/${ENV_NAME}/STOPPING ]; then
+    cd /tmp/deploy/${ENV_NAME}
+    ./STOPPING
+    # Delete previous artifact's clean up scripts so we use our own going forward
+    rm -r /tmp/deploy/${ENV_NAME}
+else
+    configure-serviceset stop -c teletraan/${ENV_NAME}/telefig/serviceset.conf
+fi

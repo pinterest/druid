@@ -1,0 +1,19 @@
+#! /bin/bash
+
+# Deployd logs don't have timestamps, so make each execution a little easier to track
+echo "$(date '+%Y-%m-%d %H:%M:%S')"
+
+# Needed here as well since /var/log/druid is shared between container and host
+sudo mkdir /var/log/druid
+sudo chmod 777 /var/log/druid
+
+sudo mkdir -p /mnt/druid/tmp
+sudo chmod 777 -R /mnt/druid/
+
+# Need to this in the RESTARTING script since Telefig can't set vm.max_map_count
+# Each segment uses one virtual memory map. The kernel default is 65530 which is too few
+# when we have historicals with more than 65530 allocated segments.
+# max_map_count should be smaller than total_memory / 128kb
+sudo sysctl -w vm.max_map_count=131072
+
+configure-serviceset -c teletraan/druid-test/telefig/serviceset.conf

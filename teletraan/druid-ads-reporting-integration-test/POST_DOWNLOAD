@@ -1,0 +1,6 @@
+#! /bin/bash
+
+mkdir -p /tmp/deploy/${ENV_NAME}/
+cp -r /mnt/${ENV_NAME}/teletraan/${ENV_NAME}/ /tmp/deploy/
+# STOPPING doesn't have executable bit set, setting it here
+chmod +x /tmp/deploy/${ENV_NAME}/STOPPING

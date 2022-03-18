@@ -1,0 +1,24 @@
+{
+  "__default": {
+    "insertion_candidate_features_user_agebucket": {
+      "version": "v1",
+      "lookupExtractorFactory": {
+        "type": "map",
+        "map": {
+          "": "unknown",
+          "0": "unknown",
+          "1": "unknown",
+          "2": "18-24",
+          "3": "18-24",
+          "4": "25-34",
+          "5": "35-44",
+          "6": "45-49",
+          "7": "50-54",
+          "8": "55-64",
+          "9": "65+",
+          "10": "unsupported"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if [ -e /tmp/deploy/${ENV_NAME}/STOPPING ]; then
+    cd /tmp/deploy/${ENV_NAME}
+    ./STOPPING
+    # Delete previous artifact's clean up scripts so we use our own going forward
+    rm -r /tmp/deploy/${ENV_NAME}
+else
+    case ${STAGE_NAME} in
+      *"coordinator"* | *"overlord"* | *"query"*)
+        configure-serviceset stop -c teletraan/${ENV_NAME}/telefig/serviceset.envoy.conf
+      ;;
+      *)
+        configure-serviceset stop -c teletraan/${ENV_NAME}/telefig/serviceset.conf
+      ;;
+    esac
+fi

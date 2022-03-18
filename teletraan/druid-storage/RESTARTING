@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# Deployd logs don't have timestamps, so make each execution a little easier to track
+echo "$(date '+%Y-%m-%d %H:%M:%S')"
+
+# Copy the config that contains the druid host health check tcollector module
+cp /mnt/${ENV_NAME}/teletraan/${ENV_NAME}/conf/tcollector.conf /etc/tcollector.conf
+# Needed here as well since /var/log/druid is shared between container and host
+sudo mkdir -p /var/log/druid/gc
+sudo chmod 777 -R /var/log/druid/
+
+sudo mkdir -p /mnt/druid/tmp
+sudo chmod 777 -R /mnt/druid/
+
+sudo sysctl -w vm.max_map_count=262144
+
+DEPLOY_TYPE="${TELETRAAN_DEPLOY_TYPE}"
+
+case "${DEPLOY_TYPE}" in
+    dev1)
+        configure-serviceset -c teletraan/${ENV_NAME}/telefig/serviceset.dev1.conf
+        ;;
+    dev2)
+        configure-serviceset -c teletraan/${ENV_NAME}/telefig/serviceset.dev2.conf
+        ;;
+    dev4)
+        configure-serviceset -c teletraan/${ENV_NAME}/telefig/serviceset.dev4.conf
+        ;;
+    insights)
+        configure-serviceset -c teletraan/${ENV_NAME}/telefig/serviceset.insights.conf
+        ;;
+    insights-a)
+        configure-serviceset -c teletraan/${ENV_NAME}/telefig/serviceset.insights-a.conf
+        ;;
+    insights-b)
+        configure-serviceset -c teletraan/${ENV_NAME}/telefig/serviceset.insights-b.conf
+        ;;
+    spam)
+        configure-serviceset -c teletraan/${ENV_NAME}/telefig/serviceset.spam.conf
+        ;;
+    adsexp)
+        configure-serviceset -c teletraan/${ENV_NAME}/telefig/serviceset.adsexp.conf
+        ;;
+    shared)
+        configure-serviceset -c teletraan/${ENV_NAME}/telefig/serviceset.shared.conf
+        ;;
+    experiments)
+        configure-serviceset -c teletraan/${ENV_NAME}/telefig/serviceset.experiments.conf
+        ;;
+    fgac)
+        configure-serviceset -c teletraan/${ENV_NAME}/telefig/serviceset.fgac.conf
+        ;;
+    *)
+        echo "Unsupported DEPLOY_TYPE: '${DEPLOY_TYPE}'"
+        exit 1
+esac

@@ -1,0 +1,49 @@
+#!/bin/bash
+
+if [ -e /tmp/deploy/${ENV_NAME}/STOPPING ]; then
+    cd /tmp/deploy/${ENV_NAME}
+    ./STOPPING
+    # Delete previous artifact's clean up scripts so we use our own going forward
+    rm -r /tmp/deploy/${ENV_NAME}
+else
+    DEPLOY_TYPE="${TELETRAAN_DEPLOY_TYPE}"
+    case "${DEPLOY_TYPE}" in
+        dev1)
+            configure-serviceset stop -c teletraan/${ENV_NAME}/telefig/serviceset.dev1.conf
+            ;;
+        dev2)
+            configure-serviceset stop -c teletraan/${ENV_NAME}/telefig/serviceset.dev2.conf
+            ;;
+        dev4)
+            configure-serviceset stop -c teletraan/${ENV_NAME}/telefig/serviceset.dev4.conf
+            ;;
+        insights)
+            configure-serviceset stop -c teletraan/${ENV_NAME}/telefig/serviceset.insights.conf
+            ;;
+        insights-a)
+            configure-serviceset stop -c teletraan/${ENV_NAME}/telefig/serviceset.insights-a.conf
+            ;;
+        insights-b)
+            configure-serviceset stop -c teletraan/${ENV_NAME}/telefig/serviceset.insights-b.conf
+            ;;
+        spam)
+            configure-serviceset stop -c teletraan/${ENV_NAME}/telefig/serviceset.spam.conf
+            ;;
+        adsexp)
+            configure-serviceset stop -c teletraan/${ENV_NAME}/telefig/serviceset.adsexp.conf
+            ;;
+        shared)
+            configure-serviceset stop -c teletraan/${ENV_NAME}/telefig/serviceset.shared.conf
+            ;;
+        experiments)
+            configure-serviceset stop -c teletraan/${ENV_NAME}/telefig/serviceset.experiments.conf
+            ;;
+        fgac)
+            configure-serviceset stop -c teletraan/${ENV_NAME}/telefig/serviceset.fgac.conf
+            ;;
+        *)
+            echo "Unsupported DEPLOY_TYPE: '${DEPLOY_TYPE}'"
+            exit 1
+    esac
+
+fi

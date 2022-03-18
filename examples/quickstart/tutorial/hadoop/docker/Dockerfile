@@ -14,8 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Creates pseudo distributed hadoop 2.8.5 with java 8
-FROM centos:7
+# Creates pseudo distributed hadoop 2.8.3 with java 8
+#
+# Modified from the SequenceIQ Dockerfiles at https://github.com/sequenceiq/hadoop-docker
+#
+# docker build -t druid-hadoop-demo:2.8.3 .
+
+FROM sequenceiq/pam:centos-6.5
+MAINTAINER SequenceIQ
 
 USER root
 
@@ -25,10 +31,8 @@ RUN yum clean all \
     && yum install -y curl which tar sudo openssh-server openssh-clients rsync yum-plugin-ovl\
     && yum clean all \
     && yum update -y libselinux \
-    && yum update -y nss \
     && yum clean all
 # update libselinux. see https://github.com/sequenceiq/hadoop-docker/issues/14
-# update nss. see https://unix.stackexchange.com/questions/280548/curl-doesnt-connect-to-https-while-wget-does-nss-error-12286
 
 # passwordless ssh
 RUN ssh-keygen -q -N "" -t dsa -f /etc/ssh/ssh_host_dsa_key
@@ -45,9 +49,8 @@ ENV JAVA_HOME /usr/lib/jvm/zulu-8
 ENV PATH $PATH:$JAVA_HOME/bin
 
 # hadoop
-ARG APACHE_ARCHIVE_MIRROR_HOST=https://archive.apache.org
-RUN curl -s ${APACHE_ARCHIVE_MIRROR_HOST}/dist/hadoop/core/hadoop-2.8.5/hadoop-2.8.5.tar.gz | tar -xz -C /usr/local/
-RUN cd /usr/local && ln -s ./hadoop-2.8.5 hadoop
+RUN curl -s https://archive.apache.org/dist/hadoop/core/hadoop-2.8.3/hadoop-2.8.3.tar.gz | tar -xz -C /usr/local/
+RUN cd /usr/local && ln -s ./hadoop-2.8.3 hadoop
 
 ENV HADOOP_PREFIX /usr/local/hadoop
 ENV HADOOP_COMMON_HOME /usr/local/hadoop
@@ -104,14 +107,8 @@ RUN sed  -i "/^[^#]*UsePAM/ s/.*/#&/"  /etc/ssh/sshd_config
 RUN echo "UsePAM no" >> /etc/ssh/sshd_config
 RUN echo "Port 2122" >> /etc/ssh/sshd_config
 
-# script for plain sshd start
-RUN echo -e \
-	'#!/bin/bash\n/usr/sbin/sshd\ntimeout 10 bash -c "until printf \"\" 2>>/dev/null >>/dev/tcp/127.0.0.1/2122; do sleep 0.5; done"' > \
-	/usr/local/bin/start_sshd && \
-	chmod a+x /usr/local/bin/start_sshd
-
-RUN start_sshd && $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh && $HADOOP_PREFIX/sbin/start-dfs.sh && $HADOOP_PREFIX/bin/hdfs dfs -mkdir -p /user/root
-RUN start_sshd && $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh && $HADOOP_PREFIX/sbin/start-dfs.sh && $HADOOP_PREFIX/bin/hdfs dfs -put $HADOOP_PREFIX/etc/hadoop/ input
+RUN service sshd start && $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh && $HADOOP_PREFIX/sbin/start-dfs.sh && $HADOOP_PREFIX/bin/hdfs dfs -mkdir -p /user/root
+RUN service sshd start && $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh && $HADOOP_PREFIX/sbin/start-dfs.sh && $HADOOP_PREFIX/bin/hdfs dfs -put $HADOOP_PREFIX/etc/hadoop/ input
 
 CMD ["/etc/bootstrap.sh", "-d"]
 

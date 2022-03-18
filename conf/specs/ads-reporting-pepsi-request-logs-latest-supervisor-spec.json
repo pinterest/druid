@@ -1,0 +1,174 @@
+{
+  "type": "kafka",
+  "dataSchema": {
+    "dataSource": "ads_reporting_pepsi_request_logs_latest",
+    "parser": {
+      "type": "string",
+      "parseSpec": {
+        "format": "json",
+        "timestampSpec": {
+          "column": "requestReceivedTimestamp",
+          "format": "auto"
+        },
+        "dimensionsSpec": {
+          "dimensions": [
+            "requestType",
+            "ldap",
+            "clientType",
+            "flags",
+            "priority",
+            "timeout",
+            "columns",
+            "sortColumns",
+            "granularity",
+            "requestSucceeded",
+            "exceptionMessage",
+            "limit",
+            "bookmark",
+            "clickWindowDays",
+            "engagementWindowDays",
+            "viewWindowDays",
+            "conversionTagVersion",
+            "conversionReportTimeType",
+            "requestId",
+            "traceId",
+            "spanId",
+            "parentSpanId",
+            "stageName",
+            "requestB64Encoded",
+            "filterColumns",
+            "filterOperators",
+            "filterValues",
+            "requestLevel",
+            "customColumnIds",
+            {
+              "type": "long",
+              "name": "userId"
+            },
+            {
+              "type": "long",
+              "name": "clientId"
+            },
+            {
+              "type": "long",
+              "name": "advertiserId"
+            },
+            {
+              "type": "long",
+              "name": "objectId"
+            },
+            {
+              "type": "long",
+              "name": "startTime"
+            },
+            {
+              "type": "long",
+              "name": "endTime"
+            },
+            {
+              "type": "string",
+              "name": "userId_str"
+            },
+            "apiVersion"
+          ],
+          "dimensionExclusions": [
+            "requestReceivedTimestamp"
+          ]
+        }
+      }
+    },
+    "metricsSpec": [
+      {
+        "type" : "count",
+        "name" : "count"
+      },
+      {
+        "type" : "longSum",
+        "name": "responseTime",
+        "fieldName": "responseTime"
+      },
+      {
+        "type" : "longSum",
+        "name": "daysRequested",
+        "fieldName": "daysRequested"
+      },
+      {
+        "type" : "longSum",
+        "name": "countColumnsRequested",
+        "fieldName": "countColumnsRequested"
+      },
+      {
+        "type": "longSum",
+        "name": "rowsReturned",
+        "fieldName": "rowsReturned"
+      },
+      {
+        "type" : "longSum",
+        "name": "countFilters",
+        "fieldName": "countFilters"
+      }
+    ],
+    "transformSpec": {
+      "transforms": [
+        {
+          "type": "expression",
+          "name": "userId",
+          "expression": "cast(userId, 'long')"
+        },
+        {
+          "type": "expression",
+          "name": "userId_str",
+          "expression": "cast(userId, 'string')"
+        },
+        {
+          "type": "expression",
+          "name": "clientId",
+          "expression": "cast(clientId, 'long')"
+        },
+        {
+          "type": "expression",
+          "name": "advertiserId",
+          "expression": "cast(advertiserId, 'long')"
+        },
+        {
+          "type": "expression",
+          "name": "objectId",
+          "expression": "cast(objectId, 'long')"
+        },
+        {
+          "type": "expression",
+          "name": "startTimeLong",
+          "expression": "cast(startTime, 'long')"
+        },
+        {
+          "type": "expression",
+          "name": "endTimeLong",
+          "expression": "cast(endTime, 'long')"
+        }
+      ]
+    },
+    "granularitySpec": {
+      "type": "uniform",
+      "segmentGranularity": "HOUR",
+      "queryGranularity": "NONE"
+    }
+  },
+  "tuningConfig": {
+    "type": "kafka",
+    "maxRowsPerSegment": 5000000,
+    "resetOffsetAutomatically": "true"
+  },
+  "ioConfig": {
+    "topic": "ads_reporting_pepsi_request_log",
+    "consumerProperties": {
+      "bootstrap.servers": {
+        "type": "serverset",
+        "file": "/var/serverset/discovery.m10nstagingkafka.prod"
+      }
+    },
+    "taskCount": 5,
+    "replicas": 1,
+    "taskDuration": "PT1H",
+    "useEarliestOffset": "true"
+  }
+}

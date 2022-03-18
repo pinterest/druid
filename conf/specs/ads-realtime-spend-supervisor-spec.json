@@ -1,0 +1,62 @@
+{
+	"type": "kafka",
+	"dataSchema": {
+		"dataSource": "ad_realtime_spend",
+		"parser": {
+			"type": "string",
+			"parseSpec": {
+				"format": "json",
+				"flattenSpec": {
+					"useFieldDiscovery": true,
+					"fields": [
+						{
+							"type": "path",
+							"name": "spend",
+							"expr": "$.dailySpend[0].spend"
+						}
+					]
+				},
+				"timestampSpec": {
+					"column": "updateEpochSec",
+					"format": "auto"
+				},
+				"dimensionsSpec": {
+					"dimensions": [
+						"gAdGroupId",
+						"gCampaignId",
+						"gOrderLineId",
+						"gAdvertiserId"
+					]
+				}
+			}
+		},
+		"metricsSpec": [
+			{
+				"type": "longSum",
+				"name": "spend",
+				"fieldName": "spend"
+			}
+		],
+		"granularitySpec": {
+			"type": "uniform",
+			"segmentGranularity": "day",
+			"queryGranularity": "minute",
+			"rollup": true
+		}
+	},
+	"tuningConfig": {
+		"type": "kafka",
+		"maxRowsPerSegment": 15000000,
+		"resetOffsetAutomatically": "true"
+	},
+	"ioConfig": {
+		"topic": "ad_spend_event_02",
+		"consumerProperties": {
+			"bootstrap.servers": "m10nkafka05002:9092,m10nkafka05003:9092,m10nkafka05004:9092,m10nkafka05005:9092,m10nkafka05006:9092,m10nkafka05013:9092,m10nkafka05014:9092,m10nkafka05015:9092,m10nkafka05017:9092,m10nkafka05023:9092,m10nkafka05024:9092,m10nkafka05025:9092"
+		},
+		"taskCount": 5,
+		"replicas": 1,
+		"taskDuration": "PT1H",
+		"useEarliestOffset": "true"
+	}
+}

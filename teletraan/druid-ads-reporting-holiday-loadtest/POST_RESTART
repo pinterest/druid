@@ -1,0 +1,42 @@
+#!/bin/bash
+
+set -e
+
+GENERAL_HEALTH_CHECK="status/health"
+
+case ${STAGE_NAME} in
+  *"master"* | *"coordinator"*)
+    port=${TELETRAAN_COORDINATOR_PORT:-9090}
+  ;;
+  *"overlord"*)
+    port=${TELETRAAN_OVERLORD_PORT:-9090}
+  ;;
+  *"middleManager"*)
+    port=${TELETRAAN_MIDDLE_MANAGER_PORT:-9090}
+  ;;
+  *)
+   port=9090
+  ;;
+esac
+
+health_check=$GENERAL_HEALTH_CHECK
+
+
+echo "Wait for druid process to start"
+i=0
+while [ "$i" -lt 25 ]
+do
+  if curl -s http://localhost:$port/$health_check | grep "true"; then
+         # Restart tcollector process to pick up tcollector.conf to begin health check
+         docker restart tcollector
+
+         echo "Druid process is running!!!"
+         exit 0
+  fi
+  i=$[$i+1]
+  echo "Not started yet, sleep 5s"
+  sleep 5
+done
+
+echo "Druid process didn't start!"
+exit 1

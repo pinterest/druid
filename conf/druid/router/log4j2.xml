@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Configuration status="WARN">
+    <Appenders>
+        <RollingFile name="DruidFileLogger" fileName="/var/log/druid/router.log" filePattern="/var/log/druid/router.%i.log.gz">
+            <PatternLayout>
+                <pattern>%d{ISO8601} [%p] [%thread] %logger{35} - %msg%n</pattern>
+            </PatternLayout>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="200 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="49"/>
+        </RollingFile>
+        <RollingFile name="JSONFileLogger" fileName="/var/log/druid/json.log" filePattern="/var/log/druid/json.%i.log.gz">
+            <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout>
+                <pattern>{"id":"%uuid","host":"${env:HOSTNAME}","@timestamp":"%d{yyyy-MM-dd'T'HH:mm:ss}","service":"${env:SERVICE_NAME}","cluster_name":"${env:ENV_NAME}","stage_name":"${env:STAGE_NAME}","build_commit":"${env:BUILD_COMMIT}","thread_name":"%t","method_name":"%m","location":"%C{1}.%M(%F:%L)","level":"%p","throwable_name":"%ex{short.className}","message":"%encode{%m{nolookups}}"}%n</pattern>
+            </PatternLayout>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="100 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="1"/>
+        </RollingFile>
+    </Appenders>
+    <Loggers>
+        <Root level="debug">
+            <AppenderRef ref="DruidFileLogger"/>
+            <AppenderRef ref="JSONFileLogger"/>
+        </Root>
+    </Loggers>
+</Configuration>

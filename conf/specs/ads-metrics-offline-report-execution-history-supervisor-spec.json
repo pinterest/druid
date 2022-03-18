@@ -1,0 +1,90 @@
+{
+  "type": "kafka",
+  "ioConfig": {
+    "type": "kafka",
+    "consumerProperties": {
+      "bootstrap.servers": {
+        "type": "serverset",
+        "file": "/var/serverset/discovery.m10nkafka.prod"
+      }
+    },
+    "topic": "ads_metrics_offline_report_execution_history",
+    "appendToExisting": false,
+    "taskCount": 5,
+    "replicas": 1,
+    "taskDuration": "PT1H",
+    "useEarliestOffset": true
+  },
+  "tuningConfig": {
+    "type": "kafka",
+    "maxRowsPerSegment": 5000000,
+    "resetOffsetAutomatically": true,
+    "logParseExceptions": true,
+    "maxParseExceptions": 10
+  },
+  "dataSchema": {
+    "dataSource": "ads_metrics_offline_report_execution_history",
+    "granularitySpec": {
+      "type": "uniform",
+      "segmentGranularity": "HOUR",
+      "queryGranularity": "NONE",
+      "rollup": false
+    },
+    "parser": {
+      "type": "string",
+      "parseSpec": {
+        "format": "json",
+        "timestampSpec": {
+          "column": "lastUpdateTimestampSeconds",
+          "format": "posix"
+        },
+        "dimensionsSpec": {
+          "dimensions": [
+            {
+              "type": "long",
+              "name": "bulkV2JobId"
+            },
+            "bulkV2JobStatus",
+            "bulkV2JobFailureCode",
+            {
+              "type": "long",
+              "name": "createdTimestampSeconds"
+            },
+            {
+              "type": "long",
+              "name": "executeForTimestampSeconds"
+            },
+            {
+              "type": "long",
+              "name": "id"
+            },
+            "notificationJobId",
+            "reportLink",
+            {
+              "type": "long",
+              "name": "reportScheduleId"
+            },
+            {
+              "type": "long",
+              "name": "reportTemplateId"
+            },
+            {
+              "type": "long",
+              "name": "scheduleOwningAdvertiserId"
+            },
+            {
+              "type": "long",
+              "name": "scheduleOwningUserId"
+            }
+          ]
+        },
+        "metricsSpec": [
+          {
+            "type": "count",
+            "name": "count"
+          }
+        ]
+      }
+    }
+  }
+}

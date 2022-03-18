@@ -1,0 +1,4 @@
+#!/bin/bash
+# AUTO GENREATED FOR TELETRAAN DEPLOYMENT.
+
+configure-serviceset stop -c teletraan/druid-logging/telefig/serviceset.conf

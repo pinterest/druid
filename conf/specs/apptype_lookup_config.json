@@ -1,0 +1,20 @@
+{
+  "__default": {
+    "insertion_candidate_features_impression_apptype": {
+      "version": "v1",
+      "lookupExtractorFactory": {
+        "type": "map",
+        "map": {
+          "": "unknown",
+          "0": "web",
+          "1": "iphone",
+          "2": "ipad",
+          "3": "android_mobile",
+          "4": "android_tablet",
+          "5": "web",
+          "6": "web_mobile"
+        }
+      }
+    }
+  }
+}

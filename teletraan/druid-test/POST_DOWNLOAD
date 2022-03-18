@@ -1,0 +1,5 @@
+#! /bin/bash
+
+if [ -e /opt/druid/druid/bin/druid ]; then
+    sudo /opt/druid/druid/bin/druid stop-all
+fi
