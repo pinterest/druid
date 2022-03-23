@@ -45,10 +45,6 @@
             <directory>../conf</directory>
             <includes>
                 <include>*</include>
-                <include>*/*</include>
-                <include>*/*/*</include>
-                <include>*/*/*/*</include>
-                <include>*/*/*/*/*</include>
             </includes>
             <outputDirectory>conf</outputDirectory>
         </fileSet>
