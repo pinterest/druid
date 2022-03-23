@@ -39,7 +39,7 @@ if [ "$1" = "--distribution-only" ]; then
     additional_mvn_args="$additional_mvn_args -pl distribution"
 fi
 
-#mvn clean install -DreducedBuild -Pbundle-contrib-pinterest,dist -Ddocker.build -Dforbiddenapis.skip -Dcheckstyle.skip -DskipTests ${additional_mvn_args}
+mvn clean install -DreducedBuild -Pbundle-contrib-pinterest,dist -Ddocker.build -Dforbiddenapis.skip -Dcheckstyle.skip -DskipTests ${additional_mvn_args}
 
 IMAGE_ID=$(docker images 998131032990.dkr.ecr.us-east-1.amazonaws.com/druid:latest --format="{{.ID}}")
 
