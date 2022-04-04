@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import org.apache.druid.java.util.common.IAE;
 import org.apache.druid.java.util.common.ISE;
+import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.query.aggregation.AggregatorFactory;
 import org.apache.druid.query.aggregation.FilteredAggregatorFactory;
 import org.apache.druid.query.aggregation.PostAggregator;
@@ -43,6 +44,7 @@ import java.util.Set;
 
 public class Aggregation
 {
+  private static final Logger log = new Logger(Aggregation.class);
   private final List<AggregatorFactory> aggregatorFactories;
   private final PostAggregator postAggregator;
 
@@ -52,13 +54,14 @@ public class Aggregation
   )
   {
     this.aggregatorFactories = Preconditions.checkNotNull(aggregatorFactories, "aggregatorFactories");
-    this.postAggregator = postAggregator;
+    this.postAggregator = (postAggregator != null && postAggregator.getName() == null)? null :postAggregator;
 
     if (aggregatorFactories.isEmpty()) {
       Preconditions.checkArgument(postAggregator != null, "postAggregator must be present if there are no aggregators");
     }
-
-    if (postAggregator == null) {
+    log.info("Sachin postAggregator == null" + postAggregator);
+    //SSAGARE-Added postAggregator.getName in condition ass we are passing postAgreegator with all variable as null
+    if (postAggregator == null || postAggregator.getName() == null) {
       Preconditions.checkArgument(aggregatorFactories.size() == 1, "aggregatorFactories.size == 1");
     } else {
       // Verify that there are no "useless" fields in the aggregatorFactories.
@@ -73,15 +76,16 @@ public class Aggregation
 
     // Verify that all "internal" aggregator names are prefixed by the output name of this aggregation.
     // This is a sanity check to make sure callers are behaving as they should be.
-    final String name = postAggregator != null
+    //SSAGARE-Added postAggregator.getName() != null in condition as we are passing postAgreegator from collect set with all variable as null
+    final String name = (postAggregator != null && postAggregator.getName() !=null)
                         ? postAggregator.getName()
                         : Iterables.getOnlyElement(aggregatorFactories).getName();
-
-    for (AggregatorFactory aggregatorFactory : aggregatorFactories) {
-      if (!aggregatorFactory.getName().startsWith(name)) {
-        throw new IAE("Aggregator[%s] not prefixed under[%s]", aggregatorFactory.getName(), name);
+      for (AggregatorFactory aggregatorFactory : aggregatorFactories) {
+        if (!aggregatorFactory.getName().startsWith(name)) {
+         log.info("Error in if ! aggregatorFactory.getName().startsWith(name) ");
+          throw new IAE("Aggregator[%s] not prefixed under[%s]", aggregatorFactory.getName(), name);
+        }
       }
-    }
   }
 
 

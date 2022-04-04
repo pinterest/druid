@@ -28,6 +28,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.druid.common.config.NullHandling;
 import org.apache.druid.java.util.common.IAE;
 import org.apache.druid.java.util.common.ISE;
+import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.query.ordering.StringComparator;
 import org.apache.druid.query.ordering.StringComparators;
 import org.apache.druid.segment.column.ColumnHolder;
@@ -45,6 +46,7 @@ import java.util.List;
  */
 public class RowSignatures
 {
+  private static final Logger log = new Logger(RowSignatures.class);
   private RowSignatures()
   {
     // No instantiation.

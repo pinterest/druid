@@ -45,6 +45,7 @@ import org.apache.druid.java.util.common.ISE;
 import org.apache.druid.java.util.common.Pair;
 import org.apache.druid.java.util.common.granularity.Granularities;
 import org.apache.druid.java.util.common.granularity.Granularity;
+import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.query.DataSource;
 import org.apache.druid.query.JoinDataSource;
 import org.apache.druid.query.Query;
@@ -107,6 +108,7 @@ import java.util.stream.Collectors;
  */
 public class DruidQuery
 {
+  private static final Logger log = new Logger(DruidQuery.class);
   private final DataSource dataSource;
   private final PlannerContext plannerContext;
 
@@ -319,6 +321,7 @@ public class DruidQuery
     final Aggregate aggregate = Preconditions.checkNotNull(partialQuery.getAggregate(), "aggregate");
     final Project aggregateProject = partialQuery.getAggregateProject();
 
+
     final List<DimensionExpression> dimensions = computeDimensions(
         partialQuery,
         plannerContext,
@@ -387,7 +390,6 @@ public class DruidQuery
     final Aggregate aggregate = Preconditions.checkNotNull(partialQuery.getAggregate());
     final List<DimensionExpression> dimensions = new ArrayList<>();
     final String outputNamePrefix = Calcites.findUnusedPrefixForDigits("d", rowSignature.getColumnNames());
-
     int outputNameCounter = 0;
 
     for (int i : aggregate.getGroupSet()) {
@@ -411,7 +413,6 @@ public class DruidQuery
       }
 
       final VirtualColumn virtualColumn;
-
 
       final String dimOutputName = outputNamePrefix + outputNameCounter++;
       if (!druidExpression.isSimpleExtraction()) {

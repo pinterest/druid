@@ -137,6 +137,9 @@ public class AggregatorUtil
   public static final byte FLOAT_ANY_CACHE_TYPE_ID = 0x44;
   public static final byte STRING_ANY_CACHE_TYPE_ID = 0x45;
 
+  // Pinterest aggregators
+  public static final byte COLLECT_SET_CACHE_TYPE_ID = 0x50;
+
   // GROUPING aggregator
   public static final byte GROUPING_CACHE_TYPE_ID = 0x46;
 
