@@ -48,6 +48,7 @@ import org.apache.druid.server.security.AuthenticationResult;
 import org.apache.druid.sql.SqlLifecycle;
 import org.apache.druid.sql.SqlLifecycleFactory;
 import org.apache.druid.sql.calcite.filtration.Filtration;
+import org.apache.druid.sql.calcite.planner.Calcites;
 import org.apache.druid.sql.calcite.planner.DruidOperatorTable;
 import org.apache.druid.sql.calcite.planner.PlannerConfig;
 import org.apache.druid.sql.calcite.planner.PlannerContext;
@@ -82,7 +83,8 @@ public class CollectSetSqlAggregatorTest extends CalciteTestBase
   private static final String DATA_SOURCE = "foo";
 
   private static QueryRunnerFactoryConglomerate conglomerate;
-  private static Closer resourceCloser = Closer.create();
+  //private static Closer resourceCloser = Closer.create();
+  private static Closer resourceCloser;
   private static AuthenticationResult authenticationResult = CalciteTests.REGULAR_USER_AUTH_RESULT;
   private static final Map<String, Object> QUERY_CONTEXT_DEFAULT =
           ImmutableMap.<String, Object>builder()
@@ -94,9 +96,10 @@ public class CollectSetSqlAggregatorTest extends CalciteTestBase
   public static void setUpClass()
   {
     //final Pair<QueryRunnerFactoryConglomerate, Closer> conglomerateCloserPair = CalciteTests
-    //    .createQueryRunnerFactoryConglomerate();
-    conglomerate = QueryStackTests.createQueryRunnerFactoryConglomerate(resourceCloser);
+    //.createQueryRunnerFactoryConglomerate();
     resourceCloser = Closer.create();
+    conglomerate = QueryStackTests.createQueryRunnerFactoryConglomerate(resourceCloser);
+    Calcites.setSystemProperties();
   }
 
   @AfterClass
@@ -153,7 +156,7 @@ public class CollectSetSqlAggregatorTest extends CalciteTestBase
         new PlannerFactory(
             druidSchema,
             CalciteTests.createMockQueryMakerFactory(walker, conglomerate),
-            CalciteTests.createOperatorTable(),
+            operatorTable,
             CalciteTests.createExprMacroTable(),
             plannerConfig,
             AuthTestUtils.TEST_AUTHORIZER_MAPPER,

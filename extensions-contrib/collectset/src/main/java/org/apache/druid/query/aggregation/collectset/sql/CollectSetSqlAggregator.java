@@ -184,7 +184,7 @@ public class CollectSetSqlAggregator implements SqlAggregator
           SqlFunctionCategory.USER_DEFINED_FUNCTION,
           false,
           false,
-              Optionality.IGNORED
+              Optionality.FORBIDDEN
       );
       log.info("Sachin Here in CollectSetSqlAgg:");
     }
