@@ -291,10 +291,11 @@ public class CollectSetSqlAggregatorTest extends CalciteTestBase
                       new CollectSetAggregatorFactory("a7", "dim4", -2)
                   )
               )
-              .context(ImmutableMap.of("skipEmptyBuckets", true, PlannerContext.CTX_SQL_QUERY_ID, "dummy"))
+              .context(ImmutableMap.of(PlannerContext.CTX_SQL_QUERY_ID, "dummy"))
               .build(),
         Iterables.getOnlyElement(queryLogHook.getRecordedQueries())
     );
+    //removed "skipEmptyBuckets", true, from context
   }
 
   @Test
