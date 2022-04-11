@@ -222,7 +222,7 @@ public abstract class AggregatorFactory implements Cacheable
    */
   public ColumnType getIntermediateType()
   {
-    //SSAGARE: commented code  below 5 line as this code is using depricated methods and returning UNKNOWN_COMPLEX value
+    //SSAGARE: commented code as below getComplexTypeName() function call is depricated  therefore now returning UNKNOWN_COMPLEX value
     //final ValueType intermediateType = getType();
    // if (intermediateType == ValueType.COMPLEX) {
       //return ColumnType.ofComplex(getComplexTypeName());
@@ -241,7 +241,7 @@ public abstract class AggregatorFactory implements Cacheable
   public ColumnType getResultType()
   {
     // this default 'fill' method is incomplete and can at best return 'unknown' complex
-    //SSAGARE: commented code  below 5 line as this code is using depricated methods and returning UNKNOWN_COMPLEX value
+    //SSAGARE: commented code as below getFinalizedType() function call is depricated  therefore now returning UNKNOWN_COMPLEX value
     //final ValueType finalized = getFinalizedType();
    // if (finalized == ValueType.COMPLEX) {
       return ColumnType.UNKNOWN_COMPLEX;

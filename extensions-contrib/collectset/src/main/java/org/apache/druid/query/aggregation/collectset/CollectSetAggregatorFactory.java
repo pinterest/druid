@@ -25,7 +25,6 @@ import com.google.common.base.Preconditions;
 import gnu.trove.set.hash.THashSet;
 import org.apache.druid.java.util.common.IAE;
 import org.apache.druid.java.util.common.StringUtils;
-import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.query.aggregation.AggregateCombiner;
 import org.apache.druid.query.aggregation.Aggregator;
 import org.apache.druid.query.aggregation.AggregatorFactory;
@@ -47,7 +46,6 @@ public class CollectSetAggregatorFactory extends AggregatorFactory
 {
   static final Comparator<Set<Object>> COMPARATOR =
       Comparator.nullsFirst(Comparator.comparingDouble(Set::size));
-  private static final Logger log = new Logger(CollectSetAggregatorFactory.class);
   private final String name;
   private final String fieldName;
   private final int limit;
@@ -61,12 +59,9 @@ public class CollectSetAggregatorFactory extends AggregatorFactory
   {
     Preconditions.checkNotNull(name);
     Preconditions.checkNotNull(fieldName);
-    log.info("Limit check here:" + limit);
     this.name = name;
     this.fieldName = fieldName;
     this.limit = (limit == null) ? -1 : limit; // -1 means unlimited.
-    log.info("field Name:" + this.fieldName);
-    log.info("Limit check here1:" + this.limit);
   }
 
   @Override
@@ -74,7 +69,6 @@ public class CollectSetAggregatorFactory extends AggregatorFactory
   {
     final ColumnValueSelector<Object> selector =
         columnSelectorFactory.makeColumnValueSelector(getFieldName());
-    log.info("Limit in factorize");
     return new CollectSetAggregator(selector, limit);
   }
 
@@ -98,20 +92,15 @@ public class CollectSetAggregatorFactory extends AggregatorFactory
     Set<Object> set = new THashSet<>();
     THashSet<Object> lhsSet = CollectSetUtil.flatten((Collection<?>) lhs);
     THashSet<Object> rhsSet = CollectSetUtil.flatten((Collection<?>) rhs);
-    log.info("Limit in combine method" + limit);
+
     if (lhsSet == null && rhsSet == null) {
-      log.info("here all null");
+
       return set;
     } else if (rhsSet == null) {
-      log.info("Limit in combine method rhsSet == null:" + limit);
       CollectSetUtil.addCollectionWithLimit(set, lhsSet, limit);
     } else if (lhsSet == null) {
-      log.info("Limit in combine method lhsSet == null:" + limit);
       CollectSetUtil.addCollectionWithLimit(set, rhsSet, limit);
     } else {
-      log.info("Limit in combine method else:" + limit);
-      log.info("set" + set + "::rhsSet-::" + lhsSet);
-      log.info("set" + set + "::lhsSet-::" + lhsSet);
       CollectSetUtil.addCollectionWithLimit(set, lhsSet, limit);
       CollectSetUtil.addCollectionWithLimit(set, rhsSet, limit);
     }

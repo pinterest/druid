@@ -27,6 +27,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import org.apache.druid.java.util.common.granularity.Granularities;
 import org.apache.druid.java.util.common.io.Closer;
+import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.query.Druids;
 import org.apache.druid.query.QueryRunnerFactoryConglomerate;
 import org.apache.druid.query.QueryRunnerTestHelper;
@@ -81,9 +82,8 @@ import java.util.Set;
 public class CollectSetSqlAggregatorTest extends CalciteTestBase
 {
   private static final String DATA_SOURCE = "foo";
-
+  private static final Logger log = new Logger(CollectSetSqlAggregatorTest.class);
   private static QueryRunnerFactoryConglomerate conglomerate;
-  //private static Closer resourceCloser = Closer.create();
   private static Closer resourceCloser;
   private static AuthenticationResult authenticationResult = CalciteTests.REGULAR_USER_AUTH_RESULT;
   private static final Map<String, Object> QUERY_CONTEXT_DEFAULT =
@@ -95,8 +95,6 @@ public class CollectSetSqlAggregatorTest extends CalciteTestBase
   @BeforeClass
   public static void setUpClass()
   {
-    //final Pair<QueryRunnerFactoryConglomerate, Closer> conglomerateCloserPair = CalciteTests
-    //.createQueryRunnerFactoryConglomerate();
     resourceCloser = Closer.create();
     conglomerate = QueryStackTests.createQueryRunnerFactoryConglomerate(resourceCloser);
     Calcites.setSystemProperties();
@@ -146,7 +144,6 @@ public class CollectSetSqlAggregatorTest extends CalciteTestBase
 
     final PlannerConfig plannerConfig = new PlannerConfig();
     final DruidSchemaCatalog druidSchema = CalciteTests.createMockRootSchema(conglomerate, walker, plannerConfig, AuthTestUtils.TEST_AUTHORIZER_MAPPER);
-    //final SystemSchema systemSchema = CalciteTests.createMockSystemSchema(druidSchema, walker, plannerConfig);
     final DruidOperatorTable operatorTable = new DruidOperatorTable(
         ImmutableSet.of(new CollectSetSqlAggregator()),
         ImmutableSet.of()
@@ -171,6 +168,82 @@ public class CollectSetSqlAggregatorTest extends CalciteTestBase
   {
     walker.close();
     walker = null;
+  }
+  @Test
+  public void testCollectSetSqlTimeseries1() throws Exception
+  {
+    SqlLifecycle sqlLifecycle = sqlLifecycleFactory.factorize();
+
+    final String sql = "SELECT\n"
+            + "  COLLECT_SET(dim4, 2) AS dim4a_set\n"
+            + "FROM druid.foo";
+
+    class ResultRecord
+    {
+      private Set<String> rec1Set;
+
+      public ResultRecord(Set<String> rec1Set)
+      {
+        this.rec1Set = rec1Set;
+      }
+
+      @Override
+      public boolean equals(Object o)
+      {
+        if (this == o) {
+          return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+          return false;
+        }
+        ResultRecord that = (ResultRecord) o;
+        return Objects.equals(rec1Set, that.rec1Set);
+      }
+
+      @Override
+      public int hashCode()
+      {
+        return Objects.hash(rec1Set);
+      }
+    }
+
+    // Verify results
+    final List<Object[]> rawResults = sqlLifecycle.runSimple(sql, QUERY_CONTEXT_DEFAULT, DEFAULT_PARAMETERS, authenticationResult).toList();
+    List<ResultRecord> results = new ArrayList<>();
+    log.info("Row result:" + rawResults.toString());
+    for (Object[] result : rawResults) {
+
+      results.add(
+              new ResultRecord(CalciteTests.getJsonMapper().readValue((String) result[0], Set.class))
+      );
+    }
+    List<ResultRecord> expectedResults = ImmutableList.of(
+            new ResultRecord(
+                    Sets.newHashSet("tag1", "tag4"))
+    );
+
+    Assert.assertEquals(expectedResults.size(), results.size());
+
+    for (int i = 0; i < expectedResults.size(); i++) {
+      log.info("result:" + i + "--" + results);
+      Assert.assertEquals(expectedResults.get(i), results.get(i));
+    }
+
+    // Verify query
+    Assert.assertEquals(
+            Druids.newTimeseriesQueryBuilder()
+                    .dataSource(CalciteTests.DATASOURCE1)
+                    .intervals(new MultipleIntervalSegmentSpec(ImmutableList.of(Filtration.eternity())))
+                    .granularity(Granularities.ALL)
+                    .aggregators(
+                            ImmutableList.of(
+                                    new CollectSetAggregatorFactory("a0", "dim4", 2)
+                            )
+                    )
+                    .context(ImmutableMap.of(PlannerContext.CTX_SQL_QUERY_ID, "dummy"))
+                    .build(),
+            Iterables.getOnlyElement(queryLogHook.getRecordedQueries())
+    );
   }
 
   @Test

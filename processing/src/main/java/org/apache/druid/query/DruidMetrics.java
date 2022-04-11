@@ -19,7 +19,6 @@
 
 package org.apache.druid.query;
 
-import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.query.aggregation.AggregatorFactory;
 import org.apache.druid.segment.column.ValueType;
 
@@ -29,7 +28,6 @@ import java.util.List;
  */
 public class DruidMetrics
 {
-  private static final Logger log = new Logger(DruidMetrics.class);
   public static final String DATASOURCE = "dataSource";
   public static final String TYPE = "type";
   public static final String INTERVAL = "interval";
@@ -53,10 +51,8 @@ public class DruidMetrics
   {
     int retVal = 0;
     for (AggregatorFactory agg : aggs) {
-      log.info("Here in find num complexAggs");
       if (agg.getIntermediateType().is(ValueType.COMPLEX)) {
         retVal++;
-        log.info("Here in find num complexAggs if condition:");
       }
     }
     return retVal;

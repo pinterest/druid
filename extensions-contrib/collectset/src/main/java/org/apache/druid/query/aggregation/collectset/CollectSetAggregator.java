@@ -41,20 +41,14 @@ public class CollectSetAggregator implements Aggregator
   )
   {
     this.selector = selector;
-    log.info("selector:" + selector);
-
     this.limit = limit;
     this.set = new THashSet<>();
-    log.info("limit value:" + limit);
-    log.info("Set value:" + set);
   }
 
   @Override
   public void aggregate()
   {
     Object value = selector.getObject();
-    log.info("Value in Collect set Agg:" + value);
-    log.info("Collect set Agg limit outside sync:" + limit);
     if (value == null) {
       return;
     }
@@ -66,20 +60,13 @@ public class CollectSetAggregator implements Aggregator
     synchronized (this) {
       if (value instanceof Collection) {
         Collection<?> valueCollection = (Collection<?>) value;
-        log.info("Value in Collect set Agg 1:" + valueCollection);
-        log.info("Collect set Agg this.limit:" + getLimit());
-        log.info("Collect set Agg limit:" + limit);
         CollectSetUtil.addCollectionWithLimit(set, valueCollection, limit);
       } else {
         set.add(value);
-        log.info("Add value " + value);
       }
     }
   }
-  public Integer getLimit()
-  {
-    return limit;
-  }
+
   @Override
   public synchronized Object get()
   {

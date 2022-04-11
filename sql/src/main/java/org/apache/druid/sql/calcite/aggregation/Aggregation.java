@@ -59,8 +59,7 @@ public class Aggregation
     if (aggregatorFactories.isEmpty()) {
       Preconditions.checkArgument(postAggregator != null, "postAggregator must be present if there are no aggregators");
     }
-    log.info("Sachin postAggregator == null" + postAggregator);
-    //SSAGARE-Added postAggregator.getName in condition ass we are passing postAgreegator with all variable as null
+    //SSAGARE-Added postAggregator.getName in condition ass] we are passing postAgreegator with all variable as null
     if (postAggregator == null || postAggregator.getName() == null) {
       Preconditions.checkArgument(aggregatorFactories.size() == 1, "aggregatorFactories.size == 1");
     } else {
@@ -76,7 +75,7 @@ public class Aggregation
 
     // Verify that all "internal" aggregator names are prefixed by the output name of this aggregation.
     // This is a sanity check to make sure callers are behaving as they should be.
-    //SSAGARE-Added postAggregator.getName() != null in condition as we are passing postAgreegator from collect set with all variable as null
+
     final String name = (postAggregator != null && postAggregator.getName() !=null)
                         ? postAggregator.getName()
                         : Iterables.getOnlyElement(aggregatorFactories).getName();

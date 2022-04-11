@@ -147,7 +147,7 @@
         <!-- Core extensions -->
         <!-- <module>extensions-core/kubernetes-extensions</module>
         <module>extensions-core/avro-extensions</module>
-        <module>extensions-core/azure-extensions</module>
+       <module>extensions-core/azure-extensions</module>
         <module>extensions-core/datasketches</module>
         <module>extensions-core/druid-bloom-filter</module>
         <module>extensions-core/druid-kerberos</module>
@@ -1988,7 +1988,7 @@
               <module>extensions-core/google-extensions</module>
               <!-- Community extensions -->
               <module>extensions-contrib/influx-extensions</module>
-              <module>extensions-contrib/azure-extensions</module>
+              <!-- <module>extensions-contrib/azure-extensions</module> -->
               <module>extensions-contrib/cassandra-storage</module>
               <module>extensions-contrib/cloudfiles-extensions</module>
               <module>extensions-contrib/graphite-emitter</module>

@@ -91,7 +91,6 @@ public class CollectSetSqlAggregator implements SqlAggregator
         project,
         aggregateCall.getArgList().get(0)
     );
-    log.info("Sachin - columnRexNode- sqlTypeName:" + columnRexNode.getType().getSqlTypeName());
 
     final DruidExpression columnArg = Expressions.toDruidExpression(plannerContext, rowSignature, columnRexNode);
     if (columnArg == null) {
@@ -123,10 +122,8 @@ public class CollectSetSqlAggregator implements SqlAggregator
       throw new ISE("Cannot translate to SQL, unsupported complex value type for field[%s]", aggregatorName);
     } else {
       final RelDataType sqlTypeName = columnRexNode.getType();
-      //final SqlTypeName type = sqlTypeName.getSqlTypeName();
-      log.info("Sachin here Print SqlTYPe -now it will be RelDataype:" + sqlTypeName.getSqlTypeName());
       ColumnType inputType = Calcites.getValueTypeForRelDataTypeFull(sqlTypeName);
-      log.info("inputType" + inputType.toString());
+
       if (inputType == null) {
         throw new ISE("Cannot translate sqlTypeName[%s] to Druid type for field[%s]", sqlTypeName, aggregatorName);
       }
@@ -142,16 +139,16 @@ public class CollectSetSqlAggregator implements SqlAggregator
             plannerContext.getExprMacroTable()
         );
         dimensionSpec = new DefaultDimensionSpec(virtualColumn.getOutputName(), null, inputType);
-        log.info(virtualColumn.toString());
         //virtualColumns.add(virtualColumn);
       }
+
       aggregatorFactory = new CollectSetAggregatorFactory(
           aggregatorName,
           dimensionSpec.getDimension(),
           limit
       );
     }
-    log.info("Code FinalizingFieldAccessPostAggregator" + new FinalizingFieldAccessPostAggregator(name, aggregatorFactory.getName()));
+
     return Aggregation.create(
        // virtualColumns,
         Collections.singletonList(aggregatorFactory),
@@ -186,7 +183,6 @@ public class CollectSetSqlAggregator implements SqlAggregator
           false,
               Optionality.FORBIDDEN
       );
-      log.info("Sachin Here in CollectSetSqlAgg:");
     }
   }
 }
