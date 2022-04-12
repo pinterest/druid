@@ -28,6 +28,7 @@ import org.apache.druid.math.expr.ExprMacroTable;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Objects;
 
 /**
  *  hash('hash_func_name', expr, expr ...) outputs hash of given expressions using given hash
@@ -110,6 +111,12 @@ public class HashExprMacro implements ExprMacroTable.ExprMacro
       public BindingAnalysis analyzeInputs()
       {
         return new BindingAnalysis();
+      }
+
+      @Override
+      public int hashCode()
+      {
+        return Objects.hash(super.hashCode());
       }
     }
 

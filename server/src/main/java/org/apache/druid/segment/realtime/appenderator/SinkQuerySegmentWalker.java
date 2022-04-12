@@ -188,6 +188,7 @@ public class SinkQuerySegmentWalker implements QuerySegmentWalker
         specs,
         descriptor -> {
           final PartitionChunk<Sink> chunk = sinkTimeline.findChunk(
+              NamespacedVersionedIntervalTimeline.getNamespace(descriptor.getPartitionIdentifier()),
               descriptor.getInterval(),
               descriptor.getVersion(),
               descriptor.getPartitionNumber()

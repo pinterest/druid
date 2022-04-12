@@ -37,6 +37,7 @@ import org.skife.jdbi.v2.PreparedBatch;
 import org.skife.jdbi.v2.Query;
 import org.skife.jdbi.v2.ResultIterator;
 
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -101,10 +102,11 @@ public class SqlSegmentsMetadataQuery
    */
   public CloseableIterator<DataSegment> retrieveUsedSegments(
       final String dataSource,
-      final Collection<Interval> intervals
+      final Collection<Interval> intervals,
+      @Nullable final String nameSpace
   )
   {
-    return retrieveSegments(dataSource, intervals, IntervalMode.OVERLAPS, true);
+    return retrieveSegments(dataSource, intervals, IntervalMode.OVERLAPS, true, nameSpace);
   }
 
   /**
@@ -118,10 +120,11 @@ public class SqlSegmentsMetadataQuery
    */
   public CloseableIterator<DataSegment> retrieveUnusedSegments(
       final String dataSource,
-      final Collection<Interval> intervals
+      final Collection<Interval> intervals,
+      @Nullable final String nameSpace
   )
   {
-    return retrieveSegments(dataSource, intervals, IntervalMode.CONTAINS, false);
+    return retrieveSegments(dataSource, intervals, IntervalMode.CONTAINS, false, nameSpace);
   }
 
   /**
@@ -201,7 +204,7 @@ public class SqlSegmentsMetadataQuery
       // Retrieve, then drop, since we can't write a WHERE clause directly.
       final List<SegmentId> segments = ImmutableList.copyOf(
           Iterators.transform(
-              retrieveSegments(dataSource, Collections.singletonList(interval), IntervalMode.CONTAINS, true),
+              retrieveSegments(dataSource, Collections.singletonList(interval), IntervalMode.CONTAINS, true, null),
               DataSegment::getId
           )
       );
@@ -213,7 +216,8 @@ public class SqlSegmentsMetadataQuery
       final String dataSource,
       final Collection<Interval> intervals,
       final IntervalMode matchMode,
-      final boolean used
+      final boolean used,
+      @Nullable final String nameSpace
   )
   {
     // Check if the intervals all support comparing as strings. If so, bake them into the SQL.

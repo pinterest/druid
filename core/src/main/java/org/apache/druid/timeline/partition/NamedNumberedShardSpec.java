@@ -66,7 +66,7 @@ public class NamedNumberedShardSpec extends NumberedShardSpec
   @Override
   public <T> PartitionChunk<T> createChunk(T obj)
   {
-    return NamedNumberedPartitionChunk.make(getPartitionNum(), getPartitions(), partitionName, obj);
+    return NamedNumberedPartitionChunk.make(getPartitionNum(), getNumCorePartitions(), partitionName, obj);
   }
 
   /*@Override
@@ -93,7 +93,7 @@ public class NamedNumberedShardSpec extends NumberedShardSpec
   {
     return "NamedNumberedShardSpec{" +
         "partitionNum=" + getPartitionNum() +
-        ", partitions=" + getPartitions() +
+        ", partitions=" + getNumCorePartitions() +
         ", partitionName=" + getPartitionName() +
         '}';
   }

@@ -167,6 +167,10 @@ public class ServerManagerTest
           {
 
           }
+          @Override
+          public void loadSegmentIntoPageCache(DataSegment segment, ExecutorService exec)
+          {
+          }
         }
     );
     serverManager = new ServerManager(
@@ -672,7 +676,8 @@ public class ServerManagerTest
               123L
           ),
           false,
-          SegmentLazyLoadFailCallback.NOOP
+          SegmentLazyLoadFailCallback.NOOP,
+          null
       );
     }
     catch (SegmentLoadingException e) {

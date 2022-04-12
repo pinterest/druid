@@ -20,6 +20,7 @@
 package org.apache.druid.server.coordination;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.apache.druid.client.CachingQueryRunner;
@@ -251,6 +252,7 @@ public class ServerManager implements QuerySegmentWalker
   )
   {
     final PartitionChunk<ReferenceCountingSegment> chunk = timeline.findChunk(
+        NamespacedVersionedIntervalTimeline.getNamespace(descriptor.getPartitionIdentifier()),
         descriptor.getInterval(),
         descriptor.getVersion(),
         descriptor.getPartitionNumber()
@@ -337,7 +339,7 @@ public class ServerManager implements QuerySegmentWalker
 
     PerSegmentOptimizingQueryRunner<T> perSegmentOptimizingQueryRunner = new PerSegmentOptimizingQueryRunner<>(
         specificSegmentQueryRunner,
-        new PerSegmentQueryOptimizationContext(segmentDescriptor)
+        new PerSegmentQueryOptimizationContext(segmentDescriptor, ImmutableSet.of())
     );
 
     return new SetAndVerifyContextQueryRunner<>(

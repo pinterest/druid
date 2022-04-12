@@ -97,16 +97,16 @@ public class NumberedShardSpec implements ShardSpec
     return partitions;
   }
 
-  @JsonProperty("partitions1")
-  public int getPartitions()
-  {
-    return partitions;
-  }
-
   @Override
   public <T> PartitionChunk<T> createChunk(T obj)
   {
     return NumberedPartitionChunk.make(partitionNum, partitions, obj);
+  }
+
+  @Override
+  public String getType()
+  {
+    return Type.NUMBERED;
   }
 
   @Override
@@ -124,16 +124,12 @@ public class NumberedShardSpec implements ShardSpec
     if (this == o) {
       return true;
     }
-
-    if (!(o instanceof NumberedShardSpec)) {
+    if (o == null || getClass() != o.getClass()) {
       return false;
     }
-
-    final NumberedShardSpec that = (NumberedShardSpec) o;
-    if (partitionNum != that.partitionNum) {
-      return false;
-    }
-    return partitions == that.partitions;
+    NumberedShardSpec that = (NumberedShardSpec) o;
+    return partitionNum == that.partitionNum &&
+            partitions == that.partitions;
   }
 
   @Override

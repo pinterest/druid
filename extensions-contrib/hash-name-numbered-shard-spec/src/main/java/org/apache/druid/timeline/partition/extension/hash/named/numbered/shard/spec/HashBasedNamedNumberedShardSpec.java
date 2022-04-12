@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.druid.timeline.partition.HashBasedNumberedShardSpec;
+import org.apache.druid.timeline.partition.HashPartitionFunction;
 import org.apache.druid.timeline.partition.NamedNumberedPartitionChunk;
 import org.apache.druid.timeline.partition.PartitionChunk;
 
@@ -36,17 +37,26 @@ public class HashBasedNamedNumberedShardSpec extends HashBasedNumberedShardSpec
   @JsonIgnore
   private final String partitionName;
 
+  private final ObjectMapper jsonMapper;
+  @JsonIgnore
+  private final List<String> partitionDimensions;
+
   @JsonCreator
   public HashBasedNamedNumberedShardSpec(
       @JsonProperty("partitionNum") int partitionNum,
       @JsonProperty("partitions") int partitions,
+      @JsonProperty("bucketId") @Nullable Integer bucketId,
+      @JsonProperty("numBuckets") @Nullable Integer numBuckets,
       @JsonProperty("partitionDimensions") @Nullable List<String> partitionDimensions,
       @JsonProperty("partitionName") @Nullable String partitionName,
+      @JsonProperty("partitionFunction") @Nullable HashPartitionFunction partitionFunction,
       @JacksonInject ObjectMapper jsonMapper
   )
   {
-    super(partitionNum, partitions, partitionDimensions, jsonMapper);
+    super(partitionNum, partitions, bucketId, numBuckets, partitionDimensions, partitionFunction, jsonMapper);
     this.partitionName = partitionName;
+    this.jsonMapper = jsonMapper;
+    this.partitionDimensions = partitionDimensions == null ? DEFAULT_PARTITION_DIMENSIONS : partitionDimensions;
   }
 
   @JsonProperty("partitionName")
