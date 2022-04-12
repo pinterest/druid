@@ -52,13 +52,13 @@ public class Aggregation
   )
   {
     this.aggregatorFactories = Preconditions.checkNotNull(aggregatorFactories, "aggregatorFactories");
-    this.postAggregator = postAggregator;
+    this.postAggregator = (postAggregator != null && postAggregator.getName() == null)? null :postAggregator;
 
     if (aggregatorFactories.isEmpty()) {
       Preconditions.checkArgument(postAggregator != null, "postAggregator must be present if there are no aggregators");
     }
-
-    if (postAggregator == null) {
+    //SSAGARE-Added postAggregator.getName in condition ass] we are passing postAgreegator with all variable as null
+    if (postAggregator == null || postAggregator.getName() == null) {
       Preconditions.checkArgument(aggregatorFactories.size() == 1, "aggregatorFactories.size == 1");
     } else {
       // Verify that there are no "useless" fields in the aggregatorFactories.
@@ -73,7 +73,8 @@ public class Aggregation
 
     // Verify that all "internal" aggregator names are prefixed by the output name of this aggregation.
     // This is a sanity check to make sure callers are behaving as they should be.
-    final String name = postAggregator != null
+
+    final String name = (postAggregator != null && postAggregator.getName() !=null)
                         ? postAggregator.getName()
                         : Iterables.getOnlyElement(aggregatorFactories).getName();
 

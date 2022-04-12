@@ -19,13 +19,24 @@
 
 package org.apache.druid.query.aggregation.collectset;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import org.apache.druid.data.input.InputRow;
+import org.apache.druid.data.input.impl.DimensionsSpec;
+import org.apache.druid.data.input.impl.DoubleDimensionSchema;
+import org.apache.druid.data.input.impl.FloatDimensionSchema;
+import org.apache.druid.data.input.impl.LongDimensionSchema;
+import org.apache.druid.data.input.impl.StringDimensionSchema;
 import org.apache.druid.java.util.common.Pair;
 import org.apache.druid.java.util.common.granularity.Granularities;
 import org.apache.druid.java.util.common.io.Closer;
 import org.apache.druid.query.QueryRunnerTestHelper;
+import org.apache.druid.query.aggregation.AggregatorFactory;
+import org.apache.druid.query.aggregation.CountAggregatorFactory;
+import org.apache.druid.query.aggregation.FilteredAggregatorFactory;
 import org.apache.druid.query.dimension.DefaultDimensionSpec;
+import org.apache.druid.query.filter.SelectorDimFilter;
 import org.apache.druid.query.groupby.GroupByQuery;
 import org.apache.druid.query.groupby.GroupByQueryConfig;
 import org.apache.druid.query.groupby.GroupByQueryRunnerFactory;
@@ -34,13 +45,17 @@ import org.apache.druid.query.groupby.GroupByQueryRunnerTestHelper;
 import org.apache.druid.query.groupby.ResultRow;
 import org.apache.druid.query.groupby.orderby.DefaultLimitSpec;
 import org.apache.druid.query.groupby.orderby.OrderByColumnSpec;
+import org.apache.druid.segment.CloserRule;
 import org.apache.druid.segment.IncrementalIndexSegment;
 import org.apache.druid.segment.Segment;
 import org.apache.druid.segment.TestHelper;
 import org.apache.druid.segment.incremental.IncrementalIndex;
+import org.apache.druid.segment.incremental.IncrementalIndexCreator;
 import org.apache.druid.segment.incremental.IncrementalIndexSchema;
+import org.apache.druid.segment.incremental.IndexSizeExceededException;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -51,9 +66,10 @@ public class CollectSetGroupByQueryTest
 {
   private GroupByQueryRunnerFactory factory;
   private Closer resourceCloser;
+  private IncrementalIndexCreator indexCreator;
 
   @Before
-  public void setup()
+  public void setup() throws JsonProcessingException
   {
     final GroupByQueryConfig config = new GroupByQueryConfig();
     config.setMaxIntermediateRows(10000);
@@ -62,6 +78,15 @@ public class CollectSetGroupByQueryTest
     );
     factory = factoryCloserPair.lhs;
     resourceCloser = factoryCloserPair.rhs;
+
+    String indexType = "CollectSetTest";
+    indexCreator = closer.closeLater(new IncrementalIndexCreator(indexType, (builder, args) -> builder
+              .setIndexSchema(new IncrementalIndexSchema.Builder()
+                             .withQueryGranularity(Granularities.SECOND)
+                              .build())
+              .setMaxRowCount(10_000)
+              .build()
+      ));
   }
 
   @After
@@ -70,10 +95,32 @@ public class CollectSetGroupByQueryTest
     resourceCloser.close();
   }
 
+  @Rule
+  public final CloserRule closer = new CloserRule(false);
+
   @Test
-  public void testGroupByWithCollectSetAgg() throws Exception
+  public void testGroupByWithCollectSetAgg() throws IndexSizeExceededException
   {
-    IncrementalIndex index = new IncrementalIndex.Builder()
+    DimensionsSpec dimensions = new DimensionsSpec(
+              Arrays.asList(
+                      new StringDimensionSchema("string"),
+                      new FloatDimensionSchema("float"),
+                      new LongDimensionSchema("long"),
+                      new DoubleDimensionSchema("double")
+              ), null, null
+      );
+    AggregatorFactory[] metrics = {
+        new FilteredAggregatorFactory(
+                      new CountAggregatorFactory("cnt"),
+                      new SelectorDimFilter("billy", "A", null)
+              )
+    };
+    final IncrementalIndexSchema schema = new IncrementalIndexSchema.Builder()
+              .withQueryGranularity(Granularities.MINUTE)
+              .withDimensionsSpec(dimensions)
+              .withMetrics(metrics)
+              .build();
+    /*IncrementalIndex index = new IncrementalIndex.Builder()
         .setIndexSchema(
             new IncrementalIndexSchema.Builder()
                 .withQueryGranularity(Granularities.SECOND)
@@ -82,6 +129,8 @@ public class CollectSetGroupByQueryTest
         .setConcurrentEventAdd(true)
         .setMaxRowCount(1000)
         .buildOnheap();
+    */
+    IncrementalIndex index = indexCreator.createIndex();
 
     for (InputRow inputRow : CollectSetTestHelper.INPUT_ROWS) {
       index.add(inputRow);
@@ -110,7 +159,9 @@ public class CollectSetGroupByQueryTest
                 10
             )
         )
-        .setAggregatorSpecs(new CollectSetAggregatorFactory(CollectSetTestHelper.DIMENSIONS[2], CollectSetTestHelper.DIMENSIONS[2]))
+        .setAggregatorSpecs(new CollectSetAggregatorFactory(CollectSetTestHelper.DIMENSIONS[2], CollectSetTestHelper.DIMENSIONS[2], null),
+                            new CollectSetAggregatorFactory(CollectSetTestHelper.DIMENSIONS[3], CollectSetTestHelper.DIMENSIONS[3], null),
+                            new CollectSetAggregatorFactory(CollectSetTestHelper.DIMENSIONS[3] + "a", CollectSetTestHelper.DIMENSIONS[3], 3))
         .build();
 
     final Segment incrementalIndexSegment = new IncrementalIndexSegment(index, null);
@@ -127,28 +178,36 @@ public class CollectSetGroupByQueryTest
             "1970-01-01T00:00:00.000Z",
             CollectSetTestHelper.DIMENSIONS[0], "0",
             CollectSetTestHelper.DIMENSIONS[1], "android",
-            CollectSetTestHelper.DIMENSIONS[2], Sets.newHashSet("image")
+            CollectSetTestHelper.DIMENSIONS[2], Sets.newHashSet("image"),
+            CollectSetTestHelper.DIMENSIONS[3], Sets.newHashSet("tag1", "tag4", "tag5", "tag6"),
+            CollectSetTestHelper.DIMENSIONS[3] + "a", Sets.newHashSet("tag1", "tag4", "tag5")
         ),
         GroupByQueryRunnerTestHelper.createExpectedRow(
             query,
             "1970-01-01T00:00:00.000Z",
             CollectSetTestHelper.DIMENSIONS[0], "0",
             CollectSetTestHelper.DIMENSIONS[1], "iphone",
-            CollectSetTestHelper.DIMENSIONS[2], Sets.newHashSet("video", "text")
+            CollectSetTestHelper.DIMENSIONS[2], Sets.newHashSet("video", "text"),
+            CollectSetTestHelper.DIMENSIONS[3], Sets.newHashSet("tag1", "tag2", "tag3", "tag4", "tag5", "tag7", "tag8"),
+            CollectSetTestHelper.DIMENSIONS[3] + "a", Sets.newHashSet("tag4", "tag5", "tag7")
         ),
         GroupByQueryRunnerTestHelper.createExpectedRow(
             query,
             "1970-01-01T00:00:00.000Z",
             CollectSetTestHelper.DIMENSIONS[0], "1",
             CollectSetTestHelper.DIMENSIONS[1], "iphone",
-            CollectSetTestHelper.DIMENSIONS[2], Sets.newHashSet("video")
+            CollectSetTestHelper.DIMENSIONS[2], Sets.newHashSet("video"),
+            CollectSetTestHelper.DIMENSIONS[3], ImmutableSet.of(),
+            CollectSetTestHelper.DIMENSIONS[3] + "a", ImmutableSet.of()
         ),
         GroupByQueryRunnerTestHelper.createExpectedRow(
             query,
             "1970-01-01T00:00:00.000Z",
             CollectSetTestHelper.DIMENSIONS[0], "2",
             CollectSetTestHelper.DIMENSIONS[1], "android",
-            CollectSetTestHelper.DIMENSIONS[2], Sets.newHashSet("video")
+            CollectSetTestHelper.DIMENSIONS[2], Sets.newHashSet("video"),
+            CollectSetTestHelper.DIMENSIONS[3], Sets.newHashSet("tag2"),
+            CollectSetTestHelper.DIMENSIONS[3] + "a", Sets.newHashSet("tag2")
         )
     );
     TestHelper.assertExpectedObjects(expectedResults, results, "collectset");

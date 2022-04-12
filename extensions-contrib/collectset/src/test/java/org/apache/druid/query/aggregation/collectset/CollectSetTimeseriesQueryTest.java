@@ -31,11 +31,14 @@ import org.apache.druid.query.Result;
 import org.apache.druid.query.timeseries.TimeseriesQuery;
 import org.apache.druid.query.timeseries.TimeseriesQueryEngine;
 import org.apache.druid.query.timeseries.TimeseriesResultValue;
+import org.apache.druid.segment.CloserRule;
 import org.apache.druid.segment.TestHelper;
 import org.apache.druid.segment.incremental.IncrementalIndex;
+import org.apache.druid.segment.incremental.IncrementalIndexCreator;
 import org.apache.druid.segment.incremental.IncrementalIndexSchema;
 import org.apache.druid.segment.incremental.IncrementalIndexStorageAdapter;
 import org.joda.time.DateTime;
+import org.junit.Rule;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -43,19 +46,34 @@ import java.util.List;
 
 public class CollectSetTimeseriesQueryTest
 {
+  private IncrementalIndexCreator indexCreator;
+
+  @Rule
+  public final CloserRule closer = new CloserRule(false);
+
   @Test
   public void testTimeseriesQueryWithCollectSetAgg() throws Exception
   {
     TimeseriesQueryEngine engine = new TimeseriesQueryEngine();
 
-    IncrementalIndex index = new IncrementalIndex.Builder()
-        .setIndexSchema(
-            new IncrementalIndexSchema.Builder()
-                .withQueryGranularity(Granularities.SECOND)
-                .build()
-        )
-        .setMaxRowCount(1000)
-        .buildOnheap();
+    String indexType = "CollectSetTest";
+    indexCreator = closer.closeLater(new IncrementalIndexCreator(indexType, (builder, args) -> builder
+              .setIndexSchema(new IncrementalIndexSchema.Builder()
+                      .withQueryGranularity(Granularities.SECOND)
+                      .build())
+              .setMaxRowCount(10_000)
+              .build()
+    ));
+
+    IncrementalIndex index = indexCreator.createIndex();
+   // IncrementalIndex index = new IncrementalIndex.Builder()
+   //     .setIndexSchema(
+    //        new IncrementalIndexSchema.Builder()
+    //            .withQueryGranularity(Granularities.SECOND)
+    //            .build()
+    //    )
+      //  .setMaxRowCount(1000)
+      //  .buildOnheap();
 
     DateTime time = DateTimes.of("2000-01-01T00:00:00.000Z");
 
@@ -69,9 +87,11 @@ public class CollectSetTimeseriesQueryTest
                                   .intervals(QueryRunnerTestHelper.FULL_ON_INTERVAL_SPEC)
                                   .aggregators(
                                       Lists.newArrayList(
-                                          new CollectSetAggregatorFactory(CollectSetTestHelper.DIMENSIONS[0], CollectSetTestHelper.DIMENSIONS[0]),
-                                          new CollectSetAggregatorFactory(CollectSetTestHelper.DIMENSIONS[1], CollectSetTestHelper.DIMENSIONS[1]),
-                                          new CollectSetAggregatorFactory(CollectSetTestHelper.DIMENSIONS[2], CollectSetTestHelper.DIMENSIONS[2])
+                                          new CollectSetAggregatorFactory(CollectSetTestHelper.DIMENSIONS[0], CollectSetTestHelper.DIMENSIONS[0], null),
+                                          new CollectSetAggregatorFactory(CollectSetTestHelper.DIMENSIONS[1], CollectSetTestHelper.DIMENSIONS[1], null),
+                                          new CollectSetAggregatorFactory(CollectSetTestHelper.DIMENSIONS[2], CollectSetTestHelper.DIMENSIONS[2], 2),
+                                          new CollectSetAggregatorFactory(CollectSetTestHelper.DIMENSIONS[3], CollectSetTestHelper.DIMENSIONS[3], null),
+                                          new CollectSetAggregatorFactory(CollectSetTestHelper.DIMENSIONS[3] + "a", CollectSetTestHelper.DIMENSIONS[3], 4)
                                       )
                                   )
                                   .build();
@@ -86,7 +106,9 @@ public class CollectSetTimeseriesQueryTest
                 ImmutableMap.of(
                     CollectSetTestHelper.DIMENSIONS[0], Sets.newHashSet("0", "1", "2"),
                     CollectSetTestHelper.DIMENSIONS[1], Sets.newHashSet("android", "iphone"),
-                    CollectSetTestHelper.DIMENSIONS[2], Sets.newHashSet("text", "video", "image"))
+                    CollectSetTestHelper.DIMENSIONS[2], Sets.newHashSet("text", "image"),
+                    CollectSetTestHelper.DIMENSIONS[3], Sets.newHashSet("tag1", "tag2", "tag3", "tag4", "tag5", "tag6", "tag7", "tag8"),
+                    CollectSetTestHelper.DIMENSIONS[3] + "a", Sets.newHashSet("tag1", "tag4", "tag5", "tag6"))
             )
         )
     );

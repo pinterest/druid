@@ -21,7 +21,9 @@ package org.apache.druid.query.aggregation.collectset.sql;
 
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.core.Project;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlAggFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
@@ -30,13 +32,17 @@ import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.util.Optionality;
 import org.apache.druid.java.util.common.ISE;
+import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.query.aggregation.AggregatorFactory;
 import org.apache.druid.query.aggregation.collectset.CollectSetAggregatorFactory;
 import org.apache.druid.query.aggregation.post.FinalizingFieldAccessPostAggregator;
 import org.apache.druid.query.dimension.DefaultDimensionSpec;
 import org.apache.druid.query.dimension.DimensionSpec;
 import org.apache.druid.segment.VirtualColumn;
+import org.apache.druid.segment.column.ColumnType;
+import org.apache.druid.segment.column.RowSignature;
 import org.apache.druid.segment.column.ValueType;
 import org.apache.druid.segment.virtual.ExpressionVirtualColumn;
 import org.apache.druid.sql.calcite.aggregation.Aggregation;
@@ -46,7 +52,6 @@ import org.apache.druid.sql.calcite.expression.Expressions;
 import org.apache.druid.sql.calcite.planner.Calcites;
 import org.apache.druid.sql.calcite.planner.PlannerContext;
 import org.apache.druid.sql.calcite.rel.VirtualColumnRegistry;
-import org.apache.druid.sql.calcite.table.RowSignature;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -55,6 +60,7 @@ import java.util.List;
 
 public class CollectSetSqlAggregator implements SqlAggregator
 {
+  private static final Logger log = new Logger(CollectSetSqlAggregator.class);
   private static final SqlAggFunction FUNCTION_INSTANCE = new CollectSetSqlAggFunction();
   private static final String NAME = "COLLECT_SET";
 
@@ -91,15 +97,33 @@ public class CollectSetSqlAggregator implements SqlAggregator
       return null;
     }
 
+    Integer limit;
+    if (aggregateCall.getArgList().size() >= 2) {
+      final RexNode limitRexNode = Expressions.fromFieldAccess(
+          rowSignature,
+          project,
+          aggregateCall.getArgList().get(1)
+      );
+
+      if (!limitRexNode.isA(SqlKind.LITERAL)) {
+        // limit must be a literal in order to plan.
+        return null;
+      }
+      limit = new Integer(((Number) RexLiteral.value(limitRexNode)).intValue());
+    } else {
+      limit = new Integer(-1);
+    }
+
     final List<VirtualColumn> virtualColumns = new ArrayList<>();
     final AggregatorFactory aggregatorFactory;
     final String aggregatorName = finalizeAggregations ? Calcites.makePrefixedName(name, "a") : name;
 
-    if (columnArg.isDirectColumnAccess() && rowSignature.getColumnType(columnArg.getDirectColumn()) == ValueType.COMPLEX) {
+    if (columnArg.isDirectColumnAccess() && rowSignature.getColumnType(columnArg.getDirectColumn()).get().toString().equals(ValueType.COMPLEX.toString())) {
       throw new ISE("Cannot translate to SQL, unsupported complex value type for field[%s]", aggregatorName);
     } else {
-      final SqlTypeName sqlTypeName = columnRexNode.getType().getSqlTypeName();
-      final ValueType inputType = Calcites.getValueTypeForSqlTypeName(sqlTypeName);
+      final RelDataType sqlTypeName = columnRexNode.getType();
+      ColumnType inputType = Calcites.getValueTypeForRelDataTypeFull(sqlTypeName);
+
       if (inputType == null) {
         throw new ISE("Cannot translate sqlTypeName[%s] to Druid type for field[%s]", sqlTypeName, aggregatorName);
       }
@@ -109,33 +133,36 @@ public class CollectSetSqlAggregator implements SqlAggregator
       if (columnArg.isDirectColumnAccess()) {
         dimensionSpec = columnArg.getSimpleExtraction().toDimensionSpec(null, inputType);
       } else {
-        final ExpressionVirtualColumn virtualColumn = columnArg.toVirtualColumn(
+        final ExpressionVirtualColumn virtualColumn = (ExpressionVirtualColumn) columnArg.toVirtualColumn(
             Calcites.makePrefixedName(name, "v"),
             inputType,
             plannerContext.getExprMacroTable()
         );
         dimensionSpec = new DefaultDimensionSpec(virtualColumn.getOutputName(), null, inputType);
-        virtualColumns.add(virtualColumn);
+        //virtualColumns.add(virtualColumn);
       }
 
       aggregatorFactory = new CollectSetAggregatorFactory(
           aggregatorName,
-          dimensionSpec.getDimension()
+          dimensionSpec.getDimension(),
+          limit
       );
     }
 
     return Aggregation.create(
-        virtualColumns,
+       // virtualColumns,
         Collections.singletonList(aggregatorFactory),
         finalizeAggregations ? new FinalizingFieldAccessPostAggregator(
             name,
             aggregatorFactory.getName()
-        ) : null
+        ) : new FinalizingFieldAccessPostAggregator(null, null)
     );
   }
 
   private static class CollectSetSqlAggFunction extends SqlAggFunction
   {
+    private static final String SIGNATURE = "'" + NAME + "(column, limit)'\n";
+
     CollectSetSqlAggFunction()
     {
       super(
@@ -144,10 +171,17 @@ public class CollectSetSqlAggregator implements SqlAggregator
           SqlKind.OTHER_FUNCTION,
           ReturnTypes.explicit(SqlTypeName.OTHER),
           null,
-          OperandTypes.family(SqlTypeFamily.ANY),
+          OperandTypes.or(
+              OperandTypes.ANY,
+              OperandTypes.and(
+                  OperandTypes.sequence(SIGNATURE, OperandTypes.ANY, OperandTypes.LITERAL),
+                  OperandTypes.family(SqlTypeFamily.ANY, SqlTypeFamily.NUMERIC)
+              )
+          ),
           SqlFunctionCategory.USER_DEFINED_FUNCTION,
           false,
-          false
+          false,
+              Optionality.FORBIDDEN
       );
     }
   }
