@@ -20,11 +20,11 @@
 package org.apache.druid.timeline;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
 import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.timeline.partition.PartitionChunk;
-import org.apache.druid.timeline.partition.PartitionHolder;
 import org.apache.druid.utils.CollectionUtils;
 import org.joda.time.Interval;
 
@@ -191,33 +191,6 @@ public class NamespacedVersionedIntervalTimeline<VersionType, ObjectType extends
     }
   }
 
-  // Should be unsupported in this timeline.
-  // For now make it return entries for null namespace so tests pass.
-  // Should be unsupported in this timeline.
-  // For now make it return entries for null namespace so tests pass.
-  /*@Override*/
-  public PartitionHolder<ObjectType> findEntry(Interval interval, VersionType version)
-  {
-    throw new UnsupportedOperationException("Non-namespaced findEntry not supported in a namespaced timeline");
-  }
-
-  public PartitionHolder<ObjectType> findEntry(@Nullable String namespace, Interval interval, VersionType version)
-  {
-    try {
-      lock.readLock().lock();
-
-      VersionedIntervalTimeline<VersionType, ObjectType> timeline = timelines.get(namespace);
-      if (timeline == null) {
-        return null;
-      }
-
-      return timeline.findEntry(interval, version);
-    }
-    finally {
-      lock.readLock().unlock();
-    }
-  }
-
   public List<TimelineObjectHolder<VersionType, ObjectType>> lookup(String namespace, Interval interval)
   {
     if (namespace == null) {
@@ -323,7 +296,25 @@ public class NamespacedVersionedIntervalTimeline<VersionType, ObjectType extends
   @Nullable
   public PartitionChunk<ObjectType> findChunk(Interval interval, VersionType version, int partitionNum)
   {
-    throw new UnsupportedOperationException("Non-namespaced findEntry not supported in a namespaced timeline");
+    throw new UnsupportedOperationException("Non-namespaced findChunk not supported in a namespaced timeline");
+  }
+
+  @Nullable
+  public PartitionChunk<ObjectType> findChunk(@Nullable String namespace, Interval interval, VersionType version, int partitionNum)
+  {
+    try {
+      lock.readLock().lock();
+
+      VersionedIntervalTimeline<VersionType, ObjectType> timeline = timelines.get(namespace);
+      if (timeline == null) {
+        return null;
+      }
+
+      return timeline.findChunk(interval, version, partitionNum);
+    }
+    finally {
+      lock.readLock().unlock();
+    }
   }
 
   /**
@@ -365,5 +356,31 @@ public class NamespacedVersionedIntervalTimeline<VersionType, ObjectType extends
       }
     }
     return false;
+  }
+
+  /**
+   * Computes a set with all objects falling within the specified interval which are at least partially "visible" in
+   * this interval (that is, are not fully overshadowed within this interval).
+   *
+   * Note that this method returns a set of {@link ObjectType}. Duplicate objects in different time chunks will be
+   * removed in the result.
+   */
+  public Set<ObjectType> findNonOvershadowedObjectsInInterval(Interval interval, Partitions completeness)
+  {
+    final List<TimelineObjectHolder<VersionType, ObjectType>> holders;
+
+    lock.readLock().lock();
+    try {
+      holders = lookup(interval); //the lookup method uses Partitions.ONLY_COMPLETE
+    }
+    finally {
+      lock.readLock().unlock();
+    }
+
+    return FluentIterable
+            .from(holders)
+            .transformAndConcat(TimelineObjectHolder::getObject)
+            .transform(PartitionChunk::getObject)
+            .toSet();
   }
 }

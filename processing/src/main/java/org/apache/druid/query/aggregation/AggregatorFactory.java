@@ -302,6 +302,11 @@ public abstract class AggregatorFactory implements Cacheable
     return getMaxIntermediateSize();
   }
 
+  boolean isNoopNumberAggregator(PerSegmentQueryOptimizationContext optimizationContext)
+  {
+    return requiredFields().stream().noneMatch(c -> optimizationContext.getAvailableFields().contains(c));
+  }
+
   /**
    * Returns a best guess as to how much memory the on-heap {@link Aggregator} returned by {@link #factorize} will
    * require when a certain number of rows have been aggregated into it.

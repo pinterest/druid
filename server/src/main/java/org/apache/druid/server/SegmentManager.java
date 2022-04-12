@@ -48,6 +48,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -210,11 +211,16 @@ public class SegmentManager
    * @param lazy    whether to lazy load columns metadata
    * @param loadFailed callBack to execute when segment lazy load failed
    *
+   * @param loadSegmentIntoPageCacheExec This thread pool is optional. Usually you can give one with
+   *                                     more capacity on bootstrap. If null is specified, the
+   *                                     thread pool to load segments into page cache on download
+   *                                     will be used.
+   *
    * @return true if the segment was newly loaded, false if it was already loaded
    *
    * @throws SegmentLoadingException if the segment cannot be loaded
    */
-  public boolean loadSegment(final DataSegment segment, boolean lazy, SegmentLazyLoadFailCallback loadFailed) throws SegmentLoadingException
+  public boolean loadSegment(final DataSegment segment, boolean lazy, SegmentLazyLoadFailCallback loadFailed, ExecutorService loadSegmentIntoPageCacheExec) throws SegmentLoadingException
   {
     final ReferenceCountingSegment adapter = getSegmentReference(segment, lazy, loadFailed);
 
@@ -228,9 +234,10 @@ public class SegmentManager
           final NamespacedVersionedIntervalTimeline<String, ReferenceCountingSegment> loadedIntervals =
               dataSourceState.getTimeline();
           final PartitionChunk<ReferenceCountingSegment> entry = loadedIntervals.findChunk(
-              segment.getInterval(),
-              segment.getVersion(),
-              segment.getShardSpec().getPartitionNum()
+                  NamespacedVersionedIntervalTimeline.getNamespace(segment.getShardSpec().getIdentifier()),
+                  segment.getInterval(),
+                  segment.getVersion(),
+                  segment.getShardSpec().getPartitionNum()
           );
 
           if (entry != null) {
@@ -255,6 +262,7 @@ public class SegmentManager
                 segment.getShardSpec().createChunk(adapter)
             );
             dataSourceState.addSegment(segment);
+            segmentLoader.loadSegmentIntoPageCache(segment, loadSegmentIntoPageCacheExec);
             resultSupplier.set(true);
 
           }

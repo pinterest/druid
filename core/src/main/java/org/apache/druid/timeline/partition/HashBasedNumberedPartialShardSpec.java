@@ -82,9 +82,12 @@ public class HashBasedNumberedPartialShardSpec implements PartialShardSpec
   public ShardSpec complete(ObjectMapper objectMapper, int partitionId, int numCorePartitions)
   {
     return new HashBasedNumberedShardSpec(
-        partitionId,
-        numCorePartitions,
+            partitionId,
+            numCorePartitions,
+            bucketId,
+            numBuckets,
             partitionDimensions,
+            partitionFunction,
             objectMapper
     );
   }

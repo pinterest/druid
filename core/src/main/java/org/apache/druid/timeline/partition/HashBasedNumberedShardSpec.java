@@ -44,12 +44,12 @@ public class HashBasedNumberedShardSpec extends NumberedShardSpec
 {
   public static final List<String> DEFAULT_PARTITION_DIMENSIONS = ImmutableList.of();
 
-  private int bucketId;
+  private final int bucketId;
 
   /**
    * Number of hash buckets
    */
-  private int numBuckets;
+  private final int numBuckets;
   private final ObjectMapper jsonMapper;
   private final List<String> partitionDimensions;
 
@@ -71,10 +71,10 @@ public class HashBasedNumberedShardSpec extends NumberedShardSpec
   public HashBasedNumberedShardSpec(
           @JsonProperty("partitionNum") int partitionNum,    // partitionId
           @JsonProperty("partitions") int partitions,        // core partition set size
-          // nullable for backward compatibility
-          // nullable for backward compatibility
+          @JsonProperty("bucketId") @Nullable Integer bucketId, // nullable for backward compatibility
+          @JsonProperty("numBuckets") @Nullable Integer numBuckets, // nullable for backward compatibility
           @JsonProperty("partitionDimensions") @Nullable List<String> partitionDimensions,
-          // nullable for backward compatibility
+          @JsonProperty("partitionFunction") @Nullable HashPartitionFunction partitionFunction, // nullable for backward compatibility
           @JacksonInject ObjectMapper jsonMapper
   )
   {
@@ -84,8 +84,8 @@ public class HashBasedNumberedShardSpec extends NumberedShardSpec
     // If numBuckets is missing, assume that any hash bucket is not empty.
     // Use the core partition set size as the number of buckets.
    // this.numBuckets = numBuckets == null ? partitions : numBuckets;
-    this.bucketId = bucketId;
-    this.numBuckets = numBuckets;
+    this.bucketId = bucketId == null ? partitionNum : bucketId;
+    this.numBuckets = numBuckets == null ? partitions : numBuckets;
     this.partitionDimensions = partitionDimensions == null ? DEFAULT_PARTITION_DIMENSIONS : partitionDimensions;
     this.partitionFunction = partitionFunction;
     this.jsonMapper = jsonMapper;

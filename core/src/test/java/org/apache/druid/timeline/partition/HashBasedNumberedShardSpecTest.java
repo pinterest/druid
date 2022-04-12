@@ -63,9 +63,12 @@ public class HashBasedNumberedShardSpecTest
     final ShardSpec spec = objectMapper.readValue(
         objectMapper.writeValueAsBytes(
             new HashBasedNumberedShardSpec(
-                1,
-                2,
+                    1,
+                    2,
+                    1,
+                    3,
                     ImmutableList.of("visitor_id"),
+                    HashPartitionFunction.MURMUR3_32_ABS,
                     objectMapper
             )
         ),
@@ -111,9 +114,9 @@ public class HashBasedNumberedShardSpecTest
   public void testPartitionChunks()
   {
     final List<ShardSpec> specs = ImmutableList.of(
-        new HashBasedNumberedShardSpec(0, 3, null, objectMapper),
-        new HashBasedNumberedShardSpec(1, 3, null, objectMapper),
-        new HashBasedNumberedShardSpec(2, 3, null, objectMapper)
+            new HashBasedNumberedShardSpec(0, 3, 0, 3, null, null, objectMapper),
+            new HashBasedNumberedShardSpec(1, 3, 1, 3, null, null, objectMapper),
+            new HashBasedNumberedShardSpec(2, 3, 2, 3, null, null, objectMapper)
     );
 
     final List<PartitionChunk<String>> chunks = Lists.transform(
@@ -239,9 +242,12 @@ public class HashBasedNumberedShardSpecTest
   public void testSharePartitionSpace()
   {
     final HashBasedNumberedShardSpec shardSpec = new HashBasedNumberedShardSpec(
-        1,
-        2,
+            1,
+            2,
+            1,
+            3,
             ImmutableList.of("visitor_id"),
+            null,
             objectMapper
     );
     Assert.assertTrue(shardSpec.sharePartitionSpace(NumberedPartialShardSpec.instance()));
@@ -262,9 +268,12 @@ public class HashBasedNumberedShardSpecTest
     for (int i = 0; i < numBuckets; i++) {
       shardSpecs.add(
           new HashBasedNumberedShardSpec(
-              i,
-              numBuckets,
+                  i,
+                  numBuckets,
+                  i,
+                  numBuckets,
                   ImmutableList.of("visitor_id"),
+                  null,
                   objectMapper
           )
       );
@@ -284,9 +293,12 @@ public class HashBasedNumberedShardSpecTest
     for (int i = 0; i < numBuckets; i++) {
       shardSpecs.add(
           new HashBasedNumberedShardSpec(
-              i,
-              numBuckets,
+                  i,
+                  numBuckets,
+                  i,
+                  numBuckets,
                   ImmutableList.of(),
+                  HashPartitionFunction.MURMUR3_32_ABS,
                   objectMapper
           )
       );
@@ -306,9 +318,12 @@ public class HashBasedNumberedShardSpecTest
     for (int i = 0; i < numBuckets; i++) {
       shardSpecs.add(
           new HashBasedNumberedShardSpec(
-              i,
-              numBuckets,
+                  i,
+                  numBuckets,
+                  i,
+                  numBuckets,
                   ImmutableList.of("visitor_id"),
+                  HashPartitionFunction.MURMUR3_32_ABS,
                   objectMapper
           )
       );
@@ -327,9 +342,12 @@ public class HashBasedNumberedShardSpecTest
     for (int i = 0; i < numBuckets; i++) {
       shardSpecs.add(
           new HashBasedNumberedShardSpec(
-              i,
-              numBuckets,
+                  i,
+                  numBuckets,
+                  i,
+                  numBuckets,
                   ImmutableList.of("visitor_id"),
+                  HashPartitionFunction.MURMUR3_32_ABS,
                   objectMapper
           )
       );
@@ -365,8 +383,11 @@ public class HashBasedNumberedShardSpecTest
   private HashBasedNumberedShardSpec newShardSpecForTesting(int partitionNum, int partitions)
   {
     return new HashBasedNumberedShardSpec(
-        partitionNum,
-        partitions,
+            partitionNum,
+            partitions,
+            partitionNum % partitions,
+            partitions,
+            null,
             null,
             objectMapper
     );

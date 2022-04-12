@@ -144,9 +144,12 @@ public class CompactSegmentsTest
         new Object[]{
             new HashedPartitionsSpec(null, 2, ImmutableList.of("dim")),
             (BiFunction<Integer, Integer, ShardSpec>) (bucketId, numBuckets) -> new HashBasedNumberedShardSpec(
-                bucketId,
-                numBuckets,
+                    bucketId,
+                    numBuckets,
+                    bucketId,
+                    numBuckets,
                     ImmutableList.of("dim"),
+                    null,
                     JSON_MAPPER
             )
         },

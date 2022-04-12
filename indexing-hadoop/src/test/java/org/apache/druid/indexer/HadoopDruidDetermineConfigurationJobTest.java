@@ -72,9 +72,12 @@ public class HadoopDruidDetermineConfigurationJobTest
       for (int i = 0; i < shardSpecsPerInterval.size(); i++) {
         Assert.assertEquals(
             new HashBasedNumberedShardSpec(
-                i,
-                shardSpecsPerInterval.size(),
+                    i,
+                    shardSpecsPerInterval.size(),
+                    i,
+                    shardSpecsPerInterval.size(),
                     null,
+                    HashPartitionFunction.MURMUR3_32_ABS,
                     new ObjectMapper()
             ),
             shardSpecsPerInterval.get(i).getActualSpec()
@@ -108,9 +111,12 @@ public class HadoopDruidDetermineConfigurationJobTest
       Assert.assertEquals(1, shardSpecsPerInterval.size());
       Assert.assertEquals(
           new HashBasedNumberedShardSpec(
-              0,
-              shardSpecsPerInterval.size(),
+                  0,
+                  shardSpecsPerInterval.size(),
+                  0,
+                  shardSpecsPerInterval.size(),
                   ImmutableList.of("dim"),
+                  null,
                   new ObjectMapper()
           ),
           shardSpecsPerInterval.get(0).getActualSpec()

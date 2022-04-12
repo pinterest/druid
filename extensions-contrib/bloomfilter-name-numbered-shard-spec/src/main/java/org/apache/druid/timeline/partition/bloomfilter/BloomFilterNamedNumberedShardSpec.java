@@ -139,7 +139,7 @@ public class BloomFilterNamedNumberedShardSpec extends NamedNumberedShardSpec
   {
     return "BloomFilterNamedNumberedShardSpec{" +
            "partitionNum=" + getPartitionNum() +
-           ", partitions=" + getPartitions() +
+           ", partitions=" + getNumCorePartitions() +
            ", partitionName=" + getPartitionName() +
            ", dimension=" + dimension +
            ", bloomFilter=" + getBloomFilter() +

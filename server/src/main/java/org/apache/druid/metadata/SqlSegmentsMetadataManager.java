@@ -571,12 +571,12 @@ public class SqlSegmentsMetadataManager implements SegmentsMetadataManager
               interval == null ? Intervals.ONLY_ETERNITY : Collections.singletonList(interval);
 
           try (final CloseableIterator<DataSegment> iterator =
-                   queryTool.retrieveUsedSegments(dataSourceName, intervals)) {
+                   queryTool.retrieveUsedSegments(dataSourceName, intervals, null)) {
             NamespacedVersionedIntervalTimeline.addSegments(timeline, iterator);
           }
 
           try (final CloseableIterator<DataSegment> iterator =
-                   queryTool.retrieveUnusedSegments(dataSourceName, intervals)) {
+                   queryTool.retrieveUnusedSegments(dataSourceName, intervals, null)) {
             while (iterator.hasNext()) {
               final DataSegment dataSegment = iterator.next();
               NamespacedVersionedIntervalTimeline.addSegments(timeline, Iterators.singletonIterator(dataSegment));
@@ -711,7 +711,7 @@ public class SqlSegmentsMetadataManager implements SegmentsMetadataManager
   )
   {
     return SqlSegmentsMetadataQuery.forHandle(handle, connector, dbTables.get(), jsonMapper)
-                                   .retrieveUsedSegments(dataSource, intervals);
+                                   .retrieveUsedSegments(dataSource, intervals, null);
   }
 
   private int markSegmentsAsUsed(final List<SegmentId> segmentIds)
