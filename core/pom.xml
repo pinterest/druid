@@ -120,7 +120,6 @@
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-smile</artifactId>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>com.google.inject</groupId>

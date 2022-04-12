@@ -207,6 +207,7 @@ public class KafkaSupervisor extends SeekableStreamSupervisor<Integer, Long, Kaf
       String baseSequenceName,
       ObjectMapper sortingMapper,
       TreeMap<Integer, Map<Integer, Long>> sequenceOffsets,
+      Integer streamPartitions,
       SeekableStreamIndexTaskIOConfig taskIoConfig,
       SeekableStreamIndexTaskTuningConfig taskTuningConfig,
       RowIngestionMetersFactory rowIngestionMetersFactory
@@ -219,6 +220,7 @@ public class KafkaSupervisor extends SeekableStreamSupervisor<Integer, Long, Kaf
     // The below is for the compatibility when you want to downgrade your cluster to something earlier than 0.16.0.
     // Kafka index task will pick up LegacyKafkaIndexTaskRunner without the below configuration.
     context.put("IS_INCREMENTAL_HANDOFF_SUPPORTED", true);
+    context.put(STREAM_PARTITIONS_CTX_KEY, streamPartitions);
 
     List<SeekableStreamIndexTask<Integer, Long, KafkaRecordEntity>> taskList = new ArrayList<>();
     for (int i = 0; i < replicas; i++) {

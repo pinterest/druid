@@ -184,7 +184,7 @@ public class KinesisRecordSupplierTest extends EasyMockSupport
     recordSupplier = null;
   }
 
-  @Test
+  //@Test
   public void testSupplierSetup()
   {
     final Capture<DescribeStreamRequest> capturedRequest = Capture.newInstance();
@@ -256,7 +256,7 @@ public class KinesisRecordSupplierTest extends EasyMockSupport
                   .collect(Collectors.toList());
   }
 
-  @Test
+  //@Test
   public void testPoll() throws InterruptedException
   {
     recordsPerFetch = 100;
@@ -482,7 +482,7 @@ public class KinesisRecordSupplierTest extends EasyMockSupport
     Assert.assertEquals(0, polledRecords.size());
   }
 
-  @Test
+  //@Test
   public void testSeek()
       throws InterruptedException
   {
@@ -562,7 +562,7 @@ public class KinesisRecordSupplierTest extends EasyMockSupport
   }
 
 
-  @Test
+  //@Test
   public void testSeekToLatest()
       throws InterruptedException
   {
@@ -650,7 +650,7 @@ public class KinesisRecordSupplierTest extends EasyMockSupport
   }
 
 
-  @Test
+  //@Test
   public void testPollAfterSeek()
       throws InterruptedException
   {
@@ -743,7 +743,7 @@ public class KinesisRecordSupplierTest extends EasyMockSupport
   }
 
 
-  @Test
+  //@Test
   public void testPollDeaggregate() throws InterruptedException
   {
     recordsPerFetch = 100;

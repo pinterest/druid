@@ -110,12 +110,20 @@
     </build>
 
     <profiles>
+        <!-- Moving the full pull-deps execution out of the dist profile since we don't want to
+        pull-deps if we're running with reducedBuild (since we won't have built all of them). In
+         previous versions of Druid, this was fine because you had to manually specify bundle-exts.
+         With the new distribution approach, this is done automatically and so causes failures if
+         both the dist and bundle-contrib-pinterest profiles are active. Because maven does not allow
+         multiple property checks, this profile will run every time reducedBuild is _not_ specified,
+         even if dist isn't specified either. This does mean that if reducedBuild is specified but
+         not bundle-contrib-pinterest, dependencies will not be properly positioned in the resulting
+         tarball. -->
         <profile>
-            <id>dist</id>
+            <id>bundle-contribs</id>
             <activation>
-                <activeByDefault>false</activeByDefault>
                 <property>
-                    <name>tar</name>
+                    <name>!reducedBuild</name>
                 </property>
             </activation>
             <build>
@@ -124,50 +132,6 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <executions>
-                            <execution>
-                                <id>generate-readme</id>
-                                <phase>initialize</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <executable>${project.basedir}/bin/build-textfile-readme.sh</executable>
-                                    <arguments>
-                                        <argument>${project.basedir}/../</argument>
-                                        <argument>${project.parent.version}</argument>
-                                    </arguments>
-                                </configuration>
-                            </execution>
-                            <!--<execution>-->
-                                <!--<id>generate-binary-license</id>-->
-                                <!--<phase>initialize</phase>-->
-                                <!--<goals>-->
-                                    <!--<goal>exec</goal>-->
-                                <!--</goals>-->
-                                <!--<configuration>-->
-                                    <!--<executable>${project.basedir}/bin/generate-binary-license.py</executable>-->
-                                    <!--<arguments>-->
-                                        <!--<argument>${project.parent.basedir}/licenses/APACHE2</argument>-->
-                                        <!--<argument>${project.parent.basedir}/licenses.yaml</argument>-->
-                                        <!--<argument>${project.parent.basedir}/LICENSE.BINARY</argument>-->
-                                    <!--</arguments>-->
-                                <!--</configuration>-->
-                            <!--</execution>-->
-                            <!--<execution>-->
-                                <!--<id>generate-binary-notice</id>-->
-                                <!--<phase>initialize</phase>-->
-                                <!--<goals>-->
-                                    <!--<goal>exec</goal>-->
-                                <!--</goals>-->
-                                <!--<configuration>-->
-                                    <!--<executable>${project.basedir}/bin/generate-binary-notice.py</executable>-->
-                                    <!--<arguments>-->
-                                        <!--<argument>${project.parent.basedir}/NOTICE</argument>-->
-                                        <!--<argument>${project.parent.basedir}/licenses.yaml</argument>-->
-                                        <!--<argument>${project.parent.basedir}/NOTICE.BINARY</argument>-->
-                                    <!--</arguments>-->
-                                <!--</configuration>-->
-                            <!--</execution>-->
                             <execution>
                                 <id>pull-deps</id>
                                 <phase>package</phase>
@@ -253,6 +217,69 @@
                                     </arguments>
                                 </configuration>
                             </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>dist</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <property>
+                    <name>tar</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>generate-readme</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>${project.basedir}/bin/build-textfile-readme.sh</executable>
+                                    <arguments>
+                                        <argument>${project.basedir}/../</argument>
+                                        <argument>${project.parent.version}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <!--<execution>-->
+                                <!--<id>generate-binary-license</id>-->
+                                <!--<phase>initialize</phase>-->
+                                <!--<goals>-->
+                                    <!--<goal>exec</goal>-->
+                                <!--</goals>-->
+                                <!--<configuration>-->
+                                    <!--<executable>${project.basedir}/bin/generate-binary-license.py</executable>-->
+                                    <!--<arguments>-->
+                                        <!--<argument>${project.parent.basedir}/licenses/APACHE2</argument>-->
+                                        <!--<argument>${project.parent.basedir}/licenses.yaml</argument>-->
+                                        <!--<argument>${project.parent.basedir}/LICENSE.BINARY</argument>-->
+                                    <!--</arguments>-->
+                                <!--</configuration>-->
+                            <!--</execution>-->
+                            <!--<execution>-->
+                                <!--<id>generate-binary-notice</id>-->
+                                <!--<phase>initialize</phase>-->
+                                <!--<goals>-->
+                                    <!--<goal>exec</goal>-->
+                                <!--</goals>-->
+                                <!--<configuration>-->
+                                    <!--<executable>${project.basedir}/bin/generate-binary-notice.py</executable>-->
+                                    <!--<arguments>-->
+                                        <!--<argument>${project.parent.basedir}/NOTICE</argument>-->
+                                        <!--<argument>${project.parent.basedir}/licenses.yaml</argument>-->
+                                        <!--<argument>${project.parent.basedir}/NOTICE.BINARY</argument>-->
+                                    <!--</arguments>-->
+                                <!--</configuration>-->
+                            <!--</execution>-->
                         </executions>
                     </plugin>
                     <plugin>
@@ -838,6 +865,24 @@
                                         <argument>-l</argument>
                                         <argument>${settings.localRepository}</argument>
                                         <argument>--no-default-hadoop</argument>
+                                        <argument>-c</argument>
+                                        <argument>org.apache.druid.extensions:druid-avro-extensions</argument>
+                                        <argument>-c</argument>
+                                        <argument>org.apache.druid.extensions:druid-datasketches</argument>
+                                        <argument>-c</argument>
+                                        <argument>org.apache.druid.extensions:druid-histogram</argument>
+                                        <argument>-c</argument>
+                                        <argument>org.apache.druid.extensions:druid-kafka-indexing-service</argument>
+                                        <argument>-c</argument>
+                                        <argument>org.apache.druid.extensions:druid-lookups-cached-global</argument>
+                                        <argument>-c</argument>
+                                        <argument>org.apache.druid.extensions:mysql-metadata-storage</argument>
+                                        <argument>-c</argument>
+                                        <argument>org.apache.druid.extensions:druid-parquet-extensions</argument>
+                                        <argument>-c</argument>
+                                        <argument>org.apache.druid.extensions:druid-s3-extensions</argument>
+                                        <argument>-c</argument>
+                                        <argument>org.apache.druid.extensions:druid-ec2-extensions</argument>
                                         <argument>-c</argument>
                                         <argument>org.apache.druid.extensions.contrib:druid-distinctcount</argument>
                                         <argument>-c</argument>

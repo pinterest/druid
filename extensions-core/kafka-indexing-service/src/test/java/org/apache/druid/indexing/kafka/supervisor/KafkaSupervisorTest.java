@@ -438,6 +438,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         "seq",
         OBJECT_MAPPER,
         new TreeMap<>(),
+        null,
         new KafkaIndexTaskIOConfig(
             0,
             "seq",

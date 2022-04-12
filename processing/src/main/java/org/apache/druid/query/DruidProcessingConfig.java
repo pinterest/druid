@@ -232,5 +232,11 @@ public abstract class DruidProcessingConfig extends ExecutorServiceConfig implem
   {
     return ParallelMergeCombiningSequence.DEFAULT_TASK_SMALL_BATCH_NUM_ROWS;
   }
+
+  @Config(value = "${base_path}.exception.skipRealtimeData")
+  public boolean skipRealtimeDataOnException()
+  {
+    return false;
+  }
 }
 

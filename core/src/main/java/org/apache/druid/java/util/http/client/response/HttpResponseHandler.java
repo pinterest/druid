@@ -90,6 +90,16 @@ public interface HttpResponseHandler<IntermediateType, FinalType>
 
   void exceptionCaught(ClientResponse<IntermediateType> clientResponse, Throwable e);
 
+  default boolean skipDataOnException()
+  {
+    return false;
+  }
+
+  default void reportExceptionMetric(String exceptionName)
+  {
+
+  }
+
   interface TrafficCop
   {
     /**

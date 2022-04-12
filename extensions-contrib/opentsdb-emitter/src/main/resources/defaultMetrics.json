@@ -16,6 +16,16 @@
   "query/node/ttfb": [
     "server"
   ],
+  "query/node/exception": [
+    "server",
+    "exceptionName"
+  ],
+  "query/node/count": [
+    "dataSource"
+  ],
+  "query/intervalChunk/time": [
+    "chunkInterval"
+  ],
   "query/success/count": [],
   "query/failed/count": [],
   "query/interrupted/count": [],

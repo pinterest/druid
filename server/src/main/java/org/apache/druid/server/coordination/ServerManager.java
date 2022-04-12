@@ -20,6 +20,7 @@
 package org.apache.druid.server.coordination;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.apache.druid.client.CachingQueryRunner;
@@ -76,9 +77,13 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 /**
+<<<<<<< HEAD
  * Query handler for Historical processes (see CliHistorical).
  * <p>
  * In tests, this class's behavior is partially mimicked by TestClusterQuerySegmentWalker.
+=======
+ *
+>>>>>>> a9613e94da (Optimize topN by skipping execution of aggregators that depends on metrics that are not included in the segments)
  */
 public class ServerManager implements QuerySegmentWalker
 {
@@ -338,7 +343,7 @@ public class ServerManager implements QuerySegmentWalker
 
     PerSegmentOptimizingQueryRunner<T> perSegmentOptimizingQueryRunner = new PerSegmentOptimizingQueryRunner<>(
         specificSegmentQueryRunner,
-        new PerSegmentQueryOptimizationContext(segmentDescriptor)
+        new PerSegmentQueryOptimizationContext(segmentDescriptor, ImmutableSet.of())
     );
 
     return new SetAndVerifyContextQueryRunner<>(

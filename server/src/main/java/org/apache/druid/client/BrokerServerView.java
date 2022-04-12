@@ -37,6 +37,7 @@ import org.apache.druid.java.util.common.lifecycle.LifecycleStart;
 import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.java.util.emitter.service.ServiceEmitter;
 import org.apache.druid.java.util.http.client.HttpClient;
+import org.apache.druid.query.DruidProcessingConfig;
 import org.apache.druid.query.QueryRunner;
 import org.apache.druid.query.QueryToolChestWarehouse;
 import org.apache.druid.query.QueryWatcher;
@@ -88,23 +89,24 @@ public class BrokerServerView implements TimelineServerView
   private final ServiceEmitter emitter;
   private final BrokerSegmentWatcherConfig segmentWatcherConfig;
   private final Predicate<Pair<DruidServerMetadata, DataSegment>> segmentFilter;
-
   private final Map<String, List<String>> dataSourceComplementaryMapToQueryOrder;
+  private final DruidProcessingConfig processingConfig;
 
   private final CountDownLatch initialized = new CountDownLatch(1);
 
   @Inject
   public BrokerServerView(
-          final QueryToolChestWarehouse warehouse,
-          final QueryWatcher queryWatcher,
-          final @Smile ObjectMapper smileMapper,
-          final @EscalatedClient HttpClient httpClient,
-          final FilteredServerInventoryView baseView,
-          final TierSelectorStrategy tierSelectorStrategy,
-          final ServiceEmitter emitter,
-          final BrokerSegmentWatcherConfig segmentWatcherConfig,
-          final BrokerDataSourceComplementConfig dataSourceComplementConfig,
-          final BrokerDataSourceMultiComplementConfig dataSourceMultiComplementConfig)
+      final QueryToolChestWarehouse warehouse,
+      final QueryWatcher queryWatcher,
+      final @Smile ObjectMapper smileMapper,
+      final @EscalatedClient HttpClient httpClient,
+      final FilteredServerInventoryView baseView,
+      final TierSelectorStrategy tierSelectorStrategy,
+      final ServiceEmitter emitter,
+      final BrokerSegmentWatcherConfig segmentWatcherConfig,
+      final BrokerDataSourceComplementConfig dataSourceComplementConfig,
+      final BrokerDataSourceMultiComplementConfig dataSourceMultiComplementConfig,
+      final DruidProcessingConfig processingConfig)
   {
     this.warehouse = warehouse;
     this.queryWatcher = queryWatcher;
@@ -114,6 +116,7 @@ public class BrokerServerView implements TimelineServerView
     this.tierSelectorStrategy = tierSelectorStrategy;
     this.emitter = emitter;
     this.segmentWatcherConfig = segmentWatcherConfig;
+    this.processingConfig = processingConfig;
 
     // TODO (lucilla) should be removed after we fully migrate to using BrokerDataSourceMultiComplementConfig
     this.dataSourceComplementaryMapToQueryOrder = CollectionUtils.mapValues(dataSourceComplementConfig.getMapping(), Collections::singletonList);
@@ -269,8 +272,13 @@ public class BrokerServerView implements TimelineServerView
             httpClient,
             server.getScheme(),
             server.getHost(),
-            emitter
-    );
+            emitter,
+            skipDataOnException(server));
+  }
+
+  private boolean skipDataOnException(DruidServer server)
+  {
+    return processingConfig.skipRealtimeDataOnException() && server.getType() == ServerType.INDEXER_EXECUTOR;
   }
 
   private QueryableDruidServer removeServer(DruidServer server)
