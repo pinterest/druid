@@ -145,6 +145,8 @@ import java.util.stream.Stream;
 public abstract class SeekableStreamSupervisor<PartitionIdType, SequenceOffsetType, RecordType extends ByteEntity> implements Supervisor
 {
   public static final String CHECKPOINTS_CTX_KEY = "checkpoints";
+  public static final String PARTITION_DIMENSIONS_CTX_KEY = "partitionDimensions";
+  public static final String STREAM_PARTITIONS_CTX_KEY = "streamPartitions";
 
   private static final long MINIMUM_GET_OFFSET_PERIOD_MILLIS = 5000;
   private static final long INITIAL_GET_OFFSET_DELAY_MILLIS = 15000;
@@ -3527,6 +3529,7 @@ public abstract class SeekableStreamSupervisor<PartitionIdType, SequenceOffsetTy
         group.baseSequenceName,
         sortingMapper,
         group.checkpointSequences,
+        partitionGroups.values().stream().mapToInt(w -> w.size()).sum(),
         newIoConfig,
         taskTuningConfig,
         rowIngestionMetersFactory
@@ -3820,6 +3823,7 @@ public abstract class SeekableStreamSupervisor<PartitionIdType, SequenceOffsetTy
       String baseSequenceName,
       ObjectMapper sortingMapper,
       TreeMap<Integer, Map<PartitionIdType, SequenceOffsetType>> sequenceOffsets,
+      Integer streamPartitions,
       SeekableStreamIndexTaskIOConfig taskIoConfig,
       SeekableStreamIndexTaskTuningConfig taskTuningConfig,
       RowIngestionMetersFactory rowIngestionMetersFactory

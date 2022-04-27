@@ -19,6 +19,7 @@
 
 package org.apache.druid.client.selector;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.druid.client.DirectDruidClient;
 import org.apache.druid.client.DruidServer;
 import org.apache.druid.java.util.common.DateTimes;
@@ -39,6 +40,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class TierSelectorStrategyTest
@@ -270,4 +272,48 @@ public class TierSelectorStrategyTest
     Assert.assertEquals(defaultDeprecatedServerSelectorStrategy.pick(servers, EasyMock.createMock(DataSegment.class), 1).get(0), p0);
   }
 
+  @Test
+  public void testQueryPriorityBasedTierSelectorStrategy()
+  {
+    DirectDruidClient client = EasyMock.createMock(DirectDruidClient.class);
+    QueryableDruidServer priority0 = new QueryableDruidServer(
+        new DruidServer("test1", "localhost", null, 0, ServerType.HISTORICAL, DruidServer.DEFAULT_TIER, 0),
+        client
+    );
+    QueryableDruidServer priority1 = new QueryableDruidServer(
+        new DruidServer("test1", "localhost", null, 0, ServerType.HISTORICAL, DruidServer.DEFAULT_TIER, 1),
+        client
+    );
+
+    TierSelectorStrategy tierSelectorStrategy =
+            new QueryPriorityBasedTierSelectorStrategy(new ConnectionCountServerSelectorStrategy(), new QueryPriorityBasedTierSelectorStrategyConfig()
+            {
+              @Override
+              public Map<Integer, Integer> getQueryPriorityToTierPriorityMap()
+              {
+                return ImmutableMap.of(1, 0, 2, 1);
+              }
+            });
+    final ServerSelector serverSelector = new ServerSelector(
+        new DataSegment(
+            "test",
+            Intervals.of("2013-01-01/2013-01-02"),
+            DateTimes.of("2013-01-01").toString(),
+            new HashMap<>(),
+            new ArrayList<>(),
+            new ArrayList<>(),
+            NoneShardSpec.instance(),
+            0,
+            0L
+        ),
+        tierSelectorStrategy
+    );
+    serverSelector.addServerAndUpdateSegment(priority0, serverSelector.getSegment());
+    serverSelector.addServerAndUpdateSegment(priority1, serverSelector.getSegment());
+
+    Assert.assertEquals(priority0, serverSelector.pickForPriority(1));
+    Assert.assertEquals(priority1, serverSelector.pickForPriority(2));
+    Assert.assertEquals(priority1, serverSelector.pickForPriority(3));
+    Assert.assertEquals(priority1, serverSelector.pickForPriority(0));
+  }
 }

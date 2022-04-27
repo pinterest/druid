@@ -172,6 +172,17 @@ public class ServerSelector implements Overshadowable<ServerSelector>
     }
   }
 
+  @Nullable
+  public QueryableDruidServer pickForPriority(int queryPriority)
+  {
+    synchronized (this) {
+      if (!historicalServers.isEmpty()) {
+        return strategy.pick(queryPriority, historicalServers, segment.get());
+      }
+      return strategy.pick(queryPriority, realtimeServers, segment.get());
+    }
+  }
+
   @Override
   public boolean overshadows(ServerSelector other)
   {

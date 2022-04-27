@@ -19,6 +19,10 @@
 
 package org.apache.druid.java.util.http.client;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Multimap;
 import com.google.common.util.concurrent.Futures;
@@ -54,6 +58,8 @@ import org.jboss.netty.handler.timeout.ReadTimeoutHandler;
 import org.jboss.netty.util.Timer;
 import org.joda.time.Duration;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Map;
@@ -67,6 +73,25 @@ public class NettyHttpClient extends AbstractHttpClient
 
   private static final String READ_TIMEOUT_HANDLER_NAME = "read-timeout";
   private static final String LAST_HANDLER_NAME = "last-handler";
+  private static final byte[] EMPTY_RESPONSE;
+
+  static {
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    byte[] emptyArray = StringUtils.toUtf8("[]");
+    try
+        (
+            JsonGenerator jg = new SmileFactory().createGenerator(bos);
+            JsonParser jp = new JsonFactory().createParser(emptyArray)
+        ) {
+      while (jp.nextToken() != null) {
+        jg.copyCurrentEvent(jp);
+      }
+    }
+    catch (Exception e) {
+      log.error("Empty response creation error!");
+    }
+    EMPTY_RESPONSE = bos.toByteArray();
+  }
 
   private final Timer timer;
   private final ResourcePool<String, ChannelFuture> pool;
@@ -126,12 +151,22 @@ public class NettyHttpClient extends AbstractHttpClient
     final ChannelFuture channelFuture = channelResourceContainer.get().awaitUninterruptibly();
     if (!channelFuture.isSuccess()) {
       channelResourceContainer.returnResource(); // Some other poor sap will have to deal with it...
-      return Futures.immediateFailedFuture(
-          new ChannelException(
-              "Faulty channel in resource pool",
-              channelFuture.getCause()
-          )
-      );
+      handler.reportExceptionMetric(channelFuture.getCause().getClass().getSimpleName());
+
+      if (handler.skipDataOnException()) {
+        // return empty response to skip this host without causing exceptions
+        log.error("return empty response for host [%s]", hostKey);
+        final SettableFuture<Final> emptyValFuture = SettableFuture.create();
+        emptyValFuture.set((Final) new ByteArrayInputStream(EMPTY_RESPONSE));
+        return emptyValFuture;
+      } else {
+        return Futures.immediateFailedFuture(
+            new ChannelException(
+                "Faulty channel in resource pool",
+                channelFuture.getCause()
+            )
+        );
+      }
     } else {
       channel = channelFuture.getChannel();
 

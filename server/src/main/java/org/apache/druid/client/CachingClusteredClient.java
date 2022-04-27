@@ -320,6 +320,7 @@ public class CachingClusteredClient implements QuerySegmentWalker
     private final DataSourceAnalysis dataSourceAnalysis;
     private final List<Interval> intervals;
     private final CacheKeyManager<T> cacheKeyManager;
+    private final QueryMetrics<? super Query<T>> queryMetrics;
 
     SpecificQueryRunnable(final QueryPlus<T> queryPlus, final ResponseContext responseContext)
     {
@@ -332,6 +333,9 @@ public class CachingClusteredClient implements QuerySegmentWalker
 
       this.useCache = CacheUtil.isUseSegmentCache(query, strategy, cacheConfig, CacheUtil.ServerType.BROKER);
       this.populateCache = CacheUtil.isPopulateSegmentCache(query, strategy, cacheConfig, CacheUtil.ServerType.BROKER);
+
+      queryMetrics = toolChest.makeMetrics(query);
+      queryMetrics.query(query);
       this.isBySegment = QueryContexts.isBySegment(query);
       // Note that enabling this leads to putting uncovered intervals information in the response headers
       // and might blow up in some cases https://github.com/apache/druid/issues/2108
@@ -627,7 +631,7 @@ public class CachingClusteredClient implements QuerySegmentWalker
     {
       final SortedMap<DruidServer, List<SegmentDescriptor>> serverSegments = new TreeMap<>();
       for (SegmentServerSelector segmentServer : segments) {
-        final QueryableDruidServer queryableDruidServer = segmentServer.getServer().pick(query);
+        final QueryableDruidServer queryableDruidServer = segmentServer.getServer().pickForPriority(QueryContexts.getPriority(query));
 
         if (queryableDruidServer == null) {
           log.makeAlert(

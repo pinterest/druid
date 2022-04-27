@@ -178,6 +178,29 @@ public class Calcites
     }
   }
 
+  public static ValueType getValueTypeForSqlTypeName(SqlTypeName sqlTypeName)
+  {
+    if (SqlTypeName.FLOAT == sqlTypeName) {
+      return ValueType.FLOAT;
+    } else if (SqlTypeName.FRACTIONAL_TYPES.contains(sqlTypeName)) {
+      return ValueType.DOUBLE;
+    } else if (SqlTypeName.TIMESTAMP == sqlTypeName
+            || SqlTypeName.DATE == sqlTypeName
+            || SqlTypeName.BOOLEAN == sqlTypeName
+            || SqlTypeName.INT_TYPES.contains(sqlTypeName)) {
+      return ValueType.LONG;
+    } else if (SqlTypeName.CHAR_TYPES.contains(sqlTypeName)) {
+      return ValueType.STRING;
+    } else if (SqlTypeName.OTHER == sqlTypeName) {
+      return ValueType.COMPLEX;
+    } else if (sqlTypeName == SqlTypeName.ARRAY) {
+      // until we have array ValueType, this will let us have array constants and use them at least
+      return ValueType.STRING;
+    } else {
+      return null;
+    }
+  }
+
   public static boolean isDoubleType(SqlTypeName sqlTypeName)
   {
     return SqlTypeName.FRACTIONAL_TYPES.contains(sqlTypeName) || SqlTypeName.APPROX_TYPES.contains(sqlTypeName);

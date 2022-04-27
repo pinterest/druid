@@ -41,13 +41,17 @@ public class ComplementaryNamespacedVersionedIntervalTimeline<VersionType, Objec
 
   private final String dataSource;
 
+  private final Boolean isLifetime;
+
   public ComplementaryNamespacedVersionedIntervalTimeline(
           String dataSource,
           Map<String, NamespacedVersionedIntervalTimeline<VersionType, ObjectType>> supportTimelinesByDataSource,
-          List<String> supportDataSourceQueryOrder
+          List<String> supportDataSourceQueryOrder,
+          Boolean isLifetime
   )
   {
     this.dataSource = dataSource;
+    this.isLifetime = isLifetime;
     this.supportTimelinesByDataSource =
             new LinkedMap<>(supportDataSourceQueryOrder.size() + 1);
     this.supportTimelinesByDataSource.put(dataSource, this);
@@ -99,6 +103,8 @@ public class ComplementaryNamespacedVersionedIntervalTimeline<VersionType, Objec
       Map<String, Map<String, Map<Interval, List<TimelineObjectHolder<VersionType, ObjectType>>>>> entriesForIntervalByDataSourceAndNamespace =
               new HashMap<>();
 
+
+
       // We assume here that the last timeline will be a superset of all other timelines. Every namespace and interval
       // should be covered by this base timeline
       NamespacedVersionedIntervalTimeline<VersionType, ObjectType> baseTimeline =
@@ -108,6 +114,7 @@ public class ComplementaryNamespacedVersionedIntervalTimeline<VersionType, Objec
               .map(ComplementaryNamespacedVersionedIntervalTimeline::getRootNamespace)
               .distinct()
               .collect(Collectors.toMap(namespace -> namespace, namespace -> intervals));
+
 
       for (String dataSource : supportTimelinesByDataSource.keySet()) {
         if (namespaceToRemainingInterval.values().stream().anyMatch(remainingInterval -> !remainingInterval.isEmpty())) {
@@ -129,10 +136,16 @@ public class ComplementaryNamespacedVersionedIntervalTimeline<VersionType, Objec
                         )
                         .collect(Collectors.toList());
               }
-              if (!supportEntry.isEmpty()) {
+              if (!supportEntry.isEmpty() && !(isLifetime && dataSource.equals(this.dataSource))) {
                 List<TimelineObjectHolder<VersionType, ObjectType>> enteries =
                         entriesForIntervalByDataSourceAndNamespace.get(dataSource).get(rootNamespace).getOrDefault(i, new ArrayList<>());
                 enteries.addAll(supportEntry);
+                entriesForIntervalByDataSourceAndNamespace.get(dataSource).get(rootNamespace).put(i, enteries);
+              } else if (!supportEntry.isEmpty() && (isLifetime && dataSource.equals(this.dataSource))) {
+                // if the datasource is a lifetime table, only add the last interval
+                List<TimelineObjectHolder<VersionType, ObjectType>> enteries =
+                    entriesForIntervalByDataSourceAndNamespace.get(dataSource).get(rootNamespace).getOrDefault(i, new ArrayList<>());
+                enteries.add(supportEntry.get(supportEntry.size() - 1));
                 entriesForIntervalByDataSourceAndNamespace.get(dataSource).get(rootNamespace).put(i, enteries);
               }
             }
@@ -140,6 +153,31 @@ public class ComplementaryNamespacedVersionedIntervalTimeline<VersionType, Objec
         } else {
           // If there are no remaining segments to find then we're done
           break;
+        }
+        // If there is lifetime table and a lifetime interval cover the remaining interval,
+        // the remaining interval should substract from its start to the end of lifetime interval.
+        if (isLifetime && dataSource.equals(this.dataSource)) {
+          Map<String, List<Interval>> tempNamespaceToRemainingInterval = new HashMap<>();
+          for (String namespace : namespaceToRemainingInterval.keySet()) {
+            List<Interval> remainingIntervals = new ArrayList<Interval>();
+            for (Interval remainingInterval : namespaceToRemainingInterval.get(namespace)) {
+              if (entriesForIntervalByDataSourceAndNamespace.containsKey(dataSource) &&
+                  entriesForIntervalByDataSourceAndNamespace.get(dataSource).containsKey(namespace) &&
+                  entriesForIntervalByDataSourceAndNamespace.get(dataSource).get(namespace).containsKey(remainingInterval)) {
+                // when lifetime table cover the interval, set the start time of this interval to be the start time of the lastest lifetime interval.
+                List<TimelineObjectHolder<VersionType, ObjectType>> enteries = entriesForIntervalByDataSourceAndNamespace.get(dataSource).get(namespace).get(remainingInterval);
+                Interval lastLifetime = enteries.get(enteries.size() - 1).getInterval();
+                Interval newRemaingInterval = substractLifetime(remainingInterval, lastLifetime);
+                if (!newRemaingInterval.getStart().equals(newRemaingInterval.getEnd())) {
+                  remainingIntervals.add(substractLifetime(remainingInterval, lastLifetime));
+                }
+              } else {
+                remainingIntervals.add(remainingInterval);
+              }
+            }
+            tempNamespaceToRemainingInterval.put(namespace, remainingIntervals);
+          }
+          namespaceToRemainingInterval = tempNamespaceToRemainingInterval;
         }
         //Recompute remaining intervals by filtering out those that we just added
         Map<String, List<Interval>> tempNamespaceToRemainingInterval = new HashMap<>();
@@ -181,6 +219,8 @@ public class ComplementaryNamespacedVersionedIntervalTimeline<VersionType, Objec
     }
   }
 
+
+
   private List<Interval> filterIntervals(Interval interval, List<Interval> sortedSkipIntervals)
   {
     ImmutableList.Builder<Interval> filteredIntervals = ImmutableList.builder();
@@ -205,6 +245,17 @@ public class ComplementaryNamespacedVersionedIntervalTimeline<VersionType, Objec
       filteredIntervals.add(new Interval(remainingStart, remainingEnd));
     }
     return filteredIntervals.build();
+  }
+
+  private Interval substractLifetime(Interval remainingInterval, Interval lastestLifetime)
+  {
+    DateTime remainingEnd = remainingInterval.getEnd();
+    if (lastestLifetime.getStart().isAfter(remainingEnd)) {
+      return remainingInterval;
+    } else {
+      return new Interval(lastestLifetime.getEnd(), remainingEnd);
+    }
+
   }
 
   private static String getRootNamespace(String namespace)

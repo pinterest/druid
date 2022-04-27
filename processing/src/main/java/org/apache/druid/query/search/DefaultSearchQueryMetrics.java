@@ -100,6 +100,12 @@ public class DefaultSearchQueryMetrics implements SearchQueryMetrics
   }
 
   @Override
+  public void exceptionName(String exceptionName)
+  {
+    throw new ISE("Unsupported method in default query metrics implementation.");
+  }
+
+  @Override
   public void granularity(SearchQuery query)
   {
     // Don't emit by default
@@ -244,6 +250,12 @@ public class DefaultSearchQueryMetrics implements SearchQueryMetrics
   }
 
   @Override
+  public QueryMetrics reportNodeException(long count)
+  {
+    return delegateQueryMetrics.reportNodeException(count);
+  }
+
+  @Override
   public QueryMetrics reportBitmapConstructionTime(long timeNs)
   {
     return delegateQueryMetrics.reportBitmapConstructionTime(timeNs);
@@ -301,6 +313,12 @@ public class DefaultSearchQueryMetrics implements SearchQueryMetrics
   public QueryMetrics reportQueriedSegmentCount(long segmentCount)
   {
     return delegateQueryMetrics.reportQueriedSegmentCount(segmentCount);
+  }
+
+  @Override
+  public QueryMetrics reportNodeCount(int nodeCount)
+  {
+    return delegateQueryMetrics.reportNodeCount(nodeCount);
   }
 
   @Override

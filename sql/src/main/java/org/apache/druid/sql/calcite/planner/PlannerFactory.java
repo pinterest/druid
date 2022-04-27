@@ -174,12 +174,6 @@ public class PlannerFactory
               return (C) new CalciteConnectionConfigImpl(props)
               {
                 @Override
-                public <T> T typeSystem(Class<T> typeSystemClass, T defaultTypeSystem)
-                {
-                  return (T) DruidTypeSystem.INSTANCE;
-                }
-
-                @Override
                 public SqlConformance conformance()
                 {
                   return DruidConformance.instance();

@@ -91,7 +91,8 @@ public class SimpleServerView implements TimelineServerView
                 httpClient,
                 server.getScheme(),
                 server.getHost(),
-                new NoopServiceEmitter()
+                new NoopServiceEmitter(),
+                false
             )
         )
     );

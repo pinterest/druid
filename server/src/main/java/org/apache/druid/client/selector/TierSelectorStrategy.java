@@ -32,12 +32,14 @@ import java.util.List;
 import java.util.Set;
 
 /**
+ *
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "tier", defaultImpl = HighestPriorityTierSelectorStrategy.class)
 @JsonSubTypes(value = {
     @JsonSubTypes.Type(name = "highestPriority", value = HighestPriorityTierSelectorStrategy.class),
     @JsonSubTypes.Type(name = "lowestPriority", value = LowestPriorityTierSelectorStrategy.class),
-    @JsonSubTypes.Type(name = "custom", value = CustomTierSelectorStrategy.class)
+    @JsonSubTypes.Type(name = "custom", value = CustomTierSelectorStrategy.class),
+    @JsonSubTypes.Type(name = "queryPriorityBased", value = QueryPriorityBasedTierSelectorStrategy.class)
 })
 public interface TierSelectorStrategy
 {
@@ -75,4 +77,11 @@ public interface TierSelectorStrategy
   {
     return pick(prioritizedServers, segment, numServersToPick);
   }
+
+  @Nullable
+  QueryableDruidServer pick(
+          int queryPriority,
+          Int2ObjectRBTreeMap<Set<QueryableDruidServer>> prioritizedServers,
+          DataSegment segment
+  );
 }

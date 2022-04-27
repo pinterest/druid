@@ -37,6 +37,7 @@ import org.apache.druid.java.util.common.ISE;
 import org.apache.druid.java.util.common.Intervals;
 import org.apache.druid.java.util.common.Pair;
 import org.apache.druid.java.util.http.client.HttpClient;
+import org.apache.druid.query.DruidProcessingConfig;
 import org.apache.druid.query.QueryToolChestWarehouse;
 import org.apache.druid.query.QueryWatcher;
 import org.apache.druid.query.TableDataSource;
@@ -159,7 +160,15 @@ public class BrokerServerViewTest extends CuratorTestBase
           {
             return dataSourceMultiComplimentMap;
           }
-        }
+        },
+        new DruidProcessingConfig() {
+          @Override
+          public String getFormatString()
+          {
+            return null;
+          }
+        },
+        new BrokerDataSourceLifetimeConfig()
     );
 
     baseView.start();
@@ -785,7 +794,15 @@ public class BrokerServerViewTest extends CuratorTestBase
           }
         },
         new BrokerDataSourceComplementConfig(),
-        new BrokerDataSourceMultiComplementConfig()
+        new BrokerDataSourceMultiComplementConfig(),
+        new DruidProcessingConfig() {
+          @Override
+          public String getFormatString()
+          {
+            return null;
+          }
+        },
+        new BrokerDataSourceLifetimeConfig()
     );
 
     baseView.start();

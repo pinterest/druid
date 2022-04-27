@@ -37,6 +37,7 @@ import org.apache.druid.java.util.common.NonnullPair;
 import org.apache.druid.java.util.common.Pair;
 import org.apache.druid.java.util.common.concurrent.Execs;
 import org.apache.druid.java.util.http.client.HttpClient;
+import org.apache.druid.query.DruidProcessingConfig;
 import org.apache.druid.query.QueryToolChestWarehouse;
 import org.apache.druid.query.QueryWatcher;
 import org.apache.druid.query.TableDataSource;
@@ -358,7 +359,16 @@ public class DruidSchemaConcurrencyTest extends DruidSchemaTestCommon
         new NoopServiceEmitter(),
         new BrokerSegmentWatcherConfig(),
         new BrokerDataSourceComplementConfig(),
-        new BrokerDataSourceMultiComplementConfig()
+        new BrokerDataSourceMultiComplementConfig(),
+        new DruidProcessingConfig()
+        {
+          @Override
+          public String getFormatString()
+          {
+            return null;
+          }
+        },
+        new BrokerDataSourceLifetimeConfig()
     );
   }
 

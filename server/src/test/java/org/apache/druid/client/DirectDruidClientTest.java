@@ -104,7 +104,8 @@ public class DirectDruidClientTest
         httpClient,
         "http",
         hostName,
-        new NoopServiceEmitter()
+        new NoopServiceEmitter(),
+        true
     );
     queryableDruidServer = new QueryableDruidServer(
         new DruidServer(
@@ -169,7 +170,8 @@ public class DirectDruidClientTest
         httpClient,
         "http",
         "foo2",
-        new NoopServiceEmitter()
+        new NoopServiceEmitter(),
+        false
     );
 
     QueryableDruidServer queryableDruidServer2 = new QueryableDruidServer(

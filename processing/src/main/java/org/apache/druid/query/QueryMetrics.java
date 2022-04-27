@@ -215,6 +215,12 @@ public interface QueryMetrics<QueryType extends Query<?>>
   void sqlQueryId(QueryType query);
 
   /**
+   * Sets exceptionName as dimension
+   */
+  @PublicApi
+  void exceptionName(String exceptionName);
+
+  /**
    * Sets {@link Query#getContext()} of the given query as dimension.
    */
   @PublicApi
@@ -341,6 +347,11 @@ public interface QueryMetrics<QueryType extends Query<?>>
   QueryMetrics<QueryType> reportTimeToAcquireHttpResource(long timeNs);
 
   /**
+   * Registers "node exception count" metric.
+   */
+  QueryMetrics<QueryType> reportNodeException(long count);
+
+  /**
    * Reports the time spent constructing bitmap from {@link #preFilters(List)} of the query. Not reported, if there are
    * no preFilters.
    */
@@ -358,6 +369,7 @@ public interface QueryMetrics<QueryType extends Query<?>>
   QueryMetrics<QueryType> reportPreFilteredRows(long numRows);
 
   /**
+<<<<<<< HEAD
    * Reports number of parallel tasks the broker used to process the query during parallel merge. This value is
    * identical to the {@link #parallelMergeParallelism} dimension value, but optionally also available as a metric.
    */
@@ -388,6 +400,11 @@ public interface QueryMetrics<QueryType extends Query<?>>
    * Reports broker total CPU time in nanoseconds where fork join merge combine tasks were doing work
    */
   QueryMetrics<QueryType> reportParallelMergeTotalCpuTime(long timeNs);
+
+  /**
+   * Reports the number of hosts queried.
+   */
+  QueryMetrics<QueryType> reportNodeCount(int nodeCount);
 
   /**
    * Emits all metrics, registered since the last {@code emit()} call on this QueryMetrics object.

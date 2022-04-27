@@ -47,6 +47,8 @@ public class ComplementaryNamespacedVersionedIntervalTimelineTest
   private static final String DATASOURCE = "ds1";
   private static final String SUPPORT_DATASOURCE = "ds2";
   private static final String SECOND_SUPPORT_DATASOURCE = "ds3";
+  private static final String LIFETIME_DATASOURCE = "ds_lifetime";
+  private static final String LIFETIME_SUPPORT_DATASOURCE = "ds_lifetime2";
   private static final String NAMESPACE1 = "ns1";
   private static final String NAMESPACE2 = "ns2";
   private static final String NAMESPACE3 = "ns3";
@@ -55,23 +57,31 @@ public class ComplementaryNamespacedVersionedIntervalTimelineTest
 
   private NamespacedVersionedIntervalTimeline<String, OvershadowableInteger> supportTimeline;
   private NamespacedVersionedIntervalTimeline<String, OvershadowableInteger> secondSupportTimeline;
+  private NamespacedVersionedIntervalTimeline<String, OvershadowableInteger> lifetimeSupportTimeline;
 
   private Map<String, NamespacedVersionedIntervalTimeline> supportTimelinesByDataSource;
-
+  private Map<String, NamespacedVersionedIntervalTimeline> supportTimelinesByDataSourcewithLifetime;
   private List<String> supportDataSourceQueryOrder;
+  private List<String> supportDataSourceQueryOrderWithLifetime;
 
   private ComplementaryNamespacedVersionedIntervalTimeline<String, OvershadowableInteger> timeline;
-
+  private ComplementaryNamespacedVersionedIntervalTimeline<String, OvershadowableInteger> timelineWithLifetime;
 
   @Before
   public void setUp()
   {
     supportTimeline = new NamespacedVersionedIntervalTimeline<>();
     secondSupportTimeline = new NamespacedVersionedIntervalTimeline<>();
+    lifetimeSupportTimeline = new NamespacedVersionedIntervalTimeline<>();
     supportTimelinesByDataSource = new HashMap<>();
+    supportTimelinesByDataSourcewithLifetime = new HashMap<>();
     supportDataSourceQueryOrder = new ArrayList<>();
     supportDataSourceQueryOrder.add(SUPPORT_DATASOURCE);
     supportDataSourceQueryOrder.add(SECOND_SUPPORT_DATASOURCE);
+
+    supportDataSourceQueryOrderWithLifetime = new ArrayList<>();
+    supportDataSourceQueryOrderWithLifetime.add(LIFETIME_SUPPORT_DATASOURCE);
+
 
     add(supportTimeline, NAMESPACE2, "2019-08-06/2019-08-09", new OvershadowableInteger("0", 0, 1));
     add(supportTimeline, NAMESPACE2, "2019-08-09/2019-08-12", new OvershadowableInteger("0", 0, 1));
@@ -129,7 +139,8 @@ public class ComplementaryNamespacedVersionedIntervalTimelineTest
     timeline = new ComplementaryNamespacedVersionedIntervalTimeline(
             DATASOURCE,
             supportTimelinesByDataSource,
-            supportDataSourceQueryOrder);
+            supportDataSourceQueryOrder,
+            false);
 
     add(timeline, NAMESPACE1, "2019-09-01/2019-09-03", new OvershadowableInteger("0", 0, 1));
     add(timeline, NAMESPACE1, "2019-09-03/2019-09-06", new OvershadowableInteger("0", 0, 1));
@@ -145,6 +156,19 @@ public class ComplementaryNamespacedVersionedIntervalTimelineTest
 
     add(timeline, NAMESPACE1, "2021-05-01/2021-06-01", new OvershadowableInteger("0", 0, 1));
     add(timeline, NAMESPACE1, "2021-06-01/2021-07-01", new OvershadowableInteger("0", 0, 1));
+
+    //Prepare timeline with lifetime
+    add(lifetimeSupportTimeline, NAMESPACE1, "2020-09-01/2020-09-18", new OvershadowableInteger("0", 0, 1));
+    add(lifetimeSupportTimeline, NAMESPACE2, "2020-08-01/2020-08-18", new OvershadowableInteger("0", 0, 1));
+    supportTimelinesByDataSourcewithLifetime.put(LIFETIME_SUPPORT_DATASOURCE, lifetimeSupportTimeline);
+    timelineWithLifetime = new ComplementaryNamespacedVersionedIntervalTimeline(
+        LIFETIME_DATASOURCE,
+        supportTimelinesByDataSourcewithLifetime,
+        supportDataSourceQueryOrderWithLifetime,
+        true);
+    add(timelineWithLifetime, NAMESPACE1, "2020-09-14/2020-09-15", new OvershadowableInteger("0", 0, 1));
+    add(timelineWithLifetime, NAMESPACE1, "2020-09-15/2020-09-16", new OvershadowableInteger("0", 0, 1));
+    add(timelineWithLifetime, NAMESPACE1, "2020-09-16/2020-09-17", new OvershadowableInteger("0", 0, 1));
 
   }
 
@@ -308,6 +332,47 @@ public class ComplementaryNamespacedVersionedIntervalTimelineTest
                     )
             ),
             timeline.lookupWithComplementary(ImmutableList.of(Intervals.of("2020-06-01/2020-08-01")))
+    );
+  }
+
+  @Test
+  public void testAlreadyCoveredLifetime()
+  {
+    assertValues(
+        ImmutableMap.of(
+            LIFETIME_DATASOURCE, Arrays.asList(
+                createExpected("2020-09-14/2020-09-15", new OvershadowableInteger("0", 0, 1))
+            )
+        ),
+        timelineWithLifetime.lookupWithComplementary(ImmutableList.of(Intervals.of("2020-09-01/2020-09-15")))
+    );
+  }
+  @Test
+  public void testLifetimeNotCovered()
+  {
+    assertValues(
+        ImmutableMap.of(
+            LIFETIME_DATASOURCE, Arrays.asList(
+                createExpected("2020-09-16/2020-09-17", new OvershadowableInteger("0", 0, 1))
+            ),
+            LIFETIME_SUPPORT_DATASOURCE, Arrays.asList(
+                createExpected("2020-09-17/2020-09-18", new OvershadowableInteger("0", 0, 1))
+            )
+        ),
+        timelineWithLifetime.lookupWithComplementary(ImmutableList.of(Intervals.of("2020-09-01/2020-09-18")))
+    );
+  }
+
+  @Test
+  public void testNoApplicableLifetime()
+  {
+    assertValues(
+        ImmutableMap.of(
+            LIFETIME_SUPPORT_DATASOURCE, Arrays.asList(
+                createExpected("2020-09-01/2020-09-04", new OvershadowableInteger("0", 0, 1))
+            )
+        ),
+        timelineWithLifetime.lookupWithComplementary(ImmutableList.of(Intervals.of("2020-09-01/2020-09-04")))
     );
   }
 
