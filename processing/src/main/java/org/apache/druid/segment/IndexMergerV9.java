@@ -1303,7 +1303,7 @@ public class IndexMergerV9 implements IndexMerger
     List<File> tempDirs = new ArrayList<>();
   //Need to have relook for this code and fix - once all the test pass we can remove this comment
 
-   if (maxColumnsToMerge == IndexMerger.UNLIMITED_MAX_COLUMNS_TO_MERGE) {
+    if (maxColumnsToMerge == IndexMerger.UNLIMITED_MAX_COLUMNS_TO_MERGE) {
       return merge(
           indexes,
           rollup,
