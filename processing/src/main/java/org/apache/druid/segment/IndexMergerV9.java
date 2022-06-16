@@ -1285,6 +1285,27 @@ public class IndexMergerV9 implements IndexMerger
                   indexSpec,
                   segmentWriteOutMediumFactory
           ); */
+          final List<String> mergedDimensions = IndexMerger.getMergedDimensions(indexes, dimensionsSpec);
+          Function<List<TransformableRowIterator>, TimeAndDimsIterator> rowMergerFn;
+          if (rollup) {
+            List<File> finalCurrentOutputs = currentOutputs;
+            rowMergerFn = rowIterators -> new RowCombiningTimeAndDimsIterator(rowIterators, metricAggs, Arrays.asList(finalCurrentOutputs.get(0).list()));
+          } else {
+            rowMergerFn = MergingRowIterator::new;
+          }
+          return makeIndexFiles(
+                  indexes,
+                  metricAggs,
+                  indexOutDir,
+                  supplimentalIndexOutDir,
+                  progress,
+                  mergedDimensions,
+                  Arrays.asList(currentOutputs.get(0).list()),
+                  rowMergerFn,
+                  true,
+                  indexSpec,
+                  segmentWriteOutMediumFactory
+          );
 
         } else {
           // convert Files to QueryableIndexIndexableAdapter and do another merge phase

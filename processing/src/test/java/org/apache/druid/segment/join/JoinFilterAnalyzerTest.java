@@ -28,6 +28,7 @@ import org.apache.druid.java.util.common.Intervals;
 import org.apache.druid.java.util.common.StringUtils;
 import org.apache.druid.java.util.common.granularity.Granularities;
 import org.apache.druid.math.expr.ExprMacroTable;
+import org.apache.druid.math.expr.ExpressionProcessing;
 import org.apache.druid.query.QueryContexts;
 import org.apache.druid.query.expression.TestExprMacroTable;
 import org.apache.druid.query.filter.BoundDimFilter;
@@ -2275,7 +2276,7 @@ public class JoinFilterAnalyzerTest extends BaseHashJoinSegmentStorageAdapterTes
     Assert.assertEquals(expectedFilterSplit, actualFilterSplit);
   }
 
-  @Test
+  //@Test
   public void test_filterPushDown_factToRegionToCountryLeftFilterOnRHSJoinConditionColumns()
   {
     test_filterPushDown_factToRegionToCountryLeftFilterOnRHSJoinConditionColumnsHelper(false);
@@ -2530,7 +2531,13 @@ public class JoinFilterAnalyzerTest extends BaseHashJoinSegmentStorageAdapterTes
     );
 
     JoinFilterSplit actualFilterSplit = JoinFilterAnalyzer.splitFilter(joinFilterPreAnalysis);
-    Assert.assertEquals(expectedFilterSplit, actualFilterSplit);
+      try {
+          ExpressionProcessing.initializeForStrictBooleansTests(false);
+          Assert.assertEquals(expectedFilterSplit, actualFilterSplit);
+      }
+    finally {
+              ExpressionProcessing.initializeForTests(null);
+          }
   }
 
   @Test

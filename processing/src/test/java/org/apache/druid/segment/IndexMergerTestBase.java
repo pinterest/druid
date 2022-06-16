@@ -39,6 +39,7 @@ import org.apache.druid.data.input.impl.LongDimensionSchema;
 import org.apache.druid.data.input.impl.StringDimensionSchema;
 import org.apache.druid.java.util.common.DateTimes;
 import org.apache.druid.java.util.common.IAE;
+import org.apache.druid.java.util.common.Pair;
 import org.apache.druid.java.util.common.granularity.Granularities;
 import org.apache.druid.java.util.common.io.smoosh.SmooshedFileMapper;
 import org.apache.druid.query.aggregation.AggregatorFactory;
@@ -181,6 +182,88 @@ public class IndexMergerTestBase extends InitializedNullHandlingTest
         Granularities.NONE,
         index.getMetadata().getQueryGranularity()
     );
+  }
+  @Test
+  public void testCreatingSupplimentalIndexFromPersistingSingleIndex() throws Exception
+  {
+    final long timestamp = System.currentTimeMillis();
+    final List<String> dimensions = ImmutableList.of("dim1", "dim2");
+    final IncrementalIndex toPersist = IncrementalIndexTest.createIndexWithDimensions(dimensions, true);
+    IncrementalIndexTest.populateIndex(timestamp, toPersist);
+    //IndexMerger.setHasBloomFilterIndexesInColumnCapabilities(dimensions, toPersist::getCapabilities);
+    QueryableIndex queryableIndex = closer.closeLater(indexIO.loadIndex(indexMerger.persist(
+            toPersist,
+            temporaryFolder.newFolder(),
+            indexSpec,
+            null
+    )));
+    IndexMerger.setHasBloomFilterIndexesInColumnCapabilities(
+            dimensions,
+            dimension -> {
+              ColumnHolder columnHolder = queryableIndex.getColumnHolder(dimension);
+              return columnHolder == null ? null : columnHolder.getCapabilities();
+            }
+    );
+    Pair<File, File> p = indexMerger.persist(toPersist, temporaryFolder.newFolder(), temporaryFolder.newFolder(), indexSpec, null);
+    File supplimentalIndexOutDir = p.rhs;
+    verifyBloomFilterIndexFilesExistence(supplimentalIndexOutDir);
+  }
+
+  @Test
+  public void testCreatingBloomFilterIndexFromMergingMultiplePersistedIndexes() throws Exception
+  {
+    final long timestamp = System.currentTimeMillis();
+    List<String> dimensions = ImmutableList.of("dim1", "dim2");
+    List<QueryableIndex> toMerge = new ArrayList<>();
+    for (int i = 0; i < 3; i++) {
+      final IncrementalIndex toPersist = IncrementalIndexTest.createIndexWithDimensions(dimensions, true);
+      IncrementalIndexTest.populateIndex(timestamp, toPersist);
+      QueryableIndex queryableIndex = closer.closeLater(indexIO.loadIndex(indexMerger.persist(
+              toPersist,
+              temporaryFolder.newFolder(),
+              indexSpec,
+              null
+      )));
+      IndexMerger.setHasBloomFilterIndexesInColumnCapabilities(
+              dimensions,
+              dimension -> {
+                ColumnHolder columnHolder = queryableIndex.getColumnHolder(dimension);
+                return columnHolder == null ? null : columnHolder.getCapabilities();
+              }
+      );
+      toMerge.add(queryableIndex);
+    }
+
+    Pair<File, File> p = indexMerger.mergeQueryableIndex(
+            toMerge,
+            true,
+            new AggregatorFactory[]{},
+            temporaryFolder.newFolder(),
+            temporaryFolder.newFolder(),
+            indexSpec,
+            null
+    );
+    verifyBloomFilterIndexFilesExistence(p.rhs);
+  }
+
+  /**
+   * Verify that bloom filter index files exist in the provided supplimental index directory
+   */
+  private void verifyBloomFilterIndexFilesExistence(@Nullable File supplimentalIndexOutDir)
+  {
+    Assert.assertNotNull(supplimentalIndexOutDir);
+    Assert.assertTrue(supplimentalIndexOutDir.exists());
+    Assert.assertTrue(supplimentalIndexOutDir.isDirectory());
+    File bloomFilterIndexOutDir = new File(supplimentalIndexOutDir, IndexMergerV9.SupplimentalIndex.BLOOM_FILTERS.getOutDir());
+    Assert.assertTrue(bloomFilterIndexOutDir.exists());
+    Assert.assertTrue(bloomFilterIndexOutDir.isDirectory());
+
+    File bloomFilterIndexMetaFile = new File(bloomFilterIndexOutDir, IndexMergerV9.SupplimentalIndex.BLOOM_FILTERS.getMetaFile());
+    Assert.assertTrue(bloomFilterIndexMetaFile.exists());
+    Assert.assertTrue(bloomFilterIndexMetaFile.isFile());
+    File bloomFilterIndexBinFile = new File(bloomFilterIndexOutDir, IndexMergerV9.SupplimentalIndex.BLOOM_FILTERS.getBinFile());
+    Assert.assertTrue(bloomFilterIndexBinFile.exists());
+    Assert.assertTrue(bloomFilterIndexBinFile.isFile());
   }
 
   @Test

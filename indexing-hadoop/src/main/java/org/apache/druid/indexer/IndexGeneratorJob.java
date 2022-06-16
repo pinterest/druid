@@ -46,13 +46,11 @@ import org.apache.druid.java.util.common.concurrent.Execs;
 import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.java.util.common.parsers.ParseException;
 import org.apache.druid.query.aggregation.AggregatorFactory;
-import org.apache.druid.segment.BaseProgressIndicator;
-import org.apache.druid.segment.IndexMerger;
-import org.apache.druid.segment.ProgressIndicator;
-import org.apache.druid.segment.QueryableIndex;
+import org.apache.druid.segment.*;
 import org.apache.druid.segment.column.ColumnCapabilities;
 import org.apache.druid.segment.column.ColumnHolder;
 import org.apache.druid.segment.incremental.IncrementalIndex;
+import org.apache.druid.segment.incremental.IncrementalIndexAdapter;
 import org.apache.druid.segment.incremental.IncrementalIndexSchema;
 import org.apache.druid.timeline.DataSegment;
 import org.apache.druid.timeline.partition.NumberedShardSpec;
@@ -779,11 +777,21 @@ public class IndexGeneratorJob implements Jobby
           if (index.isEmpty()) {
             throw new IAE("If you try to persist empty indexes you are going to have a bad time");
           }
-          // commented below link to fix compile time error ..need to revisit this part
-         // IndexMerger.setHasBloomFilterIndexesInColumnCapabilities(
-           //   dimensionNamesHasBloomFilterIndexes,
-             // indexes::getCapabilities
-         // );
+
+          final IndexableAdapter incrementalAdapter = new IncrementalIndexAdapter(
+                  interval,
+                  index,
+                  null
+          );
+          // commented below line need to revisit this part ( added 791 line to replace below)
+          /*IndexMerger.setHasBloomFilterIndexesInColumnCapabilities(
+                  dimensionNamesHasBloomFilterIndexes,
+                  index::getCapabilities
+          );*/
+          IndexMerger.setHasBloomFilterIndexesInColumnCapabilities(
+              dimensionNamesHasBloomFilterIndexes,
+                  incrementalAdapter::getCapabilities
+         );
           Pair<File, File> p = persist(index, interval, new File(baseFlushFile, "merged"),
                                        mergedSupplimentalIndexBase, progressIndicator);
           mergedIndexOutDir = p.lhs;
@@ -863,7 +871,7 @@ public class IndexGeneratorJob implements Jobby
                 outputFS,
                 segmentTemplate,
                 JobHelper.SUPPLIMENTAL_INDEX_KEY_PREFIX + '/' + dir.getName() + ".zip",
-                config.DATA_SEGMENT_PUSHER)
+                    HadoopDruidIndexerConfig.DATA_SEGMENT_PUSHER)
             );
 
             tmpSupplimentalIndexZipFilePaths.add(JobHelper.makeTmpPath(
@@ -872,7 +880,7 @@ public class IndexGeneratorJob implements Jobby
                 outputFS,
                 segmentTemplate,
                 context.getTaskAttemptID(),
-                config.DATA_SEGMENT_PUSHER)
+                    HadoopDruidIndexerConfig.DATA_SEGMENT_PUSHER)
             );
           }
         }
