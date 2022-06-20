@@ -30,6 +30,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import org.apache.druid.collections.bitmap.ConciseBitmapFactory;
 import org.apache.druid.common.guava.ThreadRenamingRunnable;
 import org.apache.druid.data.input.InputRow;
 import org.apache.druid.data.input.Row;
@@ -781,17 +782,14 @@ public class IndexGeneratorJob implements Jobby
           final IndexableAdapter incrementalAdapter = new IncrementalIndexAdapter(
                   interval,
                   index,
-                  null
+                  new ConciseBitmapFactory()
           );
-          // commented below line need to revisit this part ( added 791 line to replace below)
-          /*IndexMerger.setHasBloomFilterIndexesInColumnCapabilities(
-                  dimensionNamesHasBloomFilterIndexes,
-                  index::getCapabilities
-          );*/
+          //  below line need to revisit this added as part of cherry-pick
           IndexMerger.setHasBloomFilterIndexesInColumnCapabilities(
               dimensionNamesHasBloomFilterIndexes,
                   incrementalAdapter::getCapabilities
          );
+
           Pair<File, File> p = persist(index, interval, new File(baseFlushFile, "merged"),
                                        mergedSupplimentalIndexBase, progressIndicator);
           mergedIndexOutDir = p.lhs;
