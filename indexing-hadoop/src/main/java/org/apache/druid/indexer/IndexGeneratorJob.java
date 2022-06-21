@@ -779,15 +779,10 @@ public class IndexGeneratorJob implements Jobby
             throw new IAE("If you try to persist empty indexes you are going to have a bad time");
           }
 
-          final IndexableAdapter incrementalAdapter = new IncrementalIndexAdapter(
-                  interval,
-                  index,
-                  new ConciseBitmapFactory()
-          );
-          //  below line need to revisit this added as part of cherry-pick
+          // FIXME (ssagare):  below line need to revisit, as this added as part of cherry-pick with refactored code
           IndexMerger.setHasBloomFilterIndexesInColumnCapabilities(
               dimensionNamesHasBloomFilterIndexes,
-                  incrementalAdapter::getCapabilities
+                  index::getColumnCapabilities
          );
 
           Pair<File, File> p = persist(index, interval, new File(baseFlushFile, "merged"),
