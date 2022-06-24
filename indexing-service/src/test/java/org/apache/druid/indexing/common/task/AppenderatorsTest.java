@@ -139,7 +139,7 @@ public class AppenderatorsTest
   @Test
   public void testMaxRowsInMemoryPerSegment() throws Exception
   {
-    try (final AppenderatorTester tester = new AppenderatorTester("3")) {
+    try (final AppenderatorTester tester = new AppenderatorTester("CLOSED_SEGMENTS_SINKS")) {
       final Appenderator appenderator = tester.getAppenderator();
       final AtomicInteger eventCount = new AtomicInteger(0);
       final Supplier<Committer> committerSupplier = new Supplier<Committer>()
@@ -300,8 +300,7 @@ public class AppenderatorsTest
         }
 
         @Override
-        public DataSegment push(File indexFilesDir, File supplimentalIndexFilesDir, DataSegment segment, boolean useUniquePath) throws IOException
-        {
+        public DataSegment push(File indexFilesDir, File supplimentalIndexFilesDir, DataSegment segment, boolean useUniquePath) {
           return null;
         }
 

@@ -196,6 +196,7 @@ public class CompactionTuningConfigTest
   public void testEqualsAndHashCode()
   {
     EqualsVerifier.forClass(CompactionTask.CompactionTuningConfig.class)
+                  .withIgnoredFields("maxRowsInMemoryPerSegment")
                   .usingGetClass()
                   .verify();
   }

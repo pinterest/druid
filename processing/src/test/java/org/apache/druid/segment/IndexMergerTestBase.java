@@ -190,7 +190,7 @@ public class IndexMergerTestBase extends InitializedNullHandlingTest
     final List<String> dimensions = ImmutableList.of("dim1", "dim2");
     final IncrementalIndex toPersist = IncrementalIndexTest.createIndexWithDimensions(dimensions, true);
     IncrementalIndexTest.populateIndex(timestamp, toPersist);
-    //IndexMerger.setHasBloomFilterIndexesInColumnCapabilities(dimensions, toPersist::getCapabilities);
+
     QueryableIndex queryableIndex = closer.closeLater(indexIO.loadIndex(indexMerger.persist(
             toPersist,
             temporaryFolder.newFolder(),

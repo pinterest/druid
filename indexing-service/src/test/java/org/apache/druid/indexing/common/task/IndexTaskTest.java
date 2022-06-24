@@ -2809,6 +2809,7 @@ public class IndexTaskTest extends IngestionTestBase
   public void testEqualsAndHashCode()
   {
     EqualsVerifier.forClass(IndexTuningConfig.class)
+        .withIgnoredFields("maxRowsInMemoryPerSegment")
         .usingGetClass()
         .verify();
   }

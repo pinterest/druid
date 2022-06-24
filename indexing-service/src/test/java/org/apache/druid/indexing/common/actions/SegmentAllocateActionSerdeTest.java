@@ -85,7 +85,7 @@ public class SegmentAllocateActionSerdeTest
         Map.class
     );
 
-    Assert.assertEquals(11, fromJson.size());
+    Assert.assertEquals(12, fromJson.size());
     Assert.assertEquals(SegmentAllocateAction.TYPE, fromJson.get("type"));
     Assert.assertEquals(target.getDataSource(), fromJson.get("dataSource"));
     Assert.assertEquals(target.getTimestamp(), DateTimes.of((String) fromJson.get("timestamp")));

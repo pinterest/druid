@@ -1100,7 +1100,7 @@ public class CompactionTaskRunTest extends IngestionTestBase
     Assert.assertEquals(TaskState.FAILED, compactionResult.lhs.getStatusCode());
   }
 
-  @Test
+ @Test
   public void testRunIndexAndCompactForSameSegmentAtTheSameTime2() throws Exception
   {
     runIndexTask();
