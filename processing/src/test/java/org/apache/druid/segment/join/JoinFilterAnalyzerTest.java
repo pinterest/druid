@@ -53,7 +53,9 @@ import org.apache.druid.segment.join.filter.rewrite.JoinFilterRewriteConfig;
 import org.apache.druid.segment.join.lookup.LookupJoinable;
 import org.apache.druid.segment.join.table.IndexedTableJoinable;
 import org.apache.druid.segment.virtual.ExpressionVirtualColumn;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -62,6 +64,17 @@ import java.util.Set;
 
 public class JoinFilterAnalyzerTest extends BaseHashJoinSegmentStorageAdapterTest
 {
+    @BeforeClass
+    public static void setupExpTests()
+    {
+        ExpressionProcessing.initializeForStrictBooleansTests(true);
+    }
+
+    @AfterClass
+    public static void teardownExpTests()
+    {
+        ExpressionProcessing.initializeForTests(null);
+    }
   @Test
   public void test_filterPushDown_factToRegionToCountryLeftFilterOnChannel()
   {
@@ -2276,7 +2289,7 @@ public class JoinFilterAnalyzerTest extends BaseHashJoinSegmentStorageAdapterTes
     Assert.assertEquals(expectedFilterSplit, actualFilterSplit);
   }
 
-  //@Test
+  @Test
   public void test_filterPushDown_factToRegionToCountryLeftFilterOnRHSJoinConditionColumns()
   {
     test_filterPushDown_factToRegionToCountryLeftFilterOnRHSJoinConditionColumnsHelper(false);
@@ -2531,13 +2544,13 @@ public class JoinFilterAnalyzerTest extends BaseHashJoinSegmentStorageAdapterTes
     );
 
     JoinFilterSplit actualFilterSplit = JoinFilterAnalyzer.splitFilter(joinFilterPreAnalysis);
-      try {
-          ExpressionProcessing.initializeForStrictBooleansTests(false);
+     // try {
+      //    ExpressionProcessing.initializeForStrictBooleansTests(false);
           Assert.assertEquals(expectedFilterSplit, actualFilterSplit);
-      }
-    finally {
-              ExpressionProcessing.initializeForTests(null);
-          }
+      //}
+    //finally {
+      //        ExpressionProcessing.initializeForTests(null);
+      //    }
   }
 
   @Test
