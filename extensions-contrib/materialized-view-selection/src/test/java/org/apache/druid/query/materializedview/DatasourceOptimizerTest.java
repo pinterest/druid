@@ -29,7 +29,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.druid.client.BatchServerInventoryView;
-import org.apache.druid.client.BrokerDataSourceComplementConfig;
 import org.apache.druid.client.BrokerDataSourceLifetimeConfig;
 import org.apache.druid.client.BrokerDataSourceMultiComplementConfig;
 import org.apache.druid.client.BrokerSegmentWatcherConfig;
@@ -303,7 +302,6 @@ public class DatasourceOptimizerTest extends CuratorTestBase
         new HighestPriorityTierSelectorStrategy(new RandomServerSelectorStrategy()),
         new NoopServiceEmitter(),
         new BrokerSegmentWatcherConfig(),
-        new BrokerDataSourceComplementConfig(),
         new BrokerDataSourceMultiComplementConfig(),
         new DruidProcessingConfig()
         {

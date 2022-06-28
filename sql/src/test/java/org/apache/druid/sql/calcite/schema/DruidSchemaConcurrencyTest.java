@@ -358,7 +358,6 @@ public class DruidSchemaConcurrencyTest extends DruidSchemaTestCommon
         new HighestPriorityTierSelectorStrategy(new RandomServerSelectorStrategy()),
         new NoopServiceEmitter(),
         new BrokerSegmentWatcherConfig(),
-        new BrokerDataSourceComplementConfig(),
         new BrokerDataSourceMultiComplementConfig(),
         new DruidProcessingConfig()
         {

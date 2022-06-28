@@ -27,11 +27,14 @@ import org.joda.time.DateTime;
 import org.joda.time.Interval;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ComplementaryNamespacedVersionedIntervalTimeline<VersionType, ObjectType extends Overshadowable<ObjectType>>
     extends NamespacedVersionedIntervalTimeline<VersionType, ObjectType>
@@ -41,16 +44,20 @@ public class ComplementaryNamespacedVersionedIntervalTimeline<VersionType, Objec
 
   private final String dataSource;
 
+  private final Optional<List<String>> allowedNamespaces;
+
   private final Boolean isLifetime;
 
   public ComplementaryNamespacedVersionedIntervalTimeline(
           String dataSource,
+          Optional<List<String>> allowedNamespaces,
           Map<String, NamespacedVersionedIntervalTimeline<VersionType, ObjectType>> supportTimelinesByDataSource,
           List<String> supportDataSourceQueryOrder,
           Boolean isLifetime
   )
   {
     this.dataSource = dataSource;
+    this.allowedNamespaces = allowedNamespaces;
     this.isLifetime = isLifetime;
     this.supportTimelinesByDataSource =
             new LinkedMap<>(supportDataSourceQueryOrder.size() + 1);
@@ -90,6 +97,13 @@ public class ComplementaryNamespacedVersionedIntervalTimeline<VersionType, Objec
     return lookup(intervals, (timeline, in) -> timeline.lookup(in));
   }
 
+  private Stream<String> getSupportNamespaces(Collection<String> namespaces)
+  {
+    return allowedNamespaces.isPresent()
+           ? namespaces.stream().filter(ns -> allowedNamespaces.get().contains(ns))
+           : namespaces.stream();
+  }
+
   private ImmutableMap<String, List<TimelineObjectHolder<VersionType, ObjectType>>> lookup(
       List<Interval> intervals,
       Function2<VersionedIntervalTimeline<VersionType, ObjectType>, Interval, List<TimelineObjectHolder<VersionType, ObjectType>>> converter
@@ -112,12 +126,12 @@ public class ComplementaryNamespacedVersionedIntervalTimeline<VersionType, Objec
       Map<String, List<Interval>> namespaceToRemainingInterval;
 
       if (isLifetime) {
-        namespaceToRemainingInterval = supportTimelinesByDataSource.get(dataSource).getNamespaces().stream()
+        namespaceToRemainingInterval = getSupportNamespaces(supportTimelinesByDataSource.get(dataSource).getNamespaces())
                 .map(ComplementaryNamespacedVersionedIntervalTimeline::getRootNamespace)
                 .distinct()
                 .collect(Collectors.toMap(namespace -> namespace, namespace -> intervals));
       } else {
-        namespaceToRemainingInterval = baseTimeline.getNamespaces().stream()
+        namespaceToRemainingInterval = getSupportNamespaces(baseTimeline.getNamespaces())
                 .map(ComplementaryNamespacedVersionedIntervalTimeline::getRootNamespace)
                 .distinct()
                 .collect(Collectors.toMap(namespace -> namespace, namespace -> intervals));

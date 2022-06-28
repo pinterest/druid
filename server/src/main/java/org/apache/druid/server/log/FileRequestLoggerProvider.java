@@ -48,6 +48,9 @@ public class FileRequestLoggerProvider implements RequestLoggerProvider
   @JacksonInject
   @NotNull
   private ScheduledExecutorFactory factory = null;
+  
+  @JsonProperty
+  private long latencyThresholdMs = 0;
 
   @JacksonInject
   @NotNull
@@ -61,7 +64,8 @@ public class FileRequestLoggerProvider implements RequestLoggerProvider
         jsonMapper,
         factory.create(1, "RequestLogger-%s"),
         dir,
-        filePattern
+        filePattern,
+        latencyThresholdMs
     );
     log.debug(new Exception("Stack trace"), "Creating %s at", logger);
     return logger;

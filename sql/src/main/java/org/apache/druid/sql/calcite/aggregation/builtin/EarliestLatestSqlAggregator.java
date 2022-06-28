@@ -33,6 +33,10 @@ import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.druid.java.util.common.ISE;
 import org.apache.druid.query.aggregation.AggregatorFactory;
+import org.apache.druid.query.aggregation.any.DoubleAnyAggregatorFactory;
+import org.apache.druid.query.aggregation.any.FloatAnyAggregatorFactory;
+import org.apache.druid.query.aggregation.any.LongAnyAggregatorFactory;
+import org.apache.druid.query.aggregation.any.StringAnyAggregatorFactory;
 import org.apache.druid.query.aggregation.first.DoubleFirstAggregatorFactory;
 import org.apache.druid.query.aggregation.first.FloatFirstAggregatorFactory;
 import org.apache.druid.query.aggregation.first.LongFirstAggregatorFactory;
@@ -51,6 +55,7 @@ import org.apache.druid.sql.calcite.expression.DruidExpression;
 import org.apache.druid.sql.calcite.expression.Expressions;
 import org.apache.druid.sql.calcite.planner.Calcites;
 import org.apache.druid.sql.calcite.planner.PlannerContext;
+import org.apache.druid.sql.calcite.planner.UnsupportedSQLQueryException;
 import org.apache.druid.sql.calcite.rel.VirtualColumnRegistry;
 
 import javax.annotation.Nullable;
@@ -62,6 +67,7 @@ public class EarliestLatestSqlAggregator implements SqlAggregator
 {
   public static final SqlAggregator EARLIEST = new EarliestLatestSqlAggregator(EarliestOrLatest.EARLIEST);
   public static final SqlAggregator LATEST = new EarliestLatestSqlAggregator(EarliestOrLatest.LATEST);
+  public static final SqlAggregator ANY_VALUE = new EarliestLatestSqlAggregator(EarliestOrLatest.ANY_VALUE);
 
   enum EarliestOrLatest
   {
@@ -99,6 +105,24 @@ public class EarliestLatestSqlAggregator implements SqlAggregator
             return new StringLastAggregatorFactory(name, fieldName, timeColumn, maxStringBytes);
           default:
             throw new ISE("Cannot build aggregatorFactory for type[%s]", type);
+        }
+      }
+    },
+    ANY_VALUE {
+      @Override
+      AggregatorFactory createAggregatorFactory(String name, String fieldName, String timeColumn, ValueType type, int maxStringBytes)
+      {
+        switch (type) {
+          case LONG:
+            return new LongAnyAggregatorFactory(name, fieldName);
+          case FLOAT:
+            return new FloatAnyAggregatorFactory(name, fieldName);
+          case DOUBLE:
+            return new DoubleAnyAggregatorFactory(name, fieldName);
+          case STRING:
+            return new StringAnyAggregatorFactory(name, fieldName, maxStringBytes);
+          default:
+            throw new UnsupportedSQLQueryException("ANY aggregation is not supported for '%s' type", type);
         }
       }
     };

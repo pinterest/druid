@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Function;
 import org.apache.druid.guice.annotations.PublicApi;
+import org.apache.druid.java.util.common.DateTimes;
 import org.apache.druid.java.util.common.parsers.TimestampParser;
 import org.joda.time.DateTime;
 
@@ -45,23 +46,35 @@ public class TimestampSpec
   public static final String DEFAULT_COLUMN = "timestamp";
   private static final String DEFAULT_FORMAT = "auto";
   private static final DateTime DEFAULT_MISSING_VALUE = null;
+  private static final boolean DEFAULT_USE_SERVER_TIMESTAMP = false;
 
   private final String timestampColumn;
   private final String timestampFormat;
   // this value should never be set for production data; the data loader uses it before a timestamp column is chosen
   private final DateTime missingValue;
+  private final boolean useServerTimestamp;
   /** This field is a derivative of {@link #timestampFormat}; not checked in {@link #equals} and {@link #hashCode} */
   private final Function<Object, DateTime> timestampConverter;
 
   // remember last value parsed
   private static final ThreadLocal<ParseCtx> PARSE_CTX = ThreadLocal.withInitial(ParseCtx::new);
 
+  public TimestampSpec(
+      String timestampColumn,
+      String format,
+      DateTime missingValue
+  )
+  {
+    this(timestampColumn, format, missingValue, null);
+  }
+
   @JsonCreator
   public TimestampSpec(
       @JsonProperty("column") @Nullable String timestampColumn,
       @JsonProperty("format") @Nullable String format,
       // this value should never be set for production data; the data loader uses it before a timestamp column is chosen
-      @JsonProperty("missingValue") @Nullable DateTime missingValue
+      @JsonProperty("missingValue") @Nullable DateTime missingValue,
+      @JsonProperty("useServerTimestamp") @Nullable Boolean useServerTimestamp
   )
   {
     this.timestampColumn = (timestampColumn == null) ? DEFAULT_COLUMN : timestampColumn;
@@ -70,6 +83,8 @@ public class TimestampSpec
     this.missingValue = missingValue == null
                         ? DEFAULT_MISSING_VALUE
                         : missingValue;
+    this.useServerTimestamp = useServerTimestamp == null ? DEFAULT_USE_SERVER_TIMESTAMP :
+                              useServerTimestamp;
   }
 
   @JsonProperty("column")
@@ -90,9 +105,18 @@ public class TimestampSpec
     return missingValue;
   }
 
+  @JsonProperty("useServerTimestamp")
+  public Boolean isUseServerTimestamp()
+  {
+    return useServerTimestamp;
+  }
+
   @Nullable
   public DateTime extractTimestamp(@Nullable Map<String, Object> input)
   {
+    if (useServerTimestamp) {
+      return DateTimes.nowUtc();
+    }
     return parseDateTime(getRawTimestamp(input));
   }
 
@@ -140,6 +164,9 @@ public class TimestampSpec
     if (!timestampFormat.equals(that.timestampFormat)) {
       return false;
     }
+    if (useServerTimestamp != that.useServerTimestamp) {
+      return false;
+    }
     return !(missingValue != null ? !missingValue.equals(that.missingValue) : that.missingValue != null);
 
   }
@@ -149,6 +176,7 @@ public class TimestampSpec
   {
     int result = timestampColumn.hashCode();
     result = 31 * result + timestampFormat.hashCode();
+    result = 31 * result + Boolean.hashCode(useServerTimestamp);
     result = 31 * result + (missingValue != null ? missingValue.hashCode() : 0);
     return result;
   }
@@ -159,6 +187,7 @@ public class TimestampSpec
     return "TimestampSpec{" +
            "timestampColumn='" + timestampColumn + '\'' +
            ", timestampFormat='" + timestampFormat + '\'' +
+           ", useServerTimestamp='" + useServerTimestamp + '\'' +
            ", missingValue=" + missingValue +
            '}';
   }

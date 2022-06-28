@@ -51,6 +51,7 @@ public class DelimitedParseSpecTest
     );
     Assert.assertEquals("abc", serde.getTimestampSpec().getTimestampColumn());
     Assert.assertEquals("iso", serde.getTimestampSpec().getTimestampFormat());
+    Assert.assertEquals(false, serde.getTimestampSpec().isUseServerTimestamp());
 
     Assert.assertEquals(Collections.singletonList("abc"), serde.getColumns());
     Assert.assertEquals("\u0001", serde.getDelimiter());

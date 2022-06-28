@@ -179,6 +179,12 @@ public class SketchHolder
   {
     SketchHolder holder1 = (SketchHolder) o1;
     SketchHolder holder2 = (SketchHolder) o2;
+    if (holder1 == null) {
+      return holder2;
+    }
+    if (holder2 == null) {
+      return holder1;
+    }
 
     if (holder1.obj instanceof Union) {
       Union union = (Union) holder1.obj;

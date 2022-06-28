@@ -38,6 +38,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  *
@@ -65,6 +66,7 @@ public class ComplementaryNamespacedVersionedIntervalTimelineTest
   private List<String> supportDataSourceQueryOrderWithLifetime;
 
   private ComplementaryNamespacedVersionedIntervalTimeline<String, OvershadowableInteger> timeline;
+  private ComplementaryNamespacedVersionedIntervalTimeline<String, OvershadowableInteger> timelineWithAllowedNamespace;
   private ComplementaryNamespacedVersionedIntervalTimeline<String, OvershadowableInteger> timelineWithLifetime;
 
   @Before
@@ -99,6 +101,8 @@ public class ComplementaryNamespacedVersionedIntervalTimelineTest
     add(supportTimeline, NAMESPACE1, "2021-06-01/2021-06-10", new OvershadowableInteger("0", 0, 1));
     add(supportTimeline, NAMESPACE1, "2021-06-10/2021-06-20", new OvershadowableInteger("0", 0, 1));
     add(supportTimeline, NAMESPACE1, "2021-06-20/2021-07-01", new OvershadowableInteger("0", 0, 1));
+    add(supportTimeline, NAMESPACE1, "2022-06-10/2022-07-01", new OvershadowableInteger("0", 0, 1));
+    add(supportTimeline, NAMESPACE2, "2022-06-01/2022-07-01", new OvershadowableInteger("0", 0, 1));
 
 
     add(secondSupportTimeline, NAMESPACE1, "2019-09-01/2019-09-03", new OvershadowableInteger("0", 0, 1));
@@ -137,10 +141,18 @@ public class ComplementaryNamespacedVersionedIntervalTimelineTest
     supportTimelinesByDataSource.put(SECOND_SUPPORT_DATASOURCE, secondSupportTimeline);
 
     timeline = new ComplementaryNamespacedVersionedIntervalTimeline(
-            DATASOURCE,
-            supportTimelinesByDataSource,
-            supportDataSourceQueryOrder,
-            false);
+        DATASOURCE,
+        Optional.empty(),
+        supportTimelinesByDataSource,
+        supportDataSourceQueryOrder,
+        false);
+
+    timelineWithAllowedNamespace = new ComplementaryNamespacedVersionedIntervalTimeline(
+        DATASOURCE,
+        Optional.of(ImmutableList.of(NAMESPACE1)),
+        supportTimelinesByDataSource,
+        supportDataSourceQueryOrder,
+        false);
 
     add(timeline, NAMESPACE1, "2019-09-01/2019-09-03", new OvershadowableInteger("0", 0, 1));
     add(timeline, NAMESPACE1, "2019-09-03/2019-09-06", new OvershadowableInteger("0", 0, 1));
@@ -163,6 +175,7 @@ public class ComplementaryNamespacedVersionedIntervalTimelineTest
     supportTimelinesByDataSourcewithLifetime.put(LIFETIME_SUPPORT_DATASOURCE, lifetimeSupportTimeline);
     timelineWithLifetime = new ComplementaryNamespacedVersionedIntervalTimeline(
         LIFETIME_DATASOURCE,
+        Optional.empty(),
         supportTimelinesByDataSourcewithLifetime,
         supportDataSourceQueryOrderWithLifetime,
         true);
@@ -238,6 +251,18 @@ public class ComplementaryNamespacedVersionedIntervalTimelineTest
             )
         ),
         timeline.lookupWithComplementary(ImmutableList.of(Intervals.of("2019-07-01/2019-07-12")))
+    );
+  }
+
+  public void testUsingMissingNamespaceFromSupportDataSourceAllowedOnly()
+  {
+    assertValues(
+        ImmutableMap.of(
+            SUPPORT_DATASOURCE, Arrays.asList(
+                createExpected("2022-06-10/2022-07-01", new OvershadowableInteger("0", 0, 1))
+            )
+        ),
+        timelineWithAllowedNamespace.lookupWithComplementary(ImmutableList.of(Intervals.of("2022-05-01/2022-08-01")))
     );
   }
 

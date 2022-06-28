@@ -59,12 +59,10 @@ import org.apache.druid.timeline.NamespacedVersionedIntervalTimeline;
 import org.apache.druid.timeline.SegmentId;
 import org.apache.druid.timeline.partition.BloomFilterShardSpec;
 import org.apache.druid.timeline.partition.PartitionChunk;
-import org.apache.druid.utils.CollectionUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -103,6 +101,8 @@ public class BrokerServerView implements TimelineServerView
   private final BrokerSegmentWatcherConfig segmentWatcherConfig;
   private final Predicate<Pair<DruidServerMetadata, DataSegment>> segmentFilter;
   private final Map<String, List<String>> dataSourceComplementaryMapToQueryOrder;
+  private final Map<String, List<String>> dataSourceComplementaryAllowedNamespacesMap;
+
   private final DruidProcessingConfig processingConfig;
   private final Set<String> lifetimeDataSource;
   private final ObjectMapper jsonMapper;
@@ -120,7 +120,6 @@ public class BrokerServerView implements TimelineServerView
       final TierSelectorStrategy tierSelectorStrategy,
       final ServiceEmitter emitter,
       final BrokerSegmentWatcherConfig segmentWatcherConfig,
-      final BrokerDataSourceComplementConfig dataSourceComplementConfig,
       final BrokerDataSourceMultiComplementConfig dataSourceMultiComplementConfig,
       final DruidProcessingConfig processingConfig,
       final BrokerDataSourceLifetimeConfig lifetimeConfig,
@@ -137,8 +136,8 @@ public class BrokerServerView implements TimelineServerView
     this.processingConfig = processingConfig;
     this.jsonMapper = jsonMapper;
 
-    // TODO (lucilla) should be removed after we fully migrate to using BrokerDataSourceMultiComplementConfig
-    this.dataSourceComplementaryMapToQueryOrder = CollectionUtils.mapValues(dataSourceComplementConfig.getMapping(), Collections::singletonList);
+    this.dataSourceComplementaryAllowedNamespacesMap = dataSourceMultiComplementConfig.getAllowedNamespaces();
+    this.dataSourceComplementaryMapToQueryOrder = new HashMap<>();
     Map<String, List<String>> dataSourceMultiComplementConfigMapping = dataSourceMultiComplementConfig.getMapping();
     dataSourceMultiComplementConfigMapping.keySet().forEach(key ->
             dataSourceComplementaryMapToQueryOrder.putIfAbsent(key, dataSourceMultiComplementConfigMapping.get(key))
@@ -568,6 +567,7 @@ public class BrokerServerView implements TimelineServerView
       boolean islifetime = this.lifetimeDataSource.contains(dataSource);
       timeline = new ComplementaryNamespacedVersionedIntervalTimeline(
               dataSource,
+              Optional.ofNullable(dataSourceComplementaryAllowedNamespacesMap.get(dataSource)),
               supportTimelinesByDataSource,
               dataSourceComplementaryMapToQueryOrder.get(dataSource),
               islifetime);

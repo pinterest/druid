@@ -98,7 +98,8 @@ public class Queries
   public static List<PostAggregator> prepareAggregations(
       List<String> otherOutputNames,
       List<AggregatorFactory> aggFactories,
-      List<PostAggregator> postAggs
+      List<PostAggregator> postAggs,
+      boolean ignoreMissingDep
   )
   {
     Preconditions.checkNotNull(otherOutputNames, "otherOutputNames cannot be null");
@@ -120,6 +121,10 @@ public class Queries
       for (final PostAggregator postAgg : postAggs) {
         final Set<String> dependencies = postAgg.getDependentFields();
         final Set<String> missing = Sets.difference(dependencies, combinedOutputNames);
+
+        if (!missing.isEmpty() && ignoreMissingDep) {
+          continue;
+        }
 
         Preconditions.checkArgument(
             missing.isEmpty(),
@@ -248,8 +253,7 @@ public class Queries
       final List<DimensionSpec> dimensions,
       final List<AggregatorFactory> aggregators,
       final List<String> additionalColumns
-  )
-  {
+  ) {
     final Set<String> requiredColumns = new HashSet<>();
 
     // Everyone needs __time (it's used by intervals filters).
@@ -292,5 +296,14 @@ public class Queries
     }
 
     return requiredColumns;
+  }
+
+  public static List<PostAggregator> prepareAggregations(
+      List<String> otherOutputNames,
+      List<AggregatorFactory> aggFactories,
+      List<PostAggregator> postAggs
+  )
+  {
+    return prepareAggregations(otherOutputNames, aggFactories, postAggs, false);
   }
 }

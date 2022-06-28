@@ -30,8 +30,18 @@ public class BrokerDataSourceMultiComplementConfig
   @JsonProperty
   private Map<String, List<String>> mapping = ImmutableMap.of();
 
+  // if specified, we only allow specific namespaces to be used in complementary lookup
+  @JsonProperty
+  private Map<String, List<String>> allowedNamespaces = ImmutableMap.of();
+
   public Map<String, List<String>> getMapping()
   {
     return mapping;
   }
+
+  public Map<String, List<String>> getAllowedNamespaces()
+  {
+    return allowedNamespaces;
+  }
+
 }

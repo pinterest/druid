@@ -128,7 +128,8 @@ public class CoordinatorServerViewTest extends CuratorTestBase
         druidServer.getMetadata(),
         Iterables.getOnlyElement(segmentLoadInfo.toImmutableSegmentLoadInfo().getServers())
     );
-    Assert.assertNotNull(timeline.findChunk(intervals, "v1", partition));
+    Assert.assertNotNull(timeline.findChunk(NamespacedVersionedIntervalTimeline.getNamespace(segment.getShardSpec().getIdentifier()),
+            intervals, "v1", partition));
 
     unannounceSegmentForServer(druidServer, segment);
     Assert.assertTrue(timing.forWaiting().awaitLatch(segmentRemovedLatch));
@@ -137,7 +138,8 @@ public class CoordinatorServerViewTest extends CuratorTestBase
         0,
         ((List<TimelineObjectHolder>) timeline.lookup(Intervals.of("2014-10-20T00:00:00Z/P1D"))).size()
     );
-    Assert.assertNull(timeline.findChunk(intervals, "v1", partition));
+    Assert.assertNull(timeline.findChunk(NamespacedVersionedIntervalTimeline.getNamespace(segment.getShardSpec().getIdentifier()),
+            intervals, "v1", partition));
   }
 
   @Test

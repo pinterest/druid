@@ -31,6 +31,7 @@ import org.apache.druid.query.Druids;
 import org.apache.druid.query.PerSegmentQueryOptimizationContext;
 import org.apache.druid.query.Queries;
 import org.apache.druid.query.Query;
+import org.apache.druid.query.QueryContexts;
 import org.apache.druid.query.Result;
 import org.apache.druid.query.aggregation.AggregatorFactory;
 import org.apache.druid.query.aggregation.PostAggregator;
@@ -90,7 +91,8 @@ public class TimeseriesQuery extends BaseQuery<Result<TimeseriesResultValue>>
     this.postAggregatorSpecs = Queries.prepareAggregations(
         timestampField == null ? ImmutableList.of() : ImmutableList.of(timestampField),
         this.aggregatorSpecs,
-        postAggregatorSpecs == null ? ImmutableList.of() : postAggregatorSpecs
+        postAggregatorSpecs == null ? ImmutableList.of() : postAggregatorSpecs,
+        QueryContexts.isIgnoreMissingDepPostAgg(this)
     );
     this.limit = (limit == 0) ? Integer.MAX_VALUE : limit;
     Preconditions.checkArgument(this.limit > 0, "limit must be greater than 0");
@@ -201,6 +203,12 @@ public class TimeseriesQuery extends BaseQuery<Result<TimeseriesResultValue>>
   public TimeseriesQuery withDimFilter(DimFilter dimFilter)
   {
     return Druids.TimeseriesQueryBuilder.copy(this).filters(dimFilter).build();
+  }
+
+  @Override
+  public TimeseriesQuery withAggregatorSpecs(final List<AggregatorFactory> aggregatorSpecs)
+  {
+    return Druids.TimeseriesQueryBuilder.copy(this).aggregators(aggregatorSpecs).build();
   }
 
   public TimeseriesQuery withPostAggregatorSpecs(final List<PostAggregator> postAggregatorSpecs)

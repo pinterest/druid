@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Ordering;
 import org.apache.druid.guice.annotations.ExtensionPoint;
 import org.apache.druid.java.util.common.granularity.Granularity;
+import org.apache.druid.query.aggregation.AggregatorFactory;
 import org.apache.druid.query.datasourcemetadata.DataSourceMetadataQuery;
 import org.apache.druid.query.filter.DimFilter;
 import org.apache.druid.query.groupby.GroupByQuery;
@@ -174,6 +175,11 @@ public interface Query<T>
   }
 
   Query<T> withDataSource(DataSource dataSource);
+
+  default Query<T> withAggregatorSpecs(final List<AggregatorFactory> aggregatorSpecs)
+  {
+    return this;
+  }
 
   default Query<T> optimizeForSegment(PerSegmentQueryOptimizationContext optimizationContext)
   {

@@ -152,7 +152,6 @@ public class BrokerServerViewTest extends CuratorTestBase
         new HighestPriorityTierSelectorStrategy(new RandomServerSelectorStrategy()),
         new NoopServiceEmitter(),
         new BrokerSegmentWatcherConfig(),
-        new BrokerDataSourceComplementConfig(),
         new BrokerDataSourceMultiComplementConfig()
         {
           @Override
@@ -354,7 +353,7 @@ public class BrokerServerViewTest extends CuratorTestBase
     );
   }
 
-/*  @Test
+  @Test
   public void testMultipleServerAndBroker() throws Exception
   {
     segmentViewInitLatch = new CountDownLatch(1);
@@ -448,7 +447,7 @@ public class BrokerServerViewTest extends CuratorTestBase
       unannounceSegmentForServer(druidServers.get(i), segments.get(i), zkPathsConfig);
     }
     Assert.assertTrue(timing.forWaiting().awaitLatch(segmentRemovedLatch));
-  }*/
+  }
 
   @Test
   public void testMultipleTiers() throws Exception
@@ -794,7 +793,6 @@ public class BrokerServerViewTest extends CuratorTestBase
             return ignoredTiers;
           }
         },
-        new BrokerDataSourceComplementConfig(),
         new BrokerDataSourceMultiComplementConfig(),
         new DruidProcessingConfig() {
           @Override

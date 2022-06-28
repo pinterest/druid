@@ -1788,7 +1788,7 @@ public class IndexerSQLMetadataStorageCoordinatorTest
         "onsite",
         false);
 
-    Assert.assertEquals("ds_2017-01-01T00:00:00.000Z_2017-02-01T00:00:00.000Z_version_onsite_0", identifier.toString());
+    Assert.assertEquals("ds_2017-01-01T00:00:00.000Z_2017-02-01T00:00:00.000Z_version", identifier.toString());
   }
 
   @Test
