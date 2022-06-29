@@ -30,7 +30,6 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-import org.apache.druid.collections.bitmap.ConciseBitmapFactory;
 import org.apache.druid.common.guava.ThreadRenamingRunnable;
 import org.apache.druid.data.input.InputRow;
 import org.apache.druid.data.input.Row;
@@ -47,11 +46,13 @@ import org.apache.druid.java.util.common.concurrent.Execs;
 import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.java.util.common.parsers.ParseException;
 import org.apache.druid.query.aggregation.AggregatorFactory;
-import org.apache.druid.segment.*;
+import org.apache.druid.segment.BaseProgressIndicator;
+import org.apache.druid.segment.IndexMerger;
+import org.apache.druid.segment.ProgressIndicator;
+import org.apache.druid.segment.QueryableIndex;
 import org.apache.druid.segment.column.ColumnCapabilities;
 import org.apache.druid.segment.column.ColumnHolder;
 import org.apache.druid.segment.incremental.IncrementalIndex;
-import org.apache.druid.segment.incremental.IncrementalIndexAdapter;
 import org.apache.druid.segment.incremental.IncrementalIndexSchema;
 import org.apache.druid.timeline.DataSegment;
 import org.apache.druid.timeline.partition.NumberedShardSpec;
@@ -783,7 +784,7 @@ public class IndexGeneratorJob implements Jobby
           IndexMerger.setHasBloomFilterIndexesInColumnCapabilities(
               dimensionNamesHasBloomFilterIndexes,
                   index::getColumnCapabilities
-         );
+          );
 
           Pair<File, File> p = persist(index, interval, new File(baseFlushFile, "merged"),
                                        mergedSupplimentalIndexBase, progressIndicator);

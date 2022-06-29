@@ -1166,7 +1166,7 @@ public class IndexMergerV9 implements IndexMerger
   @Override
   public Pair<File, File> mergeQueryableIndex(List<QueryableIndex> indexes, boolean rollup, AggregatorFactory[] metricAggs, @Nullable DimensionsSpec dimensionsSpec, File outDir, @Nullable File supplimentalIndexDir, IndexSpec indexSpec, IndexSpec indexSpecForIntermediatePersists, ProgressIndicator progress, @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory, int maxColumnsToMerge) throws IOException
   {
-     return mergeQueryableIndex(indexes, rollup, metricAggs, outDir, supplimentalIndexDir, indexSpec, progress, segmentWriteOutMediumFactory);
+    return mergeQueryableIndex(indexes, rollup, metricAggs, outDir, supplimentalIndexDir, indexSpec, progress, segmentWriteOutMediumFactory);
   }
 
   @Override

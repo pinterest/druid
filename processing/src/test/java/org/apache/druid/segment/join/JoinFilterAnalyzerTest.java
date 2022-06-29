@@ -64,17 +64,17 @@ import java.util.Set;
 
 public class JoinFilterAnalyzerTest extends BaseHashJoinSegmentStorageAdapterTest
 {
-    @BeforeClass
-    public static void setupExpTests()
-    {
-        ExpressionProcessing.initializeForStrictBooleansTests(true);
-    }
+  @BeforeClass
+  public static void setupExpTests()
+  {
+    ExpressionProcessing.initializeForStrictBooleansTests(true);
+  }
 
-    @AfterClass
-    public static void teardownExpTests()
-    {
-        ExpressionProcessing.initializeForTests(null);
-    }
+  @AfterClass
+  public static void teardownExpTests()
+  {
+    ExpressionProcessing.initializeForTests(null);
+  }
   @Test
   public void test_filterPushDown_factToRegionToCountryLeftFilterOnChannel()
   {
@@ -2544,13 +2544,7 @@ public class JoinFilterAnalyzerTest extends BaseHashJoinSegmentStorageAdapterTes
     );
 
     JoinFilterSplit actualFilterSplit = JoinFilterAnalyzer.splitFilter(joinFilterPreAnalysis);
-     // try {
-      //    ExpressionProcessing.initializeForStrictBooleansTests(false);
-          Assert.assertEquals(expectedFilterSplit, actualFilterSplit);
-      //}
-    //finally {
-      //        ExpressionProcessing.initializeForTests(null);
-      //    }
+    Assert.assertEquals(expectedFilterSplit, actualFilterSplit);
   }
 
   @Test

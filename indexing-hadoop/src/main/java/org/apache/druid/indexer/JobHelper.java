@@ -456,39 +456,39 @@ public class JobHelper
     final Set<String> sortedAvailableSupplimentalIndexes = new TreeSet<>();
     final DataPusher zipPusher = (DataPusher) RetryProxy.create(
         DataPusher.class,
-            () -> {
-              try (OutputStream outputStream = outputFS.create(
+        () -> {
+          try (OutputStream outputStream = outputFS.create(
                   tmpIndexZipFilePath,
                   true,
                   DEFAULT_FS_BUFFER_SIZE,
                   progressable
               )) {
-                indexSize.set(zipAndCopyDir(mergedIndexOutDir, outputStream, progressable));
-              }
-              catch (IOException | RuntimeException exception) {
-                log.error(exception, "Exception in retry loop");
-                throw exception;
-              }
+          indexSize.set(zipAndCopyDir(mergedIndexOutDir, outputStream, progressable));
+          }
+          catch (IOException | RuntimeException exception) {
+            log.error(exception, "Exception in retry loop");
+            throw exception;
+          }
 
-              for (int i = 0; i < mergedSupplimentalIndexOutDirs.size(); i++) {
-                try (OutputStream outputStream = outputFS.create(
-                    tmpSupplimentalIndexZipFilePaths.get(i),
-                    true,
-                    DEFAULT_FS_BUFFER_SIZE,
-                    progressable
-                )) {
-                  supplimentalIndexSizes.get(i).set(zipAndCopyDir(mergedSupplimentalIndexOutDirs.get(i), outputStream,
-                                                                  progressable));
-                  sortedAvailableSupplimentalIndexes.add(mergedSupplimentalIndexOutDirs.get(i).getName());
-                }
-                catch (IOException | RuntimeException exception) {
-                  log.error(exception, "Exception in retry loop");
-                  throw exception;
-                }
-              }
+          for (int i = 0; i < mergedSupplimentalIndexOutDirs.size(); i++) {
+            try (OutputStream outputStream = outputFS.create(
+                tmpSupplimentalIndexZipFilePaths.get(i),
+                true,
+                DEFAULT_FS_BUFFER_SIZE,
+                progressable
+            )) {
+              supplimentalIndexSizes.get(i).set(zipAndCopyDir(mergedSupplimentalIndexOutDirs.get(i), outputStream,
+                                                              progressable));
+              sortedAvailableSupplimentalIndexes.add(mergedSupplimentalIndexOutDirs.get(i).getName());
+            }
+            catch (IOException | RuntimeException exception) {
+              log.error(exception, "Exception in retry loop");
+              throw exception;
+            }
+          }
 
-              return -1;
-            },
+          return -1;
+        },
         RetryPolicies.exponentialBackoffRetry(NUM_RETRIES, SECONDS_BETWEEN_RETRIES, TimeUnit.SECONDS)
     );
     zipPusher.push();

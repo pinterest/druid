@@ -199,10 +199,10 @@ public class IndexMergerTestBase extends InitializedNullHandlingTest
     )));
     IndexMerger.setHasBloomFilterIndexesInColumnCapabilities(
             dimensions,
-            dimension -> {
-              ColumnHolder columnHolder = queryableIndex.getColumnHolder(dimension);
-              return columnHolder == null ? null : columnHolder.getCapabilities();
-            }
+        dimension -> {
+        ColumnHolder columnHolder = queryableIndex.getColumnHolder(dimension);
+        return columnHolder == null ? null : columnHolder.getCapabilities();
+      }
     );
     Pair<File, File> p = indexMerger.persist(toPersist, temporaryFolder.newFolder(), temporaryFolder.newFolder(), indexSpec, null);
     File supplimentalIndexOutDir = p.rhs;
@@ -226,10 +226,10 @@ public class IndexMergerTestBase extends InitializedNullHandlingTest
       )));
       IndexMerger.setHasBloomFilterIndexesInColumnCapabilities(
               dimensions,
-              dimension -> {
-                ColumnHolder columnHolder = queryableIndex.getColumnHolder(dimension);
-                return columnHolder == null ? null : columnHolder.getCapabilities();
-              }
+          dimension -> {
+          ColumnHolder columnHolder = queryableIndex.getColumnHolder(dimension);
+          return columnHolder == null ? null : columnHolder.getCapabilities();
+        }
       );
       toMerge.add(queryableIndex);
     }
