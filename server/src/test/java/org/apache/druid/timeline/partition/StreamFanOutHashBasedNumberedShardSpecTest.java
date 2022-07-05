@@ -155,7 +155,7 @@ public class StreamFanOutHashBasedNumberedShardSpecTest
             ServerTestHelper.MAPPER
         )
     );
-    Assert.assertEquals(1, shardSpecs.stream().filter(s -> s.possibleInDomain(domain)).count());
+    Assert.assertEquals(3, shardSpecs.stream().filter(s -> s.possibleInDomain(domain)).count());
 
     // Partition dimensions not match
     final Map<String, RangeSet<String>> domain1 = ImmutableMap.of("vistor_id", rangeSet);
@@ -222,7 +222,7 @@ public class StreamFanOutHashBasedNumberedShardSpecTest
             ServerTestHelper.MAPPER
         )
     );
-    Assert.assertEquals(2, shardSpecs.stream().filter(s -> s.possibleInDomain(domain)).count());
+    Assert.assertEquals(4, shardSpecs.stream().filter(s -> s.possibleInDomain(domain)).count());
 
     // Partition dimensions not match
     final Map<String, RangeSet<String>> domain1 = ImmutableMap.of("vistor_id", rangeSet);
