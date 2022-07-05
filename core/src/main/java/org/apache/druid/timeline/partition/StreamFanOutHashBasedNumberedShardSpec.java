@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import static org.apache.druid.timeline.partition.ShardSpec.Type.STREAM_FANOUT_HASHED;
+
 public class StreamFanOutHashBasedNumberedShardSpec extends StreamHashBasedNumberedShardSpec
 {
   private static final Logger log = new Logger(StreamFanOutHashBasedNumberedShardSpec.class);
@@ -116,6 +118,13 @@ public class StreamFanOutHashBasedNumberedShardSpec extends StreamHashBasedNumbe
     // left unincluded in equals, and hashCode.
     return Objects.hash(getPartitionNum(), getNumCorePartitions());
   }
+
+  /*@Override*/
+  public String getType()
+  {
+    return STREAM_FANOUT_HASHED;
+  }
+
 
   /*@Override*/
   protected boolean groupKeyIsInChunk(List<Object> groupKey)
