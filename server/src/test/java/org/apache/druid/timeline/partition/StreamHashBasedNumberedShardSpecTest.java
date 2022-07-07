@@ -54,7 +54,7 @@ public class StreamHashBasedNumberedShardSpecTest
             10,
             ServerTestHelper.MAPPER
         ),
-        "{\"type\":\"stream_hashed\",\"partitionNum\":1,\"partitions\":2,\"partitionDimensions\":[\"partner_id\"],\"streamPartitionIds\":[1,3,5],\"streamPartitions\":10}"
+        "{\"type\":\"stream_hashed\",\"partitionNum\":1,\"partitions\":2,\"bucketId\":0,\"numBuckets\":1,\"partitionDimensions\":[\"partner_id\"],\"streamPartitionIds\":[1,3,5],\"partitionFunction\":null,\"streamPartitions\":10}"
     );
   }
 
@@ -147,7 +147,7 @@ public class StreamHashBasedNumberedShardSpecTest
             ServerTestHelper.MAPPER
         )
     );
-    Assert.assertEquals(1, shardSpecs.stream().filter(s -> s.possibleInDomain(domain)).count());
+    Assert.assertEquals(3, shardSpecs.stream().filter(s -> s.possibleInDomain(domain)).count());
 
     // Partition dimensions not match
     final Map<String, RangeSet<String>> domain1 = ImmutableMap.of("vistor_id", rangeSet);
