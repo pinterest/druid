@@ -149,17 +149,13 @@ public class FileRequestLogger implements RequestLogger
   @Override
   public void logNativeQuery(RequestLogLine requestLogLine) throws IOException
   {
-    if (requestLogLine.getLatencyMs() >= latencyThresholdMs) {
-      logToFile(requestLogLine.getNativeQueryLine(objectMapper));
-    }
+     logToFile(requestLogLine.getNativeQueryLine(objectMapper));
   }
 
   @Override
   public void logSqlQuery(RequestLogLine requestLogLine) throws IOException
   {
-    if (requestLogLine.getLatencyMs() >= latencyThresholdMs) {
-      logToFile(requestLogLine.getSqlQueryLine(objectMapper));
-    }
+     logToFile(requestLogLine.getSqlQueryLine(objectMapper));
   }
 
   private void logToFile(final String message) throws IOException
