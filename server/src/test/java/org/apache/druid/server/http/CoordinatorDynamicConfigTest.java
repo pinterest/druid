@@ -59,7 +59,6 @@ public class CoordinatorDynamicConfigTest
                      + "  \"decommissioningMaxPercentOfMaxSegmentsToMove\": 9,\n"
                      + "  \"pauseCoordination\": false,\n"
                      + "  \"replicateAfterLoadTimeout\": false,\n"
-                     + "  \"maxNonPrimaryReplicantsToLoad\": 2147483647\n"
                      + "  \"skipCoordinatorRunOnTier\": \"data\"\n"
                      + "}\n";
 
@@ -94,7 +93,7 @@ public class CoordinatorDynamicConfigTest
         false,
         false,
         Integer.MAX_VALUE,
-        ""
+        "data"
     );
 
     actual = CoordinatorDynamicConfig.builder().withDecommissioningNodes(ImmutableSet.of("host1")).build(actual);
@@ -118,7 +117,7 @@ public class CoordinatorDynamicConfigTest
         false,
         false,
         Integer.MAX_VALUE,
-        ""
+        "data"
     );
 
     actual = CoordinatorDynamicConfig.builder().withDecommissioningMaxPercentOfMaxSegmentsToMove(5).build(actual);
@@ -142,7 +141,7 @@ public class CoordinatorDynamicConfigTest
         false,
         false,
         Integer.MAX_VALUE,
-        ""
+        "data"
     );
 
     actual = CoordinatorDynamicConfig.builder().withPauseCoordination(true).build(actual);
@@ -166,7 +165,7 @@ public class CoordinatorDynamicConfigTest
         true,
         false,
         Integer.MAX_VALUE,
-        ""
+        "data"
     );
 
     actual = CoordinatorDynamicConfig.builder().withPercentOfSegmentsToConsiderPerMove(10).build(actual);
@@ -190,7 +189,7 @@ public class CoordinatorDynamicConfigTest
         true,
         false,
         Integer.MAX_VALUE,
-        ""
+        "data"
     );
 
     actual = CoordinatorDynamicConfig.builder().withReplicateAfterLoadTimeout(true).build(actual);
@@ -214,7 +213,7 @@ public class CoordinatorDynamicConfigTest
         true,
         true,
         Integer.MAX_VALUE,
-        ""
+        "data"
     );
 
     actual = CoordinatorDynamicConfig.builder().withMaxNonPrimaryReplicantsToLoad(10).build(actual);
@@ -238,7 +237,7 @@ public class CoordinatorDynamicConfigTest
         true,
         true,
         10,
-        ""
+        "data"
     );
 
   }
@@ -391,7 +390,7 @@ public class CoordinatorDynamicConfigTest
         false,
         false,
         Integer.MAX_VALUE,
-        ""
+        "data"
     );
   }
 
