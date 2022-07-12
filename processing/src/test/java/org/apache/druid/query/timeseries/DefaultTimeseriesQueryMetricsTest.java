@@ -75,7 +75,6 @@ public class DefaultTimeseriesQueryMetricsTest
     Assert.assertEquals("false", actualEvent.get("hasFilters"));
     Assert.assertEquals(expectedIntervals.get(0).toDuration().toString(), actualEvent.get("duration"));
     Assert.assertEquals("", actualEvent.get(DruidMetrics.ID));
-    Assert.assertEquals(ImmutableMap.of("testKey", "testValue"), actualEvent.get("context"));
 
     // Timeseries-specific dimensions
     Assert.assertEquals("2", actualEvent.get("numMetrics"));
