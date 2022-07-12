@@ -93,6 +93,7 @@ public class DefaultTopNQueryMetricsTest
     Assert.assertEquals("true", actualEvent.get("hasFilters"));
     Assert.assertEquals(expectedIntervals.get(0).toDuration().toString(), actualEvent.get("duration"));
     Assert.assertEquals("", actualEvent.get(DruidMetrics.ID));
+    Assert.assertEquals(ImmutableMap.of("testKey", "testValue"), actualEvent.get("context"));
 
     // TopN-specific dimensions
     Assert.assertEquals("5", actualEvent.get("threshold"));

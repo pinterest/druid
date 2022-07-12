@@ -20,6 +20,7 @@
 package org.apache.druid.query.groupby;
 
 import com.google.common.collect.ImmutableMap;
+import org.apache.druid.common.config.NullHandling;
 import org.apache.druid.java.util.common.Intervals;
 import org.apache.druid.java.util.common.granularity.PeriodGranularity;
 import org.apache.druid.java.util.emitter.service.ServiceEmitter;
@@ -36,6 +37,7 @@ import org.apache.druid.query.lookup.LookupExtractionFn;
 import org.joda.time.Interval;
 import org.joda.time.Period;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -43,6 +45,12 @@ import java.util.Map;
 
 public class DefaultGroupByQueryMetricsTest
 {
+
+  @BeforeClass
+  public static void setup()
+  {
+    NullHandling.initializeForTests();
+  }
 
   /**
    * Tests that passed a query {@link DefaultGroupByQueryMetrics} produces events with a certain set of dimensions,
