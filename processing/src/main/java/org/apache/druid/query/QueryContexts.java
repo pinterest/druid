@@ -73,7 +73,6 @@ public class QueryContexts
   public static final String BROKER_ALLOWED_SERVER_KEYWORD = "allowedServerKeyword";
   public static final String INCLUDE_REALTIME_SERVERS = "includeRealtimeServers";
   public static final String BROKER_RETURN_EMPTY_RESULTS = "returnEmptyResults";
-
   public static final String BROKER_RETURN_SEGMENT_COUNT_STATS = "returnSegmentCountStats";
   // In a table with multiple namesapces, a query could contains many aggregators that would be irrelevant,
   // e.g. querying a metric that does not exist on the namespace, that could be expensive if the query requires scanning
@@ -110,10 +109,10 @@ public class QueryContexts
   public static final int DEFAULT_SPECULATIVE_EXECUTION_REPLICAS_NEEDED = 2;
   public static final boolean DEFAULT_INCLUDE_REALTIME_SERVERS = true;
   public static final boolean DEFAULT_RETURN_EMPTY_RESULTS = false;
-
   public static final boolean DEFAULT_RETURN_SEGMENT_COUNT_STATS = false;
   public static final boolean DEFAULT_GROUPBY_OPTIMIZE_AGGREGATOR = false;
   public static final boolean DEFAULT_IGNORE_MISSING_DEP_POST_AGG = false;
+
 
   @SuppressWarnings("unused") // Used by Jackson serialization
   public enum Vectorize
@@ -385,11 +384,6 @@ public class QueryContexts
   public static <T> boolean isIncludeRealtimeServers(Query<T> query)
   {
     return parseBoolean(query, INCLUDE_REALTIME_SERVERS, DEFAULT_INCLUDE_REALTIME_SERVERS);
-  }
-
-  public static <T> boolean isReturnEmptyResults(Query<T> query)
-  {
-    return parseBoolean(query, BROKER_RETURN_EMPTY_RESULTS, DEFAULT_RETURN_EMPTY_RESULTS);
   }
 
   public static <T> boolean isIgnoreMissingDepPostAgg(Query<T> query)
