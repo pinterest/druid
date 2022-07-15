@@ -46,6 +46,51 @@ public class TestDruidCoordinatorConfig extends DruidCoordinatorConfig
   private String tierMirroringMap = null;
 
   public TestDruidCoordinatorConfig(
+          Duration coordinatorStartDelay,
+          Duration coordinatorPeriod,
+          Duration coordinatorIndexingPeriod,
+          Duration metadataStoreManagementPeriod,
+          Duration loadTimeoutDelay,
+          Duration coordinatorKillPeriod,
+          Duration coordinatorKillDurationToRetain,
+          Duration coordinatorSupervisorKillPeriod,
+          Duration coordinatorSupervisorKillDurationToRetain,
+          Duration coordinatorAuditKillPeriod,
+          Duration coordinatorAuditKillDurationToRetain,
+          Duration coordinatorCompactionKillPeriod,
+          Duration coordinatorRuleKillPeriod,
+          Duration coordinatorRuleKillDurationToRetain,
+          Duration coordinatorDatasourceKillPeriod,
+          Duration coordinatorDatasourceKillDurationToRetain,
+          int coordinatorKillMaxSegments,
+          Duration getLoadQueuePeonRepeatDelay,
+          String tierMirroringMap
+  )
+  {
+    this(
+            coordinatorStartDelay,
+            coordinatorPeriod,
+            coordinatorIndexingPeriod,
+            metadataStoreManagementPeriod,
+            loadTimeoutDelay,
+            coordinatorKillPeriod,
+            coordinatorKillDurationToRetain,
+            coordinatorSupervisorKillPeriod,
+            coordinatorSupervisorKillDurationToRetain,
+            coordinatorAuditKillPeriod,
+            coordinatorAuditKillDurationToRetain,
+            coordinatorCompactionKillPeriod,
+            coordinatorRuleKillPeriod,
+            coordinatorRuleKillDurationToRetain,
+            coordinatorDatasourceKillPeriod,
+            coordinatorDatasourceKillDurationToRetain,
+            coordinatorKillMaxSegments,
+            getLoadQueuePeonRepeatDelay
+    );
+    this.tierMirroringMap = tierMirroringMap;
+  }
+
+  public TestDruidCoordinatorConfig(
       Duration coordinatorStartDelay,
       Duration coordinatorPeriod,
       Duration coordinatorIndexingPeriod,

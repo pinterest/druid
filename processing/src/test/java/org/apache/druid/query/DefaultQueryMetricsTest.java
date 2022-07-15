@@ -21,6 +21,7 @@ package org.apache.druid.query;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import org.apache.druid.common.config.NullHandling;
 import org.apache.druid.java.util.common.granularity.Granularities;
 import org.apache.druid.java.util.emitter.service.ServiceEmitter;
 import org.apache.druid.query.aggregation.CountAggregatorFactory;
@@ -31,6 +32,7 @@ import org.apache.druid.query.topn.TopNQuery;
 import org.apache.druid.query.topn.TopNQueryBuilder;
 import org.joda.time.Interval;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.List;
@@ -39,6 +41,12 @@ import java.util.stream.Collectors;
 
 public class DefaultQueryMetricsTest
 {
+
+  @BeforeClass
+  public static void setup()
+  {
+    NullHandling.initializeForTests();
+  }
 
   /**
    * Tests that passed a query {@link DefaultQueryMetrics} produces events with a certain set of dimensions, no more,

@@ -38,7 +38,7 @@ public class StreamFanOutHashBasedNumberedShardSpecTest
   @Test
   public void testSerdeRoundTrip() throws Exception
   {
-    final int fanoutSize = 2;
+    final int fanoutSize = 5;
     testSerdeHelper(
         new StreamFanOutHashBasedNumberedShardSpec(
             1,
@@ -49,7 +49,7 @@ public class StreamFanOutHashBasedNumberedShardSpecTest
             fanoutSize,
             ServerTestHelper.MAPPER
         ),
-        "{\"type\":\"stream_fanout_hashed\",\"partitionNum\":1,\"partitions\":2,\"partitionDimensions\":[\"partner_id\"],\"streamPartitionIds\":[1,3,5],\"streamPartitions\":10,\"fanOutSize\":5}"
+        "{\"type\":\"stream_fanout_hashed\",\"partitionNum\":1,\"partitions\":2,\"bucketId\":1,\"numBuckets\":2,\"partitionDimensions\":[\"partner_id\"],\"streamPartitionIds\":[1,3,5],\"streamPartitions\":10,\"partitionFunction\":null,\"fanOutSize\":5}"
     );
   }
 
@@ -140,7 +140,7 @@ public class StreamFanOutHashBasedNumberedShardSpecTest
             ServerTestHelper.MAPPER
         )
     );
-    Assert.assertEquals(1, shardSpecs.stream().filter(s -> s.possibleInDomain(domain)).count());
+    Assert.assertEquals(3, shardSpecs.stream().filter(s -> s.possibleInDomain(domain)).count());
 
     // Partition dimensions not match
     final Map<String, RangeSet<String>> domain1 = ImmutableMap.of("vistor_id", rangeSet);
@@ -195,7 +195,7 @@ public class StreamFanOutHashBasedNumberedShardSpecTest
             ServerTestHelper.MAPPER
         )
     );
-    Assert.assertEquals(2, shardSpecs.stream().filter(s -> s.possibleInDomain(domain)).count());
+    Assert.assertEquals(4, shardSpecs.stream().filter(s -> s.possibleInDomain(domain)).count());
 
     // Partition dimensions not match
     final Map<String, RangeSet<String>> domain1 = ImmutableMap.of("vistor_id", rangeSet);

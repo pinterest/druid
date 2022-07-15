@@ -94,7 +94,7 @@ public class DruidCoordinatorMirroringTierSegmentCopierTest
                 new Duration("PT5S"), null, null, null,
                 null, null, null, null,
             null, null, null, new Duration(Long.MAX_VALUE),
-                new Duration("PT1S"), 10, null
+                new Duration("PT1S"), 10, null, MIRROR1 + ":" + TIER1
         ));
 
     TestDruidCoordinatorConfig druidCoordinatorConfig = new TestDruidCoordinatorConfig(

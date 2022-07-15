@@ -168,7 +168,8 @@ public class GroupByQueryTest
                       "forceLimitPushDown",
                       "postProcessingFn",
                       "resultRowSignature",
-                      "universalTimestamp"
+                      "universalTimestamp",
+                      "zeroFilledDimensionSpec"
                   )
                   .verify();
   }
