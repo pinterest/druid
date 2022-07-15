@@ -81,7 +81,6 @@ public class DefaultSearchQueryMetricsTest
     Assert.assertEquals("false", actualEvent.get("hasFilters"));
     Assert.assertEquals(expectedIntervals.get(0).toDuration().toString(), actualEvent.get("duration"));
     Assert.assertEquals("", actualEvent.get(DruidMetrics.ID));
-    Assert.assertEquals("testValue", actualEvent.get("testKey"));
 
     // Metric
     Assert.assertEquals("query/time", actualEvent.get("metric"));
