@@ -1438,6 +1438,9 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
       // setRowIndex() must be called before rows.add() for visibility of rowIndex from concurrent readers.
       key.setRowIndex(rowIndex);
       rows.add(key);
+      if (enableInMemoryBitmap) {
+        rowIndexToFacts.put(rowIndex, key);
+      }
       // always return EMPTY_ROW_INDEX to indicate that we always add new row
       return IncrementalIndexRow.EMPTY_ROW_INDEX;
     }
@@ -1451,19 +1454,27 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
     @Override
     public long getTimestamp(int rowIndex)
     {
-      throw new UnsupportedOperationException();
+      if (!enableInMemoryBitmap) {
+        throw new UnsupportedOperationException();
+      } else {
+        return rowIndexToFacts.get(rowIndex).getTimestamp();
+      }
     }
 
     @Override
     public IncrementalIndexRow getRow(int rowInex)
     {
-      throw new UnsupportedOperationException();
+      if (!enableInMemoryBitmap) {
+        throw new UnsupportedOperationException();
+      } else {
+        return rowIndexToFacts.get(rowInex);
+      }
     }
 
     @Override
     public int getNumRows()
     {
-      throw new UnsupportedOperationException();
+      return rowIndexToFacts.size();
     }
   }
 

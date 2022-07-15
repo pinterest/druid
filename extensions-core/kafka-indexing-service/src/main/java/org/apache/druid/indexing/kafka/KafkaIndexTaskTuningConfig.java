@@ -55,7 +55,8 @@ public class KafkaIndexTaskTuningConfig extends SeekableStreamIndexTaskTuningCon
       @JsonProperty("maxParseExceptions") @Nullable Integer maxParseExceptions,
       @JsonProperty("maxSavedParseExceptions") @Nullable Integer maxSavedParseExceptions,
       @JsonProperty("ignoreOutOfOrderSequenceNumber") @Nullable Boolean ignoreOutOfOrderSequenceNumber,
-      @JsonProperty("enableInMemoryBitmap") @Nullable Boolean enableInMemoryBitmap
+      @JsonProperty("enableInMemoryBitmap") @Nullable Boolean enableInMemoryBitmap,
+      @JsonProperty("allowMixedShardSpecType") @Nullable Boolean allowMixedShardSpecType
   )
   {
     super(
@@ -81,7 +82,8 @@ public class KafkaIndexTaskTuningConfig extends SeekableStreamIndexTaskTuningCon
         maxParseExceptions,
         maxSavedParseExceptions,
         ignoreOutOfOrderSequenceNumber,
-        enableInMemoryBitmap
+        enableInMemoryBitmap,
+        allowMixedShardSpecType
     );
   }
 
@@ -110,7 +112,8 @@ public class KafkaIndexTaskTuningConfig extends SeekableStreamIndexTaskTuningCon
         getMaxParseExceptions(),
         getMaxSavedParseExceptions(),
         isIgnoreOutOfOrderSequenceNumber(),
-        isEnableInMemoryBitmap()
+        isEnableInMemoryBitmap(),
+        isAllowMixedShardSpecType()
     );
   }
 

@@ -30,6 +30,7 @@ import org.apache.druid.utils.CompressionUtils;
 import org.jclouds.rackspace.cloudfiles.v1.CloudFilesApi;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.util.Map;
@@ -139,6 +140,18 @@ public class CloudFilesDataSegmentPusher implements DataSegmentPusher
         descriptorFile.delete();
       }
     }
+  }
+
+  @Override
+  public DataSegment push(
+      File indexFilesDir,
+      File supplimentalIndexFilesDir,
+      DataSegment segment,
+      boolean useUniquePath
+  ) throws IOException
+  {
+    // TODO (add logic to use supplimentalIndexFilesDir)
+    return push(indexFilesDir, segment, useUniquePath);
   }
 
   @Override

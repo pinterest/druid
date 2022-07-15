@@ -424,7 +424,30 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
         toolbox.getDruidNodeAnnouncer().announce(discoveryDruidNode);
       }
       appenderator = task.newAppenderator(toolbox, fireDepartmentMetrics, rowIngestionMeters, parseExceptionHandler);
-      driver = task.newDriver(appenderator, toolbox, fireDepartmentMetrics);
+
+      final List<String> partitionDimensions = task.getContextValue(SeekableStreamSupervisor.PARTITION_DIMENSIONS_CTX_KEY);
+      final Integer streamPartitions = task.getContextValue(SeekableStreamSupervisor.STREAM_PARTITIONS_CTX_KEY);
+      final Integer fanOutSize = task.getContextValue(SeekableStreamSupervisor.PARTITION_FAN_OUT_SIZE);
+
+      // Only support single sequence for now
+      final Set<PartitionIdType> rawStreamPartitionIds = sequences.size() == 1
+                                                   ? sequences.get(0).startOffsets.keySet()
+                                                   : null;
+      // Only support stream partition ids of type integer for now
+      final Set<Integer> streamPartitionIds = rawStreamPartitionIds != null
+                                        && !rawStreamPartitionIds.isEmpty()
+                                        && rawStreamPartitionIds.stream().allMatch(Integer.class::isInstance)
+                                        ? (Set<Integer>) rawStreamPartitionIds
+                                        : null;
+      driver = task.newDriver(
+          appenderator,
+          toolbox,
+          fireDepartmentMetrics,
+          partitionDimensions,
+          streamPartitionIds,
+          streamPartitions,
+          fanOutSize
+      );
 
       // Start up, set up initial sequences.
       final Object restoredMetadata = driver.startJob(
@@ -659,7 +682,8 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
                     true,
                     // do not allow incremental persists to happen until all the rows from this batch
                     // of rows are indexed
-                    false
+                    false,
+                        tuningConfig.isAllowMixedShardSpecType()
                 );
 
                 if (addResult.isOk()) {

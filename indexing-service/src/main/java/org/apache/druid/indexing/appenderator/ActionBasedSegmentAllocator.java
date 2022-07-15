@@ -51,11 +51,13 @@ public class ActionBasedSegmentAllocator implements SegmentAllocator
       final InputRow row,
       final String sequenceName,
       final String previousSegmentId,
-      final boolean skipSegmentLineageCheck
+      final boolean skipSegmentLineageCheck,
+      final boolean allowMixedShardSpecType
   ) throws IOException
   {
     return taskActionClient.submit(
-        actionGenerator.generate(dataSchema, row, sequenceName, previousSegmentId, skipSegmentLineageCheck)
+        actionGenerator.generate(dataSchema, row, sequenceName, previousSegmentId, skipSegmentLineageCheck,
+                                 allowMixedShardSpecType)
     );
   }
 }

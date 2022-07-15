@@ -48,6 +48,17 @@ public class TestDataSegmentPusher implements DataSegmentPusher
   }
 
   @Override
+  public DataSegment push(
+      File indexFilesDir,
+      File supplimentalIndexFilesDir,
+      DataSegment segment,
+      boolean useUniquePath
+  )
+  {
+    return segment;
+  }
+
+  @Override
   public Map<String, Object> makeLoadSpec(URI uri)
   {
     throw new UnsupportedOperationException();

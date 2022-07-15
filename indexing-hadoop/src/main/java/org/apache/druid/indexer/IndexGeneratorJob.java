@@ -34,20 +34,24 @@ import org.apache.druid.common.guava.ThreadRenamingRunnable;
 import org.apache.druid.data.input.InputRow;
 import org.apache.druid.data.input.Row;
 import org.apache.druid.data.input.Rows;
+import org.apache.druid.data.input.impl.DimensionsSpec;
 import org.apache.druid.indexer.hadoop.SegmentInputRow;
 import org.apache.druid.indexer.path.DatasourcePathSpec;
 import org.apache.druid.java.util.common.FileUtils;
 import org.apache.druid.java.util.common.IAE;
 import org.apache.druid.java.util.common.ISE;
+import org.apache.druid.java.util.common.Pair;
 import org.apache.druid.java.util.common.StringUtils;
 import org.apache.druid.java.util.common.concurrent.Execs;
 import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.java.util.common.parsers.ParseException;
 import org.apache.druid.query.aggregation.AggregatorFactory;
 import org.apache.druid.segment.BaseProgressIndicator;
+import org.apache.druid.segment.IndexMerger;
 import org.apache.druid.segment.ProgressIndicator;
 import org.apache.druid.segment.QueryableIndex;
 import org.apache.druid.segment.column.ColumnCapabilities;
+import org.apache.druid.segment.column.ColumnHolder;
 import org.apache.druid.segment.incremental.IncrementalIndex;
 import org.apache.druid.segment.incremental.IncrementalIndexSchema;
 import org.apache.druid.timeline.DataSegment;
@@ -593,38 +597,30 @@ public class IndexGeneratorJob implements Jobby
       };
     }
 
-    private File persist(
+    private Pair<File, File> persist(
         final IncrementalIndex index,
         final Interval interval,
-        final File file,
+        final File indexOutDir,
+        final File supplimentalIndexOutDir,
         final ProgressIndicator progressIndicator
     ) throws IOException
     {
       return HadoopDruidIndexerConfig.INDEX_MERGER_V9
-          .persist(index, interval, file, config.getIndexSpecForIntermediatePersists(), progressIndicator, null);
+          .persist(index, interval, indexOutDir, supplimentalIndexOutDir, config.getIndexSpecForIntermediatePersists(),
+                   progressIndicator, null);
     }
 
-    protected File mergeQueryableIndex(
+    protected Pair<File, File> mergeQueryableIndex(
         final List<QueryableIndex> indexes,
         final AggregatorFactory[] aggs,
-        final File file,
+        final File indexOutDir,
+        final File supplimentalIndexOutDir,
         ProgressIndicator progressIndicator
     ) throws IOException
     {
       boolean rollup = config.getSchema().getDataSchema().getGranularitySpec().isRollup();
       return HadoopDruidIndexerConfig.INDEX_MERGER_V9
-          .mergeQueryableIndex(
-              indexes,
-              rollup,
-              aggs,
-              null,
-              file,
-              config.getIndexSpec(),
-              config.getIndexSpecForIntermediatePersists(),
-              progressIndicator,
-              null,
-              -1
-          );
+          .mergeQueryableIndex(indexes, rollup, aggs, indexOutDir, supplimentalIndexOutDir, config.getIndexSpec(), progressIndicator, null);
     }
 
     @Override
@@ -732,7 +728,7 @@ public class IndexGeneratorJob implements Jobby
                       public void doRun()
                       {
                         try {
-                          persist(persistIndex, interval, file, progressIndicator);
+                          persist(persistIndex, interval, file, null, progressIndicator);
                         }
                         catch (Exception e) {
                           log.error(e, "persist index error");
@@ -764,19 +760,38 @@ public class IndexGeneratorJob implements Jobby
         log.info("%,d lines completed.", lineCount);
 
         List<QueryableIndex> indexes = Lists.newArrayListWithCapacity(indexCount);
-        final File mergedBase;
+        final File mergedIndexOutDir;
+        final File mergedSupplimentalIndexOutDir;
 
+        DimensionsSpec dimensionsSpec = config.getSchema()
+                                              .getDataSchema()
+                                              .getParser() == null ? null : config.getSchema()
+                                                                                  .getDataSchema()
+                                                                                  .getParser()
+                                                                                  .getParseSpec()
+                                                                                  .getDimensionsSpec();
+        boolean hasSupplimentalIndex = IndexMerger.hasSupplimentalIndex(dimensionsSpec);
+        final File mergedSupplimentalIndexBase = hasSupplimentalIndex ? new File(baseFlushFile,
+                                                                                 "merged_supplimental_index") : null;
+        List<String> dimensionNamesHasBloomFilterIndexes = IndexMerger.getDimensionNamesHasBloomFilterIndexes(
+            dimensionsSpec);
         if (toMerge.size() == 0) {
           if (index.isEmpty()) {
             throw new IAE("If you try to persist empty indexes you are going to have a bad time");
           }
-
-          mergedBase = new File(baseFlushFile, "merged");
-          persist(index, interval, mergedBase, progressIndicator);
+          // commented below link to fix compile time error ..need to revisit this part
+         // IndexMerger.setHasBloomFilterIndexesInColumnCapabilities(
+           //   dimensionNamesHasBloomFilterIndexes,
+             // indexes::getCapabilities
+         // );
+          Pair<File, File> p = persist(index, interval, new File(baseFlushFile, "merged"),
+                                       mergedSupplimentalIndexBase, progressIndicator);
+          mergedIndexOutDir = p.lhs;
+          mergedSupplimentalIndexOutDir = p.rhs;
         } else {
           if (!index.isEmpty()) {
-            final File finalFile = new File(baseFlushFile, "final");
-            persist(index, interval, finalFile, progressIndicator);
+            // No need to create supplimental index for intermediate segments so pass supplimentalIndexOutDir as null
+            final File finalFile = persist(index, interval, new File(baseFlushFile, "final"), null, progressIndicator).lhs;
             toMerge.add(finalFile);
           }
 
@@ -784,12 +799,23 @@ public class IndexGeneratorJob implements Jobby
           persistExecutor.shutdown();
 
           for (File file : toMerge) {
-            indexes.add(HadoopDruidIndexerConfig.INDEX_IO.loadIndex(file));
+            QueryableIndex queryableIndex = HadoopDruidIndexerConfig.INDEX_IO.loadIndex(file);
+            IndexMerger.setHasBloomFilterIndexesInColumnCapabilities(
+                dimensionNamesHasBloomFilterIndexes,
+                dimension -> {
+                  ColumnHolder columnHolder = queryableIndex.getColumnHolder(dimension);
+                  return columnHolder == null ? null : columnHolder.getCapabilities();
+                }
+            );
+            indexes.add(queryableIndex);
           }
 
           log.info("starting merge of intermediate persisted segments.");
           long mergeStartTime = System.currentTimeMillis();
-          mergedBase = mergeQueryableIndex(indexes, aggregators, new File(baseFlushFile, "merged"), progressIndicator);
+          Pair<File, File> p = mergeQueryableIndex(indexes, aggregators, new File(baseFlushFile, "merged"),
+                                                   mergedSupplimentalIndexBase, progressIndicator);
+          mergedIndexOutDir = p.lhs;
+          mergedSupplimentalIndexOutDir = p.rhs;
           log.info(
               "finished merge of intermediate persisted segments. time taken [%d] ms.",
               (System.currentTimeMillis() - mergeStartTime)
@@ -824,11 +850,38 @@ public class IndexGeneratorJob implements Jobby
             0
         );
 
+        final List<File> mergedSupplimentalIndexOutDirs = new ArrayList<>();
+        final List<Path> finalSupplimentalIndexZipFilePaths = new ArrayList<>();
+        final List<Path> tmpSupplimentalIndexZipFilePaths = new ArrayList<>();
+
+        if (mergedSupplimentalIndexOutDir != null) {
+          for (File dir : mergedSupplimentalIndexOutDir.listFiles()) {
+            mergedSupplimentalIndexOutDirs.add(dir);
+
+            finalSupplimentalIndexZipFilePaths.add(JobHelper.makeFileNamePath(
+                new Path(config.getSchema().getIOConfig().getSegmentOutputPath()),
+                outputFS,
+                segmentTemplate,
+                JobHelper.SUPPLIMENTAL_INDEX_KEY_PREFIX + '/' + dir.getName() + ".zip",
+                config.DATA_SEGMENT_PUSHER)
+            );
+
+            tmpSupplimentalIndexZipFilePaths.add(JobHelper.makeTmpPath(
+                new Path(config.getSchema().getIOConfig().getSegmentOutputPath()),
+                JobHelper.SUPPLIMENTAL_INDEX_KEY_PREFIX + '/' + dir.getName() + ".zip",
+                outputFS,
+                segmentTemplate,
+                context.getTaskAttemptID(),
+                config.DATA_SEGMENT_PUSHER)
+            );
+          }
+        }
+
         final DataSegmentAndIndexZipFilePath segmentAndIndexZipFilePath = JobHelper.serializeOutIndex(
             segmentTemplate,
             context.getConfiguration(),
             context,
-            mergedBase,
+            mergedIndexOutDir,
             JobHelper.makeFileNamePath(
                 new Path(config.getSchema().getIOConfig().getSegmentOutputPath()),
                 outputFS,
@@ -838,11 +891,15 @@ public class IndexGeneratorJob implements Jobby
             ),
             JobHelper.makeTmpPath(
                 new Path(config.getSchema().getIOConfig().getSegmentOutputPath()),
+                JobHelper.INDEX_ZIP,
                 outputFS,
                 segmentTemplate,
                 context.getTaskAttemptID(),
                 HadoopDruidIndexerConfig.DATA_SEGMENT_PUSHER
             ),
+            mergedSupplimentalIndexOutDirs,
+            finalSupplimentalIndexZipFilePaths,
+            tmpSupplimentalIndexZipFilePaths,
             HadoopDruidIndexerConfig.DATA_SEGMENT_PUSHER
         );
 

@@ -176,5 +176,11 @@ public class LocalIntermediaryDataManagerAutoCleanupTest
     {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public boolean isCompatible(Class<? extends ShardSpec> other)
+    {
+      return false;
+    }
   }
 }

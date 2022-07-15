@@ -94,6 +94,12 @@ public class DataSegmentTest
         return true;
       }
 
+      @Override
+      public boolean isCompatible(Class<? extends ShardSpec> other)
+      {
+        return false;
+      }
+
     };
   }
 
@@ -128,7 +134,8 @@ public class DataSegmentTest
             ImmutableMap.of()
         ),
         TEST_VERSION,
-        1
+        1,
+        Arrays.asList("supplimental_index_1", "supplimental_index_2")
     );
 
     final Map<String, Object> objectMap = MAPPER.readValue(
@@ -147,6 +154,8 @@ public class DataSegmentTest
     Assert.assertEquals(TEST_VERSION, objectMap.get("binaryVersion"));
     Assert.assertEquals(1, objectMap.get("size"));
     Assert.assertEquals(5, ((Map) objectMap.get("lastCompactionState")).size());
+    Assert.assertEquals("supplimental_index_1,supplimental_index_2",
+                        objectMap.get("availableSupplimentalIndexes"));
 
     DataSegment deserializedSegment = MAPPER.readValue(MAPPER.writeValueAsString(segment), DataSegment.class);
 
@@ -160,6 +169,8 @@ public class DataSegmentTest
     Assert.assertEquals(segment.getSize(), deserializedSegment.getSize());
     Assert.assertEquals(segment.getId(), deserializedSegment.getId());
     Assert.assertEquals(segment.getLastCompactionState(), deserializedSegment.getLastCompactionState());
+    Assert.assertEquals(segment.getAvailableSupplimentalIndexes(),
+                        deserializedSegment.getAvailableSupplimentalIndexes());
 
     deserializedSegment = MAPPER.readValue(MAPPER.writeValueAsString(segment), DataSegment.class);
     Assert.assertEquals(0, segment.compareTo(deserializedSegment));
@@ -328,6 +339,8 @@ public class DataSegmentTest
     final DataSegment segment2 = MAPPER.readValue(MAPPER.writeValueAsString(segment), DataSegment.class);
     Assert.assertEquals("empty dimensions", ImmutableList.of(), segment2.getDimensions());
     Assert.assertEquals("empty metrics", ImmutableList.of(), segment2.getMetrics());
+    Assert.assertEquals("empty availableSupplimentalIndexes", ImmutableList.of(),
+                        segment2.getAvailableSupplimentalIndexes());
   }
 
   @Test

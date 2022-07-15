@@ -300,6 +300,12 @@ public class AppenderatorsTest
         }
 
         @Override
+        public DataSegment push(File indexFilesDir, File supplimentalIndexFilesDir, DataSegment segment, boolean useUniquePath) throws IOException
+        {
+          return null;
+        }
+
+        @Override
         public DataSegment push(File file, DataSegment segment, boolean useUniquePath) throws IOException
         {
           if (enablePushFailure && mustFail) {

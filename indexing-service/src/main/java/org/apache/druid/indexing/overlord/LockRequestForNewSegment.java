@@ -45,6 +45,7 @@ public class LockRequestForNewSegment implements LockRequest
   private final boolean skipSegmentLineageCheck;
   @Nullable
   private final String nameSpace;
+  private final boolean allowMixedShardSpecType;
 
   private String version;
 
@@ -59,7 +60,8 @@ public class LockRequestForNewSegment implements LockRequest
       String sequenceName,
       @Nullable String previsousSegmentId,
       boolean skipSegmentLineageCheck,
-      @Nullable String nameSpace
+      @Nullable String nameSpace,
+      boolean allowMixedShardSpecType
   )
   {
     this.lockGranularity = lockGranularity;
@@ -73,6 +75,7 @@ public class LockRequestForNewSegment implements LockRequest
     this.previsousSegmentId = previsousSegmentId;
     this.skipSegmentLineageCheck = skipSegmentLineageCheck;
     this.nameSpace = nameSpace;
+    this.allowMixedShardSpecType = allowMixedShardSpecType;
   }
 
   @VisibleForTesting
@@ -85,7 +88,8 @@ public class LockRequestForNewSegment implements LockRequest
       String sequenceName,
       @Nullable String previsousSegmentId,
       boolean skipSegmentLineageCheck,
-      @Nullable String nameSpace
+      @Nullable String nameSpace,
+      boolean allowMixedShardSpecType
   )
   {
     this(
@@ -99,7 +103,8 @@ public class LockRequestForNewSegment implements LockRequest
         sequenceName,
         previsousSegmentId,
         skipSegmentLineageCheck,
-        nameSpace
+        nameSpace,
+        allowMixedShardSpecType
     );
   }
 
@@ -184,6 +189,11 @@ public class LockRequestForNewSegment implements LockRequest
     return skipSegmentLineageCheck;
   }
 
+  public boolean isAllowMixedShardSpecType()
+  {
+    return allowMixedShardSpecType;
+  }
+
   public String getNameSpace()
   {
     return nameSpace;
@@ -204,6 +214,7 @@ public class LockRequestForNewSegment implements LockRequest
            ", previsousSegmentId='" + previsousSegmentId + '\'' +
            ", skipSegmentLineageCheck=" + skipSegmentLineageCheck +
            ", nameSpace='" + nameSpace + '\'' +
+           ", allowMixedShardSpecType=" + allowMixedShardSpecType +
            '}';
   }
 }

@@ -62,8 +62,11 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
@@ -92,6 +95,7 @@ public class JobHelper
   }
 
   public static final String INDEX_ZIP = "index.zip";
+  public static final String SUPPLIMENTAL_INDEX_KEY_PREFIX = "supplimental_index";
 
   /**
    * Dose authenticate against a secured hadoop cluster
@@ -432,15 +436,24 @@ public class JobHelper
       final DataSegment segmentTemplate,
       final Configuration configuration,
       final Progressable progressable,
-      final File mergedBase,
+      final File mergedIndexOutDir,
       final Path finalIndexZipFilePath,
-      final Path tmpPath,
+      final Path tmpIndexZipFilePath,
+      final List<File> mergedSupplimentalIndexOutDirs,
+      final List<Path> finalSupplimentalIndexZipFilePaths,
+      final List<Path> tmpSupplimentalIndexZipFilePaths,
       DataSegmentPusher dataSegmentPusher
   )
       throws IOException
   {
     final FileSystem outputFS = FileSystem.get(finalIndexZipFilePath.toUri(), configuration);
-    final AtomicLong size = new AtomicLong(0L);
+    final AtomicLong indexSize = new AtomicLong(0L);
+    // Use atomic variable because it's effectively final in lambda
+    final List<AtomicLong> supplimentalIndexSizes = new ArrayList<>();
+    for (int i = 0; i < mergedSupplimentalIndexOutDirs.size(); i++) {
+      supplimentalIndexSizes.add(new AtomicLong(0L));
+    }
+    final Set<String> sortedAvailableSupplimentalIndexes = new TreeSet<>();
     final DataPusher zipPusher = (DataPusher) RetryProxy.create(
         DataPusher.class,
         new DataPusher()
@@ -449,34 +462,68 @@ public class JobHelper
           public long push() throws IOException
           {
             try (OutputStream outputStream = outputFS.create(
-                tmpPath,
+                tmpIndexZipFilePath,
                 true,
                 DEFAULT_FS_BUFFER_SIZE,
                 progressable
             )) {
-              size.set(zipAndCopyDir(mergedBase, outputStream, progressable));
+              indexSize.set(zipAndCopyDir(mergedIndexOutDir, outputStream, progressable));
             }
             catch (IOException | RuntimeException exception) {
               log.error(exception, "Exception in retry loop");
               throw exception;
             }
+
+            for (int i = 0; i < mergedSupplimentalIndexOutDirs.size(); i++) {
+              try (OutputStream outputStream = outputFS.create(
+                  tmpSupplimentalIndexZipFilePaths.get(i),
+                  true,
+                  DEFAULT_FS_BUFFER_SIZE,
+                  progressable
+              )) {
+                supplimentalIndexSizes.get(i).set(zipAndCopyDir(mergedSupplimentalIndexOutDirs.get(i), outputStream,
+                                                                progressable));
+                sortedAvailableSupplimentalIndexes.add(mergedSupplimentalIndexOutDirs.get(i).getName());
+              }
+              catch (IOException | RuntimeException exception) {
+                log.error(exception, "Exception in retry loop");
+                throw exception;
+              }
+            }
+
             return -1;
           }
         },
         RetryPolicies.exponentialBackoffRetry(NUM_RETRIES, SECONDS_BETWEEN_RETRIES, TimeUnit.SECONDS)
     );
     zipPusher.push();
-    log.info("Zipped %,d bytes to [%s]", size.get(), tmpPath.toUri());
+    log.info("Zipped %,d bytes to [%s]", indexSize.get(), tmpIndexZipFilePath.toUri());
+    for (int i = 0; i < supplimentalIndexSizes.size(); i++) {
+      log.info("Zipped %,d bytes to [%s]", supplimentalIndexSizes.get(i).get(),
+               tmpSupplimentalIndexZipFilePaths.get(i).toUri());
+    }
 
     final URI indexOutURI = finalIndexZipFilePath.toUri();
     final DataSegment finalSegment = segmentTemplate
         .withLoadSpec(dataSegmentPusher.makeLoadSpec(indexOutURI))
-        .withSize(size.get())
-        .withBinaryVersion(SegmentUtils.getVersionFromDir(mergedBase));
+        .withSize(indexSize.get())
+        .withBinaryVersion(SegmentUtils.getVersionFromDir(mergedIndexOutDir))
+        .withAvailableSupplimentalIndexes(new ArrayList<>(sortedAvailableSupplimentalIndexes));
+    
+    for (int i = 0; i < tmpSupplimentalIndexZipFilePaths.size(); i++) {
+      if (!renameIndexFile(outputFS, tmpSupplimentalIndexZipFilePaths.get(i),
+                            finalSupplimentalIndexZipFilePaths.get(i))) {
+        throw new IOE(
+            "Unable to rename [%s] to [%s]",
+            tmpSupplimentalIndexZipFilePaths.get(i).toUri().toString(),
+            finalSupplimentalIndexZipFilePaths.get(i).toUri().toString()
+        );
+      }
+    }
 
     return new DataSegmentAndIndexZipFilePath(
         finalSegment,
-        tmpPath.toUri().toString(),
+            tmpIndexZipFilePath.toUri().toString(),
         finalIndexZipFilePath.toUri().toString()
     );
   }
@@ -606,6 +653,7 @@ public class JobHelper
 
   public static Path makeTmpPath(
       final Path basePath,
+      final String indexName,
       final FileSystem fs,
       final DataSegment segmentTemplate,
       final TaskAttemptID taskAttemptID,
@@ -616,7 +664,7 @@ public class JobHelper
         prependFSIfNullScheme(fs, basePath),
         StringUtils.format(
             "./%s.%d",
-            dataSegmentPusher.makeIndexPathName(segmentTemplate, JobHelper.INDEX_ZIP),
+            dataSegmentPusher.makeIndexPathName(segmentTemplate, indexName),
             taskAttemptID.getId()
         )
     );

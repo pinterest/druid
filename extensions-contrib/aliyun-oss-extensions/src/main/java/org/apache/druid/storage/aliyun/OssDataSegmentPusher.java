@@ -60,6 +60,12 @@ public class OssDataSegmentPusher implements DataSegmentPusher
     return StringUtils.format("%s/%s", config.getBucket(), config.getPrefix());
   }
 
+  @Override
+  public DataSegment push(File indexFilesDir, File supplimentalIndexFilesDir, DataSegment segment, boolean useUniquePath) throws IOException
+  {
+    return null;
+  }
+
   @Deprecated
   @Override
   public String getPathForHadoop(String dataSource)

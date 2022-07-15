@@ -39,6 +39,7 @@ public interface SegmentAllocator
    *                                When skipSegmentLineageCheck is true, this will be ignored.
    * @param skipSegmentLineageCheck if false, perform lineage validation using previousSegmentId for this sequence.
    *                                Should be set to false if replica tasks would index events in same order
+   * @param allowMixedShardSpecType if true, allow to use different shard spec types for the same data source
    *
    * @return the pending segment identifier, or null if it was impossible to allocate a new segment
    */
@@ -47,6 +48,7 @@ public interface SegmentAllocator
       InputRow row,
       String sequenceName,
       @Nullable String previousSegmentId,
-      boolean skipSegmentLineageCheck
+      boolean skipSegmentLineageCheck,
+      boolean allowMixedShardSpecType
   ) throws IOException;
 }

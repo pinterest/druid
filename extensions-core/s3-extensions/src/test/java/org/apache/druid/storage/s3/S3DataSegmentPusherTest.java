@@ -25,6 +25,7 @@ import com.amazonaws.services.s3.model.Grant;
 import com.amazonaws.services.s3.model.Owner;
 import com.amazonaws.services.s3.model.Permission;
 import com.amazonaws.services.s3.model.PutObjectResult;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 import org.apache.druid.java.util.common.Intervals;
 import org.apache.druid.timeline.DataSegment;
@@ -34,16 +35,35 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
  */
+@RunWith(Parameterized.class)
 public class S3DataSegmentPusherTest
 {
+  private final boolean testPushSupplimentalIndexes;
+
+  public S3DataSegmentPusherTest(boolean testPushSupplimentalIndexes)
+  {
+    this.testPushSupplimentalIndexes = testPushSupplimentalIndexes;
+  }
+
+  @Parameterized.Parameters
+  public static Collection testPushSupplimentalIndexes()
+  {
+    return Arrays.asList(true, false);
+  }
+
   private static class ValueContainer<T>
   {
     private T value;
@@ -62,6 +82,9 @@ public class S3DataSegmentPusherTest
   @Rule
   public final TemporaryFolder tempFolder = new TemporaryFolder();
 
+  @Rule
+  public final TemporaryFolder tempSupplimentalIndexFolder = new TemporaryFolder();
+
   @Test
   public void testPush() throws Exception
   {
@@ -74,18 +97,24 @@ public class S3DataSegmentPusherTest
     testPushInternal(true, "key/foo/2015-01-01T00:00:00\\.000Z_2016-01-01T00:00:00\\.000Z/0/0/[A-Za-z0-9-]{36}/index\\.zip");
   }
 
-  private void testPushInternal(boolean useUniquePath, String matcher) throws Exception
+  private void testPushInternal(boolean useUniquePath, String matcher) throws
+                                                                                                            Exception
   {
-    ServerSideEncryptingAmazonS3 s3Client = EasyMock.createStrictMock(ServerSideEncryptingAmazonS3.class);
-
+    // When there are multiple files to push, relax to only check total mock method calls because of potential multi
+    // threaded execution
+    ServerSideEncryptingAmazonS3 s3Client = testPushSupplimentalIndexes ?
+                                            EasyMock.createMock(ServerSideEncryptingAmazonS3.class) :
+                                            EasyMock.createStrictMock(ServerSideEncryptingAmazonS3.class);
+    // Push 1 index file or/and 2 supplimental index files
+    int expectedNumMockCalls = testPushSupplimentalIndexes ? 3 : 1;
     final AccessControlList acl = new AccessControlList();
     acl.setOwner(new Owner("ownerId", "owner"));
     acl.grantAllPermissions(new Grant(new CanonicalGrantee(acl.getOwner().getId()), Permission.FullControl));
-    EasyMock.expect(s3Client.getBucketAcl(EasyMock.eq("bucket"))).andReturn(acl).once();
+    EasyMock.expect(s3Client.getBucketAcl(EasyMock.eq("bucket"))).andReturn(acl).times(expectedNumMockCalls);
 
     EasyMock.expect(s3Client.putObject(EasyMock.anyObject()))
             .andReturn(new PutObjectResult())
-            .once();
+            .times(expectedNumMockCalls);
 
     EasyMock.replay(s3Client);
 
@@ -102,6 +131,22 @@ public class S3DataSegmentPusherTest
     Files.write(data, tmp);
     final long size = data.length;
 
+    // Create mock segment supplimental indexes
+    File supplimentalIndexFilesDir = null;
+    if (testPushSupplimentalIndexes) {
+      supplimentalIndexFilesDir = tempSupplimentalIndexFolder.newFolder(
+          S3LoadSpec.SEGMENT_SUPPLIMENTAL_INDEX_KEY_PREFIX);
+      List<String> supplimentalIndexes = ImmutableList.of("supplimental_index_1", "supplimental_index_2");
+      for (String s : supplimentalIndexes) {
+        // Create supplimental index directory
+        File supplimentalIndexDir = new File(supplimentalIndexFilesDir, s);
+        supplimentalIndexDir.mkdir();
+        // Create dummy data in the directory
+        File supplimentalIndexData = new File(supplimentalIndexDir, "dummy.bin");
+        Files.write(data, supplimentalIndexData);
+      }
+    }
+
     DataSegment segmentToPush = new DataSegment(
         "foo",
         Intervals.of("2015/2016"),
@@ -114,7 +159,7 @@ public class S3DataSegmentPusherTest
         size
     );
 
-    DataSegment segment = pusher.push(tempFolder.getRoot(), segmentToPush, useUniquePath);
+    DataSegment segment = pusher.push(tempFolder.getRoot(), supplimentalIndexFilesDir, segmentToPush, useUniquePath);
 
     Assert.assertEquals(segmentToPush.getSize(), segment.getSize());
     Assert.assertEquals(1, (int) segment.getBinaryVersion());
@@ -124,6 +169,10 @@ public class S3DataSegmentPusherTest
         Pattern.compile(matcher).matcher(segment.getLoadSpec().get("key").toString()).matches()
     );
     Assert.assertEquals("s3_zip", segment.getLoadSpec().get("type"));
+    List<String> expectedAvailableSupplimentalIndexes =
+        testPushSupplimentalIndexes ? ImmutableList.of("supplimental_index_1", "supplimental_index_2") :
+        ImmutableList.of();
+    Assert.assertEquals(expectedAvailableSupplimentalIndexes, segment.getAvailableSupplimentalIndexes());
 
     EasyMock.verify(s3Client);
   }

@@ -43,4 +43,12 @@ public class CommaListJoinSerializer extends StdScalarSerializer<List<String>>
   {
     jgen.writeString(JOINER.join(value));
   }
+
+  // Explicitly define isEmpty to work properly with @JsonInclude(JsonInclude.Include.NON_EMPTY) to save footprints for
+  // some use cases if directed
+  @Override
+  public boolean isEmpty(SerializerProvider provider, List<String> value)
+  {
+    return (value == null || value.isEmpty());
+  }
 }

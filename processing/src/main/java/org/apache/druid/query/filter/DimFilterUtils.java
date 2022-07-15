@@ -21,11 +21,14 @@ package org.apache.druid.query.filter;
 
 import com.google.common.base.Function;
 import com.google.common.collect.RangeSet;
+import com.google.common.hash.BloomFilter;
 import org.apache.druid.java.util.common.logger.Logger;
+import org.apache.druid.timeline.partition.BloomFilterShardSpec;
 import org.apache.druid.timeline.partition.ShardSpec;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -135,7 +138,15 @@ public class DimFilterUtils
 
       if (dimFilter != null && shard != null) {
         Map<String, RangeSet<String>> filterDomain = new HashMap<>();
-        List<String> dimensions = shard.getDomainDimensions();
+        final Set<String> dimensions = new HashSet<>(shard.getDomainDimensions());
+        // Also add dimensions that has bloom filters
+        if (shard instanceof BloomFilterShardSpec) {
+          Map<String, BloomFilter<CharSequence>> bloomFilters = ((BloomFilterShardSpec) shard).getBloomFilters();
+          if (bloomFilters != null && !bloomFilters.isEmpty()) {
+            dimensions.addAll(bloomFilters.keySet());
+          }
+        }
+
         for (String dimension : dimensions) {
           Optional<RangeSet<String>> optFilterRangeSet = dimensionRangeCache
               .computeIfAbsent(dimension, d -> Optional.ofNullable(dimFilter.getDimensionRangeSet(d)));

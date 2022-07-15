@@ -46,7 +46,8 @@ public interface DataSegmentPusher
 
   /**
    * Pushes index files and segment descriptor to deep storage.
-   * @param file directory containing index files
+   * @param indexFilesDir directory containing index files
+   * @param supplimentalIndexFilesDir directory containing supplimental index files
    * @param segment segment descriptor
    * @param useUniquePath if true, pushes to a unique file path. This prevents situations where task failures or replica
    *                      tasks can either overwrite or fail to overwrite existing segments leading to the possibility
@@ -66,11 +67,18 @@ public interface DataSegmentPusher
    * @return segment descriptor
    * @throws IOException
    */
-  DataSegment push(File file, DataSegment segment, boolean useUniquePath) throws IOException;
+  DataSegment push(File indexFilesDir, File supplimentalIndexFilesDir, DataSegment segment, boolean useUniquePath)
+      throws IOException;
 
   default DataSegment pushToPath(File indexFilesDir, DataSegment segment, String storageDirSuffix) throws IOException
   {
     throw new UnsupportedOperationException("not supported");
+  }
+
+  default DataSegment push(File indexFilesDir, DataSegment segment, boolean useUniquePath)
+      throws IOException
+  {
+    return push(indexFilesDir, null, segment, useUniquePath);
   }
 
   //use map instead of LoadSpec class to avoid dependency pollution.

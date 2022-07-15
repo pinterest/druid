@@ -103,7 +103,8 @@ public class KinesisIndexTaskTuningConfig extends SeekableStreamIndexTaskTuningC
         maxParseExceptions,
         maxSavedParseExceptions,
         null,
-        false
+        null,
+        null
     );
     this.recordBufferSize = recordBufferSize == null ? DEFAULT_RECORD_BUFFER_SIZE : recordBufferSize;
     this.recordBufferOfferTimeout = recordBufferOfferTimeout == null

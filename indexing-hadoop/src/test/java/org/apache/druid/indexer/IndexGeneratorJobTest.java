@@ -26,9 +26,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.apache.druid.data.input.impl.CSVParseSpec;
+import org.apache.druid.data.input.impl.DimensionSchema;
 import org.apache.druid.data.input.impl.DimensionsSpec;
 import org.apache.druid.data.input.impl.InputRowParser;
 import org.apache.druid.data.input.impl.JSONParseSpec;
+import org.apache.druid.data.input.impl.StringDimensionSchema;
 import org.apache.druid.data.input.impl.StringInputRowParser;
 import org.apache.druid.data.input.impl.TimestampSpec;
 import org.apache.druid.java.util.common.Intervals;
@@ -39,6 +41,8 @@ import org.apache.druid.query.aggregation.AggregatorFactory;
 import org.apache.druid.query.aggregation.CountAggregatorFactory;
 import org.apache.druid.query.aggregation.LongSumAggregatorFactory;
 import org.apache.druid.query.aggregation.hyperloglog.HyperUniquesAggregatorFactory;
+import org.apache.druid.segment.IndexMerger;
+import org.apache.druid.segment.IndexMergerV9;
 import org.apache.druid.segment.indexing.DataSchema;
 import org.apache.druid.segment.indexing.granularity.UniformGranularitySpec;
 import org.apache.druid.timeline.DataSegment;
@@ -71,15 +75,9 @@ import org.junit.runners.Parameterized;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
 public class IndexGeneratorJobTest
@@ -98,297 +96,339 @@ public class IndexGeneratorJobTest
                                    "maxBytesInMemory={8}, aggs={9}, datasourceName={10}, forceExtendableShardSpecs={11}")
   public static Collection<Object[]> constructFeed()
   {
-    final Object[][] baseConstructors = new Object[][]{
-        {
-            false,
-            "single",
-            "2014-10-22T00:00:00Z/P2D",
-            new String[][][]{
-                {
-                    {null, "c.example.com"},
-                    {"c.example.com", "e.example.com"},
-                    {"e.example.com", "g.example.com"},
-                    {"g.example.com", "i.example.com"},
-                    {"i.example.com", null}
-                },
-                {
-                    {null, "c.example.com"},
-                    {"c.example.com", "e.example.com"},
-                    {"e.example.com", "g.example.com"},
-                    {"g.example.com", "i.example.com"},
-                    {"i.example.com", null}
-                }
-            },
-            ImmutableList.of(
-                "2014102200,a.example.com,100",
-                "2014102200,b.exmaple.com,50",
-                "2014102200,c.example.com,200",
-                "2014102200,d.example.com,250",
-                "2014102200,e.example.com,123",
-                "2014102200,f.example.com,567",
-                "2014102200,g.example.com,11",
-                "2014102200,h.example.com,251",
-                "2014102200,i.example.com,963",
-                "2014102200,j.example.com,333",
-                "2014102300,a.example.com,100",
-                "2014102300,b.exmaple.com,50",
-                "2014102300,c.example.com,200",
-                "2014102300,d.example.com,250",
-                "2014102300,e.example.com,123",
-                "2014102300,f.example.com,567",
-                "2014102300,g.example.com,11",
-                "2014102300,h.example.com,251",
-                "2014102300,i.example.com,963",
-                "2014102300,j.example.com,333"
-            ),
-            null,
-            new StringInputRowParser(
-                new CSVParseSpec(
-                    new TimestampSpec("timestamp", "yyyyMMddHH", null),
-                    new DimensionsSpec(DimensionsSpec.getDefaultSchemas(ImmutableList.of("host")), null, null),
-                    null,
-                    ImmutableList.of("timestamp", "host", "visited_num"),
-                    false,
-                    0
-                ),
-                null
-            ),
-            null,
-            null,
-            AGGS1,
-            "website"
-        },
-        {
-            false,
-            "hashed",
-            "2014-10-22T00:00:00Z/P1D",
-            new Integer[][][]{
-                {
-                    {0, 4},
-                    {1, 4},
-                    {2, 4},
-                    {3, 4}
-                }
-            },
-            ImmutableList.of(
-                "2014102200,a.example.com,100",
-                "2014102201,b.exmaple.com,50",
-                "2014102202,c.example.com,200",
-                "2014102203,d.example.com,250",
-                "2014102204,e.example.com,123",
-                "2014102205,f.example.com,567",
-                "2014102206,g.example.com,11",
-                "2014102207,h.example.com,251",
-                "2014102208,i.example.com,963",
-                "2014102209,j.example.com,333",
-                "2014102210,k.example.com,253",
-                "2014102211,l.example.com,321",
-                "2014102212,m.example.com,3125",
-                "2014102213,n.example.com,234",
-                "2014102214,o.example.com,325",
-                "2014102215,p.example.com,3533",
-                "2014102216,q.example.com,500",
-                "2014102216,q.example.com,87"
-            ),
-            null,
-            new HadoopyStringInputRowParser(
-                new CSVParseSpec(
-                    new TimestampSpec("timestamp", "yyyyMMddHH", null),
-                    new DimensionsSpec(DimensionsSpec.getDefaultSchemas(ImmutableList.of("host")), null, null),
-                    null,
-                    ImmutableList.of("timestamp", "host", "visited_num"),
-                    false,
-                    0
-                )
-            ),
-            null,
-            null,
-            AGGS1,
-            "website"
-        },
-        {
-            true,
-            "hashed",
-            "2014-10-22T00:00:00Z/P1D",
-            new Integer[][][]{
-                {
-                    {0, 4},
-                    {1, 4},
-                    {2, 4},
-                    {3, 4}
-                }
-            },
-            ImmutableList.of(
-                "2014102200,a.example.com,100",
-                "2014102201,b.exmaple.com,50",
-                "2014102202,c.example.com,200",
-                "2014102203,d.example.com,250",
-                "2014102204,e.example.com,123",
-                "2014102205,f.example.com,567",
-                "2014102206,g.example.com,11",
-                "2014102207,h.example.com,251",
-                "2014102208,i.example.com,963",
-                "2014102209,j.example.com,333",
-                "2014102210,k.example.com,253",
-                "2014102211,l.example.com,321",
-                "2014102212,m.example.com,3125",
-                "2014102213,n.example.com,234",
-                "2014102214,o.example.com,325",
-                "2014102215,p.example.com,3533",
-                "2014102216,q.example.com,500",
-                "2014102216,q.example.com,87"
-            ),
-            null,
-            new StringInputRowParser(
-                new CSVParseSpec(
-                    new TimestampSpec("timestamp", "yyyyMMddHH", null),
-                    new DimensionsSpec(DimensionsSpec.getDefaultSchemas(ImmutableList.of("host")), null, null),
-                    null,
-                    ImmutableList.of("timestamp", "host", "visited_num"),
-                    false,
-                    0
-                ),
-                null
-            ),
-            null,
-            null,
-            AGGS1,
-            "website"
-        },
-        {
-            false,
-            "single",
-            "2014-10-22T00:00:00Z/P2D",
-            new String[][][]{
-                {
-                    {null, "c.example.com"},
-                    {"c.example.com", "e.example.com"},
-                    {"e.example.com", "g.example.com"},
-                    {"g.example.com", "i.example.com"},
-                    {"i.example.com", null}
-                },
-                {
-                    {null, "c.example.com"},
-                    {"c.example.com", "e.example.com"},
-                    {"e.example.com", "g.example.com"},
-                    {"g.example.com", "i.example.com"},
-                    {"i.example.com", null}
-                }
-            },
-            ImmutableList.of(
-                "2014102200,a.example.com,100",
-                "2014102200,b.exmaple.com,50",
-                "2014102200,c.example.com,200",
-                "2014102200,d.example.com,250",
-                "2014102200,e.example.com,123",
-                "2014102200,f.example.com,567",
-                "2014102200,g.example.com,11",
-                "2014102200,h.example.com,251",
-                "2014102200,i.example.com,963",
-                "2014102200,j.example.com,333",
-                "2014102300,a.example.com,100",
-                "2014102300,b.exmaple.com,50",
-                "2014102300,c.example.com,200",
-                "2014102300,d.example.com,250",
-                "2014102300,e.example.com,123",
-                "2014102300,f.example.com,567",
-                "2014102300,g.example.com,11",
-                "2014102300,h.example.com,251",
-                "2014102300,i.example.com,963",
-                "2014102300,j.example.com,333"
-            ),
-            SequenceFileInputFormat.class.getName(),
-            new HadoopyStringInputRowParser(
-                new CSVParseSpec(
-                    new TimestampSpec("timestamp", "yyyyMMddHH", null),
-                    new DimensionsSpec(DimensionsSpec.getDefaultSchemas(ImmutableList.of("host")), null, null),
-                    null,
-                    ImmutableList.of("timestamp", "host", "visited_num"),
-                    false,
-                    0
-                )
-            ),
-            null,
-            null,
-            AGGS1,
-            "website"
-        },
-        {
-            // Tests that new indexes inherit the dimension order from previous index
-            false,
-            "hashed",
-            "2014-10-22T00:00:00Z/P1D",
-            new Integer[][][]{
-                {
-                    {0, 1} // use a single partition, dimension order inheritance is not supported across partitions
-                }
-            },
-            ImmutableList.of(
-                "{\"ts\":\"2014102200\", \"X\":\"x.example.com\"}",
-                "{\"ts\":\"2014102201\", \"Y\":\"y.example.com\"}",
-                "{\"ts\":\"2014102202\", \"M\":\"m.example.com\"}",
-                "{\"ts\":\"2014102203\", \"Q\":\"q.example.com\"}",
-                "{\"ts\":\"2014102204\", \"B\":\"b.example.com\"}",
-                "{\"ts\":\"2014102205\", \"F\":\"f.example.com\"}"
-            ),
-            null,
-            new StringInputRowParser(
-                new JSONParseSpec(
-                    new TimestampSpec("ts", "yyyyMMddHH", null),
-                    new DimensionsSpec(null, null, null),
-                    null,
-                    null,
-                    null
-                ),
-                null
-            ),
-            1, // force 1 row max per index for easier testing
-            null,
-            AGGS2,
-            "inherit_dims"
-        },
-        {
-            // Tests that pre-specified dim order is maintained across indexes.
-            false,
-            "hashed",
-            "2014-10-22T00:00:00Z/P1D",
-            new Integer[][][]{
-                {
-                    {0, 1}
-                }
-            },
-            ImmutableList.of(
-                "{\"ts\":\"2014102200\", \"X\":\"x.example.com\"}",
-                "{\"ts\":\"2014102201\", \"Y\":\"y.example.com\"}",
-                "{\"ts\":\"2014102202\", \"M\":\"m.example.com\"}",
-                "{\"ts\":\"2014102203\", \"Q\":\"q.example.com\"}",
-                "{\"ts\":\"2014102204\", \"B\":\"b.example.com\"}",
-                "{\"ts\":\"2014102205\", \"F\":\"f.example.com\"}"
-            ),
-            null,
-            new StringInputRowParser(
-                new JSONParseSpec(
-                    new TimestampSpec("ts", "yyyyMMddHH", null),
-                    new DimensionsSpec(DimensionsSpec.getDefaultSchemas(ImmutableList.of(
-                        "B",
-                        "F",
-                        "M",
-                        "Q",
-                        "X",
-                        "Y"
-                    )), null, null),
-                    null,
-                    null,
-                    null
-                ),
-                null
-            ),
-            1, // force 1 row max per index for easier testing
-            null,
-            AGGS2,
-            "inherit_dims2"
-        }
-    };
+    final List<Object[]> baseConstructors = new ArrayList<>();
+
+    // Run each baseConstructor with/without createBloomFilterIndex.
+    for (boolean createBloomFilterIndex : Arrays.asList(true, false)) {
+      baseConstructors.addAll(Arrays.asList(
+          new Object[][]{
+              {
+                  false,
+                  "single",
+                  "2014-10-22T00:00:00Z/P2D",
+                  new String[][][]{
+                      {
+                          {null, "c.example.com"},
+                          {"c.example.com", "e.example.com"},
+                          {"e.example.com", "g.example.com"},
+                          {"g.example.com", "i.example.com"},
+                          {"i.example.com", null}
+                      },
+                      {
+                          {null, "c.example.com"},
+                          {"c.example.com", "e.example.com"},
+                          {"e.example.com", "g.example.com"},
+                          {"g.example.com", "i.example.com"},
+                          {"i.example.com", null}
+                      }
+                  },
+                  ImmutableList.of(
+                      "2014102200,a.example.com,100",
+                      "2014102200,b.exmaple.com,50",
+                      "2014102200,c.example.com,200",
+                      "2014102200,d.example.com,250",
+                      "2014102200,e.example.com,123",
+                      "2014102200,f.example.com,567",
+                      "2014102200,g.example.com,11",
+                      "2014102200,h.example.com,251",
+                      "2014102200,i.example.com,963",
+                      "2014102200,j.example.com,333",
+                      "2014102300,a.example.com,100",
+                      "2014102300,b.exmaple.com,50",
+                      "2014102300,c.example.com,200",
+                      "2014102300,d.example.com,250",
+                      "2014102300,e.example.com,123",
+                      "2014102300,f.example.com,567",
+                      "2014102300,g.example.com,11",
+                      "2014102300,h.example.com,251",
+                      "2014102300,i.example.com,963",
+                      "2014102300,j.example.com,333"
+                  ),
+                  null,
+                  new StringInputRowParser(
+                      new CSVParseSpec(
+                          new TimestampSpec("timestamp", "yyyyMMddHH", null),
+                          new DimensionsSpec(ImmutableList.of(
+                              new StringDimensionSchema(
+                                  "host",
+                                  DimensionSchema.MultiValueHandling.ofDefault(),
+                                  true,
+                                  createBloomFilterIndex
+                              ))
+                          ),
+                          null,
+                          ImmutableList.of("timestamp", "host", "visited_num"),
+                          false,
+                          0
+                      ),
+                      null
+                  ),
+                  null,
+                  null,
+                  AGGS1,
+                  "website"
+              },
+              {
+                  false,
+                  "hashed",
+                  "2014-10-22T00:00:00Z/P1D",
+                  new Integer[][][]{
+                      {
+                          {0, 4},
+                          {1, 4},
+                          {2, 4},
+                          {3, 4}
+                      }
+                  },
+                  ImmutableList.of(
+                      "2014102200,a.example.com,100",
+                      "2014102201,b.exmaple.com,50",
+                      "2014102202,c.example.com,200",
+                      "2014102203,d.example.com,250",
+                      "2014102204,e.example.com,123",
+                      "2014102205,f.example.com,567",
+                      "2014102206,g.example.com,11",
+                      "2014102207,h.example.com,251",
+                      "2014102208,i.example.com,963",
+                      "2014102209,j.example.com,333",
+                      "2014102210,k.example.com,253",
+                      "2014102211,l.example.com,321",
+                      "2014102212,m.example.com,3125",
+                      "2014102213,n.example.com,234",
+                      "2014102214,o.example.com,325",
+                      "2014102215,p.example.com,3533",
+                      "2014102216,q.example.com,500",
+                      "2014102216,q.example.com,87"
+                  ),
+                  null,
+                  new HadoopyStringInputRowParser(
+                      new CSVParseSpec(
+                          new TimestampSpec("timestamp", "yyyyMMddHH", null),
+                          new DimensionsSpec(ImmutableList.of(
+                              new StringDimensionSchema(
+                                  "host",
+                                  DimensionSchema.MultiValueHandling.ofDefault(),
+                                  true,
+                                  createBloomFilterIndex
+                              ))
+                          ),
+                          null,
+                          ImmutableList.of("timestamp", "host", "visited_num"),
+                          false,
+                          0
+                      )
+                  ),
+                  null,
+                  null,
+                  AGGS1,
+                  "website"
+              },
+              {
+                  true,
+                  "hashed",
+                  "2014-10-22T00:00:00Z/P1D",
+                  new Integer[][][]{
+                      {
+                          {0, 4},
+                          {1, 4},
+                          {2, 4},
+                          {3, 4}
+                      }
+                  },
+                  ImmutableList.of(
+                      "2014102200,a.example.com,100",
+                      "2014102201,b.exmaple.com,50",
+                      "2014102202,c.example.com,200",
+                      "2014102203,d.example.com,250",
+                      "2014102204,e.example.com,123",
+                      "2014102205,f.example.com,567",
+                      "2014102206,g.example.com,11",
+                      "2014102207,h.example.com,251",
+                      "2014102208,i.example.com,963",
+                      "2014102209,j.example.com,333",
+                      "2014102210,k.example.com,253",
+                      "2014102211,l.example.com,321",
+                      "2014102212,m.example.com,3125",
+                      "2014102213,n.example.com,234",
+                      "2014102214,o.example.com,325",
+                      "2014102215,p.example.com,3533",
+                      "2014102216,q.example.com,500",
+                      "2014102216,q.example.com,87"
+                  ),
+                  null,
+                  new StringInputRowParser(
+                      new CSVParseSpec(
+                          new TimestampSpec("timestamp", "yyyyMMddHH", null),
+                          new DimensionsSpec(ImmutableList.of(
+                              new StringDimensionSchema(
+                                  "host",
+                                  DimensionSchema.MultiValueHandling.ofDefault(),
+                                  true,
+                                  createBloomFilterIndex
+                              ))
+                          ),
+                          null,
+                          ImmutableList.of("timestamp", "host", "visited_num"),
+                          false,
+                          0
+                      ),
+                      null
+                  ),
+                  null,
+                  null,
+                  AGGS1,
+                  "website"
+              },
+              {
+                  false,
+                  "single",
+                  "2014-10-22T00:00:00Z/P2D",
+                  new String[][][]{
+                      {
+                          {null, "c.example.com"},
+                          {"c.example.com", "e.example.com"},
+                          {"e.example.com", "g.example.com"},
+                          {"g.example.com", "i.example.com"},
+                          {"i.example.com", null}
+                      },
+                      {
+                          {null, "c.example.com"},
+                          {"c.example.com", "e.example.com"},
+                          {"e.example.com", "g.example.com"},
+                          {"g.example.com", "i.example.com"},
+                          {"i.example.com", null}
+                      }
+                  },
+                  ImmutableList.of(
+                      "2014102200,a.example.com,100",
+                      "2014102200,b.exmaple.com,50",
+                      "2014102200,c.example.com,200",
+                      "2014102200,d.example.com,250",
+                      "2014102200,e.example.com,123",
+                      "2014102200,f.example.com,567",
+                      "2014102200,g.example.com,11",
+                      "2014102200,h.example.com,251",
+                      "2014102200,i.example.com,963",
+                      "2014102200,j.example.com,333",
+                      "2014102300,a.example.com,100",
+                      "2014102300,b.exmaple.com,50",
+                      "2014102300,c.example.com,200",
+                      "2014102300,d.example.com,250",
+                      "2014102300,e.example.com,123",
+                      "2014102300,f.example.com,567",
+                      "2014102300,g.example.com,11",
+                      "2014102300,h.example.com,251",
+                      "2014102300,i.example.com,963",
+                      "2014102300,j.example.com,333"
+                  ),
+                  SequenceFileInputFormat.class.getName(),
+                  new HadoopyStringInputRowParser(
+                      new CSVParseSpec(
+                          new TimestampSpec("timestamp", "yyyyMMddHH", null),
+                          new DimensionsSpec(ImmutableList.of(
+                              new StringDimensionSchema(
+                                  "host",
+                                  DimensionSchema.MultiValueHandling.ofDefault(),
+                                  true,
+                                  createBloomFilterIndex
+                              ))
+                          ),
+                          null,
+                          ImmutableList.of("timestamp", "host", "visited_num"),
+                          false,
+                          0
+                      )
+                  ),
+                  null,
+                  null,
+                  AGGS1,
+                  "website"
+              },
+              {
+                  // Tests that new indexes inherit the dimension order from previous index
+                  false,
+                  "hashed",
+                  "2014-10-22T00:00:00Z/P1D",
+                  new Integer[][][]{
+                      {
+                          {0, 1}
+                          // use a single partition, dimension order inheritance is not supported across partitions
+                      }
+                  },
+                  ImmutableList.of(
+                      "{\"ts\":\"2014102200\", \"X\":\"x.example.com\"}",
+                      "{\"ts\":\"2014102201\", \"Y\":\"y.example.com\"}",
+                      "{\"ts\":\"2014102202\", \"M\":\"m.example.com\"}",
+                      "{\"ts\":\"2014102203\", \"Q\":\"q.example.com\"}",
+                      "{\"ts\":\"2014102204\", \"B\":\"b.example.com\"}",
+                      "{\"ts\":\"2014102205\", \"F\":\"f.example.com\"}"
+                  ),
+                  null,
+                  new StringInputRowParser(
+                      new JSONParseSpec(
+                          new TimestampSpec("ts", "yyyyMMddHH", null),
+                          // There is no way to specify createBloomFilterIndex for schemaless dimensions spec
+                          new DimensionsSpec(null, null, null),
+                          null,
+                          null,
+                          null
+                      ),
+                      null
+                  ),
+                  1, // force 1 row max per index for easier testing
+                  null,
+                  AGGS2,
+                  "inherit_dims"
+              },
+              {
+                  // Tests that pre-specified dim order is maintained across indexes.
+                  false,
+                  "hashed",
+                  "2014-10-22T00:00:00Z/P1D",
+                  new Integer[][][]{
+                      {
+                          {0, 1}
+                      }
+                  },
+                  ImmutableList.of(
+                      "{\"ts\":\"2014102200\", \"X\":\"x.example.com\"}",
+                      "{\"ts\":\"2014102201\", \"Y\":\"y.example.com\"}",
+                      "{\"ts\":\"2014102202\", \"M\":\"m.example.com\"}",
+                      "{\"ts\":\"2014102203\", \"Q\":\"q.example.com\"}",
+                      "{\"ts\":\"2014102204\", \"B\":\"b.example.com\"}",
+                      "{\"ts\":\"2014102205\", \"F\":\"f.example.com\"}"
+                  ),
+                  null,
+                  new StringInputRowParser(
+                      new JSONParseSpec(
+                          new TimestampSpec("ts", "yyyyMMddHH", null),
+                          new DimensionsSpec(
+                              ImmutableList.of("B", "F", "M", "Q", "X", "Y")
+                                           .stream()
+                                           .map(d -> new StringDimensionSchema(
+                                               d,
+                                               DimensionSchema.MultiValueHandling.ofDefault(),
+                                               true,
+                                               createBloomFilterIndex
+                                           ))
+                                           .collect(Collectors.toList()),
+                              null,
+                              null
+                          ),
+                          null,
+                          null,
+                          null
+                      ),
+                      null
+                  ),
+                  1, // force 1 row max per index for easier testing
+                  null,
+                  AGGS2,
+                  "inherit_dims2"
+              }
+          }
+      ));
+    }
 
     // Run each baseConstructor with/without forceExtendableShardSpecs.
     final List<Object[]> constructors = new ArrayList<>();
@@ -637,6 +677,7 @@ public class IndexGeneratorJobTest
     Assert.assertTrue(workingPath.exists());
 
     final Map<Interval, List<File>> intervalToIndexFiles = new HashMap<>();
+    final Map<Interval, List<List<String>>> intervalToAvailableSupplimentalIndexes = new HashMap<>();
     int segmentNum = 0;
     for (DateTime currTime = interval.getStart(); currTime.isBefore(interval.getEnd()); currTime = currTime.plusDays(1)) {
       Object[][] shardInfo = shardInfoForEachSegment[segmentNum++];
@@ -662,6 +703,35 @@ public class IndexGeneratorJobTest
 
         intervalToIndexFiles.computeIfAbsent(new Interval(currTime, currTime.plusDays(1)), k -> new ArrayList<>())
                             .add(indexZip);
+        intervalToAvailableSupplimentalIndexes.computeIfAbsent(
+            new Interval(currTime, currTime.plusDays(1)),
+            k -> new ArrayList<>()
+        );
+        DimensionsSpec dimensionsSpec = config.getSchema()
+                                              .getDataSchema()
+                                              .getParser()
+                                              .getParseSpec()
+                                              .getDimensionsSpec();
+        boolean hasSupplimentalIndex = IndexMerger.hasSupplimentalIndex(dimensionsSpec);
+        if (hasSupplimentalIndex) {
+          File supplimentalIndexOutDir = new File(individualSegmentFolder, "supplimental_index");
+          Assert.assertTrue(supplimentalIndexOutDir.exists());
+          Assert.assertTrue(supplimentalIndexOutDir.isDirectory());
+
+          boolean hasBloomFilterIndexes = IndexMerger.hasBloomFilterIndexes(dimensionsSpec);
+          if (hasBloomFilterIndexes) {
+            File bloomFilterIndexZipFile = new File(supplimentalIndexOutDir,
+                                                   IndexMergerV9.SupplimentalIndex.BLOOM_FILTERS.getZipFile());
+            Assert.assertTrue(bloomFilterIndexZipFile.exists());
+            Assert.assertTrue(bloomFilterIndexZipFile.isFile());
+            intervalToAvailableSupplimentalIndexes.get(new Interval(currTime, currTime.plusDays(1)))
+                                                  .add(ImmutableList.of(
+                                                      IndexMergerV9.SupplimentalIndex.BLOOM_FILTERS.getTypeName()));
+          }
+        } else {
+          intervalToAvailableSupplimentalIndexes.get(new Interval(currTime, currTime.plusDays(1)))
+                                                .add(ImmutableList.of());
+        }
       }
     }
 
@@ -672,6 +742,7 @@ public class IndexGeneratorJobTest
       final Interval interval = entry.getKey();
       final List<DataSegment> segments = entry.getValue();
       final List<File> indexFiles = intervalToIndexFiles.get(interval);
+      final List<List<String>> availableSupplimentalIndexes = intervalToAvailableSupplimentalIndexes.get(interval);
       Collections.sort(segments);
       indexFiles.sort(Comparator.comparing(File::getAbsolutePath));
 
@@ -705,6 +776,8 @@ public class IndexGeneratorJobTest
         } else {
           Assert.fail("Test did not specify supported datasource name");
         }
+
+        Assert.assertEquals(availableSupplimentalIndexes.get(i), dataSegment.getAvailableSupplimentalIndexes());
 
         if (forceExtendableShardSpecs) {
           NumberedShardSpec spec = (NumberedShardSpec) dataSegment.getShardSpec();

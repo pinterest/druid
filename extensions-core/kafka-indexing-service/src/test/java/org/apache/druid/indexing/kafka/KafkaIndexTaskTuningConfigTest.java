@@ -147,6 +147,7 @@ public class KafkaIndexTaskTuningConfigTest
         null,
         null,
         null,
+        null,
         null
     );
     KafkaIndexTaskTuningConfig copy = (KafkaIndexTaskTuningConfig) original.convertToTaskTuningConfig();
@@ -188,6 +189,7 @@ public class KafkaIndexTaskTuningConfigTest
         true,
         42,
         42,
+        null,
         null,
         null
     );

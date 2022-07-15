@@ -57,7 +57,7 @@ class LocalSegmentAllocator implements SegmentAllocatorForBatch
         .collect(Collectors.toMap(TaskLock::getInterval, TaskLock::getVersion));
     final Map<Interval, MutableInt> counters = Maps.newHashMapWithExpectedSize(intervalToVersion.size());
 
-    internalAllocator = (row, sequenceName, previousSegmentId, skipSegmentLineageCheck) -> {
+    internalAllocator = (row, sequenceName, previousSegmentId, skipSegmentLineageCheck, allowMixedShardSpecType) -> {
       final DateTime timestamp = row.getTimestamp();
       Optional<Interval> maybeInterval = granularitySpec.bucketInterval(timestamp);
       if (!maybeInterval.isPresent()) {
@@ -90,10 +90,11 @@ class LocalSegmentAllocator implements SegmentAllocatorForBatch
       InputRow row,
       String sequenceName,
       String previousSegmentId,
-      boolean skipSegmentLineageCheck
+      boolean skipSegmentLineageCheck,
+      boolean allowMixedShardSpecType
   ) throws IOException
   {
-    return internalAllocator.allocate(row, sequenceName, previousSegmentId, skipSegmentLineageCheck);
+    return internalAllocator.allocate(row, sequenceName, previousSegmentId, skipSegmentLineageCheck, allowMixedShardSpecType);
   }
 
   @Override

@@ -64,6 +64,10 @@ public class ColumnCapabilitiesImpl implements ColumnCapabilities
     {
       return false;
     }
+
+    //@Override
+    //public boolean hasBloomFilterIndexes() { return false; }
+
   };
 
   public static ColumnCapabilitiesImpl copyOf(@Nullable final ColumnCapabilities other)
@@ -138,6 +142,7 @@ public class ColumnCapabilitiesImpl implements ColumnCapabilities
     merged.hasNulls = merged.hasNulls.or(other.hasNulls());
     merged.hasInvertedIndexes |= otherSnapshot.hasBitmapIndexes();
     merged.hasSpatialIndexes |= otherSnapshot.hasSpatialIndexes();
+    merged.hasBloomFilterIndexes |= otherSnapshot.hasBloomFilterIndexes();
     merged.filterable &= otherSnapshot.isFilterable();
 
     return merged;
@@ -212,6 +217,7 @@ public class ColumnCapabilitiesImpl implements ColumnCapabilities
 
   private boolean hasInvertedIndexes = false;
   private boolean hasSpatialIndexes = false;
+  private boolean hasBloomFilterIndexes = false;
   private Capable dictionaryEncoded = Capable.UNKNOWN;
   private Capable hasMultipleValues = Capable.UNKNOWN;
 
@@ -337,6 +343,20 @@ public class ColumnCapabilitiesImpl implements ColumnCapabilities
     this.hasMultipleValues = Capable.of(hasMultipleValues);
     return this;
   }
+
+  @Override
+  @JsonProperty("hasBloomFilterIndexes")
+  public boolean hasBloomFilterIndexes()
+  {
+    return hasBloomFilterIndexes;
+  }
+
+  public ColumnCapabilitiesImpl setHasBloomFilterIndexes(boolean hasBloomFilterIndexes)
+  {
+    this.hasBloomFilterIndexes = hasBloomFilterIndexes;
+    return this;
+  }
+
 
   @Override
   public Capable hasNulls()

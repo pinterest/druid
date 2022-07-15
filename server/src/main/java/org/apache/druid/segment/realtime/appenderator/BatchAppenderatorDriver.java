@@ -111,7 +111,7 @@ public class BatchAppenderatorDriver extends BaseAppenderatorDriver
       String sequenceName
   ) throws IOException
   {
-    return append(row, sequenceName, null, false, true);
+    return append(row, sequenceName, null, false, true, false);
   }
 
   /**

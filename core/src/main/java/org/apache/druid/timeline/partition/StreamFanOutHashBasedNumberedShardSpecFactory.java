@@ -29,7 +29,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Set;
 
-public class StreamFanOutHashBasedNumberedShardSpecFactory
+public class StreamFanOutHashBasedNumberedShardSpecFactory implements ShardSpecFactory
 {
   private static final Logger log = new Logger(StreamFanOutHashBasedNumberedShardSpecFactory.class);
   private static final StreamFanOutHashBasedNumberedShardSpecFactory
@@ -97,19 +97,16 @@ public class StreamFanOutHashBasedNumberedShardSpecFactory
     return fanOutSize;
   }
 
-  /*@Override*/
+  @Override
   public ShardSpec create(ObjectMapper objectMapper, @Nullable ShardSpec specOfPreviousMaxPartitionId)
   {
     if (specOfPreviousMaxPartitionId == null) {
       return new StreamFanOutHashBasedNumberedShardSpec(
           0,
           0,
-          0,
-          0,
           partitionDimensions,
           streamPartitionIds,
           streamPartitions,
-          null,
           fanOutSize,
           objectMapper
       );
@@ -118,36 +115,30 @@ public class StreamFanOutHashBasedNumberedShardSpecFactory
       return new StreamFanOutHashBasedNumberedShardSpec(
           prevSpec.getPartitionNum() + 1,
           prevSpec.getNumCorePartitions(),
-          prevSpec.getPartitionNum() + 1,
-          prevSpec.getNumCorePartitions(),
           partitionDimensions,
           streamPartitionIds,
           streamPartitions,
-          null,
           fanOutSize,
           objectMapper
       );
     }
   }
 
-  /*@Override*/
+  @Override
   public ShardSpec create(ObjectMapper objectMapper, int partitionId)
   {
     return new StreamFanOutHashBasedNumberedShardSpec(
         partitionId,
         0,
-        partitionId,
-        0,
         partitionDimensions,
         streamPartitionIds,
         streamPartitions,
-        null,
         fanOutSize,
         objectMapper
     );
   }
 
-  /*@Override*/
+  @Override
   public Class<? extends ShardSpec> getShardSpecClass()
   {
     return StreamFanOutHashBasedNumberedShardSpec.class;

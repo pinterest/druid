@@ -49,6 +49,7 @@ public interface ColumnCapabilities extends TypeSignature<ValueType>
   @Override
   TypeSignature<ValueType> getElementType();
 
+  boolean hasBloomFilterIndexes();
   /**
    * Is the column dictionary encoded? If so, a DimensionDictionarySelector may be used instead of using a value
    * selector, allowing algorithms to operate on primitive integer dictionary ids rather than the looked up dictionary
@@ -214,4 +215,5 @@ public interface ColumnCapabilities extends TypeSignature<ValueType>
      */
     boolean hasNulls();
   }
+
 }

@@ -38,6 +38,12 @@ public interface LoadSpec
    */
   LoadSpecResult loadSegment(File destDir) throws SegmentLoadingException;
 
+  default LoadSpecResult loadSupplimentalIndexFile(File outDir, String supplimentalIndexFileName)
+      throws SegmentLoadingException
+  {
+    throw new UnsupportedOperationException();
+  }
+
   // Hold interesting data about the results of the segment load
   class LoadSpecResult
   {

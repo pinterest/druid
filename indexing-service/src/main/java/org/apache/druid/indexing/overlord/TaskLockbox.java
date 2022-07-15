@@ -540,7 +540,8 @@ public class TaskLockbox
         request.getPartialShardSpec(),
         version,
         request.isSkipSegmentLineageCheck(),
-        request.getNameSpace()
+        request.getNameSpace(),
+        request.isAllowMixedShardSpecType()
     );
   }
 

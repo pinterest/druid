@@ -99,6 +99,18 @@ public class HdfsDataSegmentPusher implements DataSegmentPusher
   }
 
   @Override
+  public DataSegment push(
+      File indexFilesDir,
+      File supplimentalIndexFilesDir,
+      DataSegment segment,
+      boolean useUniquePath
+  ) throws IOException
+  {
+    // TODO (add logic to use supplimentalIndexFilesDir)
+    return push(indexFilesDir, segment, useUniquePath);
+  }
+
+  @Override
   public DataSegment push(final File inDir, final DataSegment segment, final boolean useUniquePath) throws IOException
   {
     // For HDFS, useUniquePath does not affect the directory tree but instead affects the filename, which is of the form
@@ -117,7 +129,7 @@ public class HdfsDataSegmentPusher implements DataSegmentPusher
     return pushToPath(inDir, segment, outIndexFilePathSuffix);
   }
 
-  @Override
+  //@Override
   public DataSegment pushToPath(File inDir, DataSegment segment, String storageDirSuffix) throws IOException
   {
     log.debug(

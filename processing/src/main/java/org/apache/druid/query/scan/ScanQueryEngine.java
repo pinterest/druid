@@ -56,7 +56,7 @@ import java.util.Set;
 
 public class ScanQueryEngine
 {
-  static final String LEGACY_TIMESTAMP_KEY = "timestamp";
+  public static final String LEGACY_TIMESTAMP_KEY = "timestamp";
 
   public Sequence<ScanResultValue> process(
       final ScanQuery query,
@@ -65,14 +65,17 @@ public class ScanQueryEngine
   )
   {
     // "legacy" should be non-null due to toolChest.mergeResults
-    final boolean legacy = Preconditions.checkNotNull(query.isLegacy(), "Expected non-null 'legacy' parameter");
+    final boolean legacy = Preconditions.checkNotNull(query.isLegacy(), "WTF?! Expected non-null legacy");
 
-    final Long numScannedRows = responseContext.getRowScanCount();
-    if (numScannedRows != null && numScannedRows >= query.getScanRowsLimit() && query.getTimeOrder().equals(ScanQuery.Order.NONE)) {
-      return Sequences.empty();
+    final Object numScannedRows = responseContext.get(ResponseContext.Keys.NUM_SCANNED_ROWS);
+    if (numScannedRows != null) {
+      long count = (long) numScannedRows;
+      if (count >= query.getScanRowsLimit() && query.getTimeOrder().equals(ScanQuery.Order.NONE)) {
+        return Sequences.empty();
+      }
     }
     final boolean hasTimeout = QueryContexts.hasTimeout(query);
-    final Long timeoutAt = responseContext.getTimeoutTime();
+    final long timeoutAt = (long) responseContext.get(ResponseContext.Keys.TIMEOUT_AT);
     final long start = System.currentTimeMillis();
     final StorageAdapter adapter = segment.asStorageAdapter();
 
@@ -119,9 +122,9 @@ public class ScanQueryEngine
 
     final Filter filter = Filters.convertToCNFFromQueryContext(query, Filters.toFilter(query.getFilter()));
 
-    final boolean useInMemoryBitmapInQuery = query.getContextBoolean("useInMemoryBitmapInQuery", false);
-    // If the row count is not set, set it to 0, else do nothing.
-    responseContext.addRowScanCount(0);
+    final boolean useInMemoryBitmapInQuery = query.getContextBoolean("useInMemoryBitmapInQuery", true);
+
+    responseContext.add(ResponseContext.Keys.NUM_SCANNED_ROWS, 0L);
     final long limit = calculateRemainingScanRowsLimit(query, responseContext);
     return Sequences.concat(
             adapter
@@ -261,7 +264,7 @@ public class ScanQueryEngine
   private long calculateRemainingScanRowsLimit(ScanQuery query, ResponseContext responseContext)
   {
     if (query.getTimeOrder().equals(ScanQuery.Order.NONE)) {
-      return query.getScanRowsLimit() - (Long) responseContext.getRowScanCount();
+      return query.getScanRowsLimit() - (long) responseContext.get(ResponseContext.Keys.NUM_SCANNED_ROWS);
     }
     return query.getScanRowsLimit();
   }

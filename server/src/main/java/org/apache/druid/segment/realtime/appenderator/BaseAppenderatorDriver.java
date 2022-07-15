@@ -323,7 +323,8 @@ public abstract class BaseAppenderatorDriver implements Closeable
   public SegmentIdWithShardSpec getSegment(
       final InputRow row,
       final String sequenceName,
-      final boolean skipSegmentLineageCheck
+      final boolean skipSegmentLineageCheck,
+      final boolean allowMixedShardSpecType
   ) throws IOException
   {
     synchronized (segments) {
@@ -341,7 +342,8 @@ public abstract class BaseAppenderatorDriver implements Closeable
             // send lastSegmentId irrespective of skipSegmentLineageCheck so that
             // unique constraint for sequence_name_prev_id_sha1 does not fail for
             // allocatePendingSegment in IndexerSQLMetadataStorageCoordinator
-            skipSegmentLineageCheck
+            skipSegmentLineageCheck,
+            allowMixedShardSpecType
         );
 
         if (newSegment != null) {
@@ -397,13 +399,15 @@ public abstract class BaseAppenderatorDriver implements Closeable
       final String sequenceName,
       @Nullable final Supplier<Committer> committerSupplier,
       final boolean skipSegmentLineageCheck,
-      final boolean allowIncrementalPersists
+      final boolean allowIncrementalPersists,
+      final boolean allowMixedShardSpecType
   ) throws IOException
   {
     Preconditions.checkNotNull(row, "row");
     Preconditions.checkNotNull(sequenceName, "sequenceName");
 
-    final SegmentIdWithShardSpec identifier = getSegment(row, sequenceName, skipSegmentLineageCheck);
+    final SegmentIdWithShardSpec identifier = getSegment(row, sequenceName, skipSegmentLineageCheck,
+                                                         allowMixedShardSpecType);
 
     if (identifier != null) {
       try {

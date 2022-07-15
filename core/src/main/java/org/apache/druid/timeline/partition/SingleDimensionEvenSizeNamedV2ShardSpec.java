@@ -26,7 +26,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 
-import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Set;
 
@@ -37,21 +36,19 @@ public class SingleDimensionEvenSizeNamedV2ShardSpec extends SingleDimensionEven
 
   @JsonCreator
   public SingleDimensionEvenSizeNamedV2ShardSpec(
-          @JsonProperty("dimension") String dimension,
-          @JsonProperty("start") String start,
-          @JsonProperty("end") String end,
-          @JsonProperty("partitionNum") int partitionNum,
-          @JsonProperty("partitions") int partitions,
-          @JsonProperty("partitionSize") int partitionSize,
-          @JsonProperty("largePartitionDimensionValues") Map<String, Integer> largePartitionDimensionValues,
-          @JsonProperty("groupKeyDimensions") Set<String> groupKeyDimensions,
-          @JsonProperty("partitionName") String partitionName,
-          @JsonProperty("numCorePartitions") @Nullable Integer numCorePartitions, // nullable for backward compatibility
-          @JacksonInject ObjectMapper jsonMapper
+      @JsonProperty("dimension") String dimension,
+      @JsonProperty("start") String start,
+      @JsonProperty("end") String end,
+      @JsonProperty("partitionNum") int partitionNum,
+      @JsonProperty("partitions") int partitions,
+      @JsonProperty("partitionSize") int partitionSize,
+      @JsonProperty("largePartitionDimensionValues") Map<String, Integer> largePartitionDimensionValues,
+      @JsonProperty("groupKeyDimensions") Set<String> groupKeyDimensions,
+      @JsonProperty("partitionName") String partitionName,
+      @JacksonInject ObjectMapper jsonMapper
   )
   {
-    super(dimension, start, end, partitionNum, partitions, partitionSize, largePartitionDimensionValues,
-          groupKeyDimensions, numCorePartitions, jsonMapper);
+    super(dimension, start, end, partitionNum, partitions, partitionSize, largePartitionDimensionValues, groupKeyDimensions, null, jsonMapper);
     Preconditions.checkArgument(partitionName != null && !partitionName.isEmpty(), "partitionName");
     this.partitionName = partitionName;
   }

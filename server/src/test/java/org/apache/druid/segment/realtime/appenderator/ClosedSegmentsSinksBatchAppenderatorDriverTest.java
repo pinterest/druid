@@ -42,6 +42,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -216,7 +218,7 @@ public class ClosedSegmentsSinksBatchAppenderatorDriverTest extends EasyMockSupp
       this.granularity = granularity;
     }
 
-    @Override
+    //@Override
     public SegmentIdWithShardSpec allocate(
         final InputRow row,
         final String sequenceName,
@@ -233,6 +235,22 @@ public class ClosedSegmentsSinksBatchAppenderatorDriverTest extends EasyMockSupp
           granularity.bucket(dateTimeTruncated),
           VERSION,
           new NumberedShardSpec(partitionNum, 0)
+      );
+    }
+
+    @Nullable
+    @Override
+    public SegmentIdWithShardSpec allocate(InputRow row, String sequenceName, @Nullable String previousSegmentId, boolean skipSegmentLineageCheck, boolean allowMixedShardSpecType) throws IOException
+    {
+      DateTime dateTimeTruncated = granularity.bucketStart(row.getTimestamp());
+      final long timestampTruncated = dateTimeTruncated.getMillis();
+      counters.putIfAbsent(timestampTruncated, new AtomicInteger());
+      final int partitionNum = counters.get(timestampTruncated).getAndIncrement();
+      return new SegmentIdWithShardSpec(
+              dataSource,
+              granularity.bucket(dateTimeTruncated),
+              VERSION,
+              new NumberedShardSpec(partitionNum, 0)
       );
     }
   }

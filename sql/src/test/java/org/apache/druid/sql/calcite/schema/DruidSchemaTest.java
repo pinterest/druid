@@ -165,6 +165,7 @@ public class DruidSchemaTest extends DruidSchemaTestCommon
         null,
         1,
         100L,
+        null,
         PruneSpecsHolder.DEFAULT
     );
     final List<DataSegment> realtimeSegments = ImmutableList.of(segment1);
@@ -933,6 +934,7 @@ public class DruidSchemaTest extends DruidSchemaTestCommon
         null,
         1,
         100L,
+        null,
         PruneSpecsHolder.DEFAULT
     );
     segmentDataSourceNames.add("foo");
@@ -998,6 +1000,7 @@ public class DruidSchemaTest extends DruidSchemaTestCommon
         null,
         1,
         100L,
+        null,
         PruneSpecsHolder.DEFAULT
     );
     segmentDataSourceNames.add("foo");
@@ -1212,6 +1215,7 @@ public class DruidSchemaTest extends DruidSchemaTestCommon
         null,
         1,
         100L,
+        null,
         PruneSpecsHolder.DEFAULT
     );
   }

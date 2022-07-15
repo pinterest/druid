@@ -373,6 +373,24 @@ public class DefaultQueryMetrics<QueryType extends Query<?>> implements QueryMet
   }
 
   @Override
+  public QueryMetrics<QueryType> reportSegmentFilteringTime(long timeNs)
+  {
+    return reportMillisTimeMetric("query/segment/filteringTime", timeNs);
+  }
+
+  @Override
+  public QueryMetrics<QueryType> reportSegmentBeforeFilteringCount(int segmentCount)
+  {
+    return reportMetric("query/segment/beforeFilteringCount", segmentCount);
+  }
+
+  @Override
+  public QueryMetrics<QueryType> reportSegmentAfterFilteringCount(int segmentCount)
+  {
+    return reportMetric("query/segment/afterFilteringCount", segmentCount);
+  }
+
+  @Override
   public QueryMetrics<QueryType> reportTimeout(String host)
   {
     setDimension("node", host);

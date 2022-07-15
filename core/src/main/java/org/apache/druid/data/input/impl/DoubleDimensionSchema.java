@@ -28,7 +28,7 @@ public class DoubleDimensionSchema extends DimensionSchema
   @JsonCreator
   public DoubleDimensionSchema(@JsonProperty("name") String name)
   {
-    super(name, null, false);
+    super(name, null, false, false);
   }
 
   @Override

@@ -24,9 +24,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.druid.segment.column.ColumnType;
 
+import javax.annotation.Nullable;
+
 public class StringDimensionSchema extends DimensionSchema
 {
   private static final boolean DEFAULT_CREATE_BITMAP_INDEX = true;
+  private static final boolean DEFAULT_CREATE_BLOOM_FILTER_INDEX = false;
 
   @JsonCreator
   public static StringDimensionSchema create(String name)
@@ -38,15 +41,26 @@ public class StringDimensionSchema extends DimensionSchema
   public StringDimensionSchema(
       @JsonProperty("name") String name,
       @JsonProperty("multiValueHandling") MultiValueHandling multiValueHandling,
-      @JsonProperty("createBitmapIndex") Boolean createBitmapIndex
+      @JsonProperty("createBitmapIndex") @Nullable Boolean createBitmapIndex,
+      @JsonProperty("createBloomFilterIndex") @Nullable Boolean createBloomFilterIndex
   )
   {
-    super(name, multiValueHandling, createBitmapIndex == null ? DEFAULT_CREATE_BITMAP_INDEX : createBitmapIndex);
+    super(name, multiValueHandling, createBitmapIndex == null ? DEFAULT_CREATE_BITMAP_INDEX : createBitmapIndex,
+          createBloomFilterIndex == null ? DEFAULT_CREATE_BLOOM_FILTER_INDEX : createBloomFilterIndex);
+  }
+
+  public StringDimensionSchema(
+      String name,
+      MultiValueHandling multiValueHandling,
+      Boolean createBitmapIndex
+  )
+  {
+    this(name, multiValueHandling, createBitmapIndex, DEFAULT_CREATE_BLOOM_FILTER_INDEX);
   }
 
   public StringDimensionSchema(String name)
   {
-    this(name, null, DEFAULT_CREATE_BITMAP_INDEX);
+    this(name, null, DEFAULT_CREATE_BITMAP_INDEX, DEFAULT_CREATE_BLOOM_FILTER_INDEX);
   }
 
   @Override

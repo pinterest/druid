@@ -32,7 +32,7 @@ public class LongDimensionSchema extends DimensionSchema
       @JsonProperty("name") String name
   )
   {
-    super(name, null, false);
+    super(name, null, false, false);
   }
 
   @Override

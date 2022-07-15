@@ -406,6 +406,21 @@ public interface QueryMetrics<QueryType extends Query<?>>
   QueryMetrics<QueryType> reportNodeCount(int nodeCount);
 
   /**
+   * Reports the time taken to filter segments based on shard spec in broker
+   */
+  QueryMetrics<QueryType> reportSegmentFilteringTime(long timeNs);
+
+  /**
+   * Reports the number of segments to query before filtering based on shard spec in broker
+   */
+  QueryMetrics<QueryType> reportSegmentBeforeFilteringCount(int segmentCount);
+
+  /**
+   * Reports the number of segments to query after filtering based on shard spec in broker
+   */
+  QueryMetrics<QueryType> reportSegmentAfterFilteringCount(int segmentCount);
+
+  /**
    * Reports the host that has timeout
    */
   QueryMetrics<QueryType> reportTimeout(String host);

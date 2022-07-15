@@ -125,6 +125,12 @@ public class BuildingHashBasedNumberedShardSpec implements BuildingShardSpec<Has
   }
 
   @Override
+  public boolean isCompatible(Class<? extends ShardSpec> other)
+  {
+    return false;
+  }
+
+  @Override
   public boolean equals(Object o)
   {
     if (this == o) {

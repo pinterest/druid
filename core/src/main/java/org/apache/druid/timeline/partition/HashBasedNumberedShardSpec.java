@@ -109,6 +109,12 @@ public class HashBasedNumberedShardSpec extends NumberedShardSpec
     return partitionDimensions;
   }
 
+  @Override
+  public boolean isCompatible(Class<? extends ShardSpec> other)
+  {
+    return other == HashBasedNumberedShardSpec.class;
+  }
+
   @JsonProperty
   public @Nullable HashPartitionFunction getPartitionFunction()
   {
@@ -140,6 +146,10 @@ public class HashBasedNumberedShardSpec extends NumberedShardSpec
   @Override
   public boolean possibleInDomain(Map<String, RangeSet<String>> domain)
   {
+    if (!possibleInBloomFilter(domain)) {
+      return false;
+    }
+
     // partitionFunction should be used instead of HashPartitioner at query time.
     // We should process all segments if partitionFunction is null because we don't know what hash function
     // was used to create segments at ingestion time.

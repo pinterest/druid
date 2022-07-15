@@ -45,5 +45,16 @@ public class DimensionSchemaTest
         schema2,
         OBJECT_MAPPER.readValue(OBJECT_MAPPER.writeValueAsString(schema2), DimensionSchema.class)
     );
+
+    final StringDimensionSchema schema3 = new StringDimensionSchema(
+        "foo",
+        DimensionSchema.MultiValueHandling.ARRAY,
+        false,
+        true
+    );
+    Assert.assertEquals(
+        schema3,
+        OBJECT_MAPPER.readValue(OBJECT_MAPPER.writeValueAsString(schema3), DimensionSchema.class)
+    );
   }
 }

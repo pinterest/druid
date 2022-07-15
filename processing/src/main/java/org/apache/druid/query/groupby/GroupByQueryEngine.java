@@ -54,6 +54,7 @@ import org.joda.time.DateTime;
 import org.joda.time.Interval;
 
 import javax.annotation.Nullable;
+import java.io.Closeable;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -99,7 +100,7 @@ public class GroupByQueryEngine
 
     Filter filter = Filters.convertToCNFFromQueryContext(query, Filters.toFilter(query.getDimFilter()));
 
-    final boolean useInMemoryBitmapInQuery = query.getContextBoolean("useInMemoryBitmapInQuery", false);
+    final boolean useInMemoryBitmapInQuery = query.getContextBoolean("useInMemoryBitmapInQuery", true);
 
     final Sequence<Cursor> cursors = storageAdapter.makeCursors(
         filter,
@@ -141,7 +142,14 @@ public class GroupByQueryEngine
                   }
                 }
             ),
-            bufferHolder
+            new Closeable()
+            {
+              @Override
+              public void close()
+              {
+                CloseableUtils.closeAndWrapExceptions(bufferHolder);
+              }
+            }
         )
     );
   }

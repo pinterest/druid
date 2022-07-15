@@ -52,11 +52,19 @@ import org.apache.druid.segment.realtime.appenderator.Appenderator;
 import org.apache.druid.segment.realtime.appenderator.StreamAppenderatorDriver;
 import org.apache.druid.segment.realtime.firehose.ChatHandler;
 import org.apache.druid.server.security.AuthorizerMapper;
-import org.apache.druid.timeline.partition.NumberedPartialShardSpec;
+import org.apache.druid.timeline.partition.NamedNumberedShardSpecFactory;
+import org.apache.druid.timeline.partition.NumberedShardSpecFactory;
+import org.apache.druid.timeline.partition.PartialShardSpec;
+import org.apache.druid.timeline.partition.ShardSpecFactory;
+import org.apache.druid.timeline.partition.StreamFanOutHashBasedNumberedShardSpecFactory;
+import org.apache.druid.timeline.partition.StreamFanOutNamedHashBasedNumberedShardSpecFactory;
+import org.apache.druid.timeline.partition.StreamHashBasedNumberedShardSpecFactory;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 
 public abstract class SeekableStreamIndexTask<PartitionIdType, SequenceOffsetType, RecordType extends ByteEntity>
@@ -208,15 +216,75 @@ public abstract class SeekableStreamIndexTask<PartitionIdType, SequenceOffsetTyp
   public StreamAppenderatorDriver newDriver(
       final Appenderator appenderator,
       final TaskToolbox toolbox,
-      final FireDepartmentMetrics metrics
+      final FireDepartmentMetrics metrics,
+      final List<String> partitionDimensions,
+      final Set<Integer> streamPartitionIds,
+      final Integer streamPartitions,
+      final Integer fanOutSize
   )
   {
+    final String nameSpace = this.getContextValue("nameSpace");
+    final ShardSpecFactory effectiveShardSpecFactory;
+    if (nameSpace != null) {
+      if (partitionDimensions != null
+              && !partitionDimensions.isEmpty()
+              && streamPartitionIds != null
+              && !streamPartitionIds.isEmpty()
+              && streamPartitions != null
+              && streamPartitions > 0) {
+        log.info(
+                "Include stream partition info in StreamFanOutNamedHashBasedNumberedShardSpecFactory: "
+                        + "partitionDimensions [%s], streamPartitionIds [%s], streamPartitions [%d], nameSpace [%s], fanOUtsize [%d]",
+                partitionDimensions,
+                streamPartitionIds,
+                streamPartitions,
+                nameSpace,
+                fanOutSize
+        );
+        effectiveShardSpecFactory = StreamFanOutNamedHashBasedNumberedShardSpecFactory.instance(nameSpace)
+                .set(partitionDimensions,
+                        streamPartitionIds,
+                        streamPartitions,
+                        fanOutSize);
+      } else {
+        effectiveShardSpecFactory = NamedNumberedShardSpecFactory.instance(nameSpace);
+      }
+    } else {
+      if (partitionDimensions != null
+          && !partitionDimensions.isEmpty()
+          && streamPartitionIds != null
+          && !streamPartitionIds.isEmpty()
+          && streamPartitions != null
+          && streamPartitions > 0) {
+        log.info(
+            "Include stream partition info in StreamHashBasedNumberedShardSpec: partitionDimensions [%s], streamPartitionIds [%s], streamPartitions [%d]",
+            partitionDimensions,
+            streamPartitionIds,
+            streamPartitions
+        );
+
+        effectiveShardSpecFactory = fanOutSize != null ? new StreamFanOutHashBasedNumberedShardSpecFactory(
+                partitionDimensions,
+                streamPartitionIds,
+                streamPartitions,
+                fanOutSize
+        ) : new StreamHashBasedNumberedShardSpecFactory(
+                partitionDimensions,
+                streamPartitionIds,
+                streamPartitions
+        );
+
+      } else {
+        effectiveShardSpecFactory = NumberedShardSpecFactory.instance();
+      }
+    }
+
     return new StreamAppenderatorDriver(
         appenderator,
         new ActionBasedSegmentAllocator(
             toolbox.getTaskActionClient(),
             dataSchema,
-            (schema, row, sequenceName, previousSegmentId, skipSegmentLineageCheck) -> new SegmentAllocateAction(
+            (schema, row, sequenceName, previousSegmentId, skipSegmentLineageCheck, allowMixedShardSpecType) -> new SegmentAllocateAction(
                 schema.getDataSource(),
                 row.getTimestamp(),
                 schema.getGranularitySpec().getQueryGranularity(),
@@ -224,11 +292,13 @@ public abstract class SeekableStreamIndexTask<PartitionIdType, SequenceOffsetTyp
                 sequenceName,
                 previousSegmentId,
                 skipSegmentLineageCheck,
-                NumberedPartialShardSpec.instance(),
+                (PartialShardSpec) effectiveShardSpecFactory,
                 lockGranularityToUse,
-                lockTypeToUse
+                lockTypeToUse,
+                allowMixedShardSpecType
             )
         ),
+
         toolbox.getSegmentHandoffNotifierFactory(),
         new ActionBasedUsedSegmentChecker(toolbox.getTaskActionClient()),
         toolbox.getDataSegmentKiller(),

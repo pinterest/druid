@@ -74,6 +74,7 @@ public class LoadableDataSegment extends DataSegment
         lastCompactionState,
         binaryVersion,
         size,
+        null,
         PruneSpecsHolder.DEFAULT
     );
 

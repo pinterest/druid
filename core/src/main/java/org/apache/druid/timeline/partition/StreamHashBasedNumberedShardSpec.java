@@ -46,16 +46,13 @@ public class StreamHashBasedNumberedShardSpec extends HashBasedNumberedShardSpec
   public StreamHashBasedNumberedShardSpec(
       @JsonProperty("partitionNum") int partitionNum,
       @JsonProperty("partitions") int partitions,
-      @JsonProperty("bucketId") @Nullable Integer bucketId,
-      @JsonProperty("numBuckets") @Nullable Integer numBuckets,
       @JsonProperty("partitionDimensions") @Nullable List<String> partitionDimensions,
       @JsonProperty("streamPartitionIds") @Nullable Set<Integer> streamPartitionIds,
-      @JsonProperty("partitionFunction") @Nullable HashPartitionFunction partitionFunction,
       @JsonProperty("streamPartitions") @Nullable Integer streamPartitions,
       @JacksonInject ObjectMapper jsonMapper
   )
   {
-    super(partitionNum, partitions, bucketId, numBuckets, partitionDimensions, partitionFunction, jsonMapper);
+    super(partitionNum, partitions, null, null, partitionDimensions, null, jsonMapper);
     this.streamPartitionIds = streamPartitionIds == null ? ImmutableSet.of() : streamPartitionIds;
     this.streamPartitions = streamPartitions;
     this.jsonMapper = jsonMapper;
@@ -75,11 +72,13 @@ public class StreamHashBasedNumberedShardSpec extends HashBasedNumberedShardSpec
     return streamPartitions;
   }
 
-  /*@Override*/
+  @Override
   public boolean isCompatible(Class<? extends ShardSpec> other)
   {
-    return other == NumberedShardSpec.class || other == NumberedOverwriteShardSpec.class ||
-           other == StreamHashBasedNumberedShardSpec.class;
+    return other == NumberedShardSpec.class ||
+           other == NumberedOverwriteShardSpec.class ||
+           other == StreamHashBasedNumberedShardSpec.class ||
+           other == StreamFanOutHashBasedNumberedShardSpec.class;
   }
 
   @Override
@@ -117,4 +116,9 @@ public class StreamHashBasedNumberedShardSpec extends HashBasedNumberedShardSpec
     return Objects.hash(getPartitionNum(), getNumCorePartitions());
   }
 
+  /*@Override*/
+  protected boolean groupKeyIsInChunk(List<Object> groupKey)
+  {
+    return this.streamPartitionIds.contains(Math.abs(Objects.hash(jsonMapper, groupKey) % getStreamPartitions()));
+  }
 }

@@ -97,7 +97,7 @@ public class HashPartitionCachingLocalSegmentAllocatorTest
     InputRow row = createInputRow();
 
     String sequenceName = sequenceNameFunction.getSequenceName(INTERVAL, row);
-    SegmentIdWithShardSpec segmentIdWithShardSpec = target.allocate(row, sequenceName, null, false);
+    SegmentIdWithShardSpec segmentIdWithShardSpec = target.allocate(row, sequenceName, null, false, false);
 
     Assert.assertEquals(
         SegmentId.of(DATASOURCE, INTERVAL, VERSION, PARTITION_NUM),

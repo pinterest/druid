@@ -90,6 +90,12 @@ public class NoneShardSpec implements ShardSpec
   }
 
   @Override
+  public boolean isCompatible(Class<? extends ShardSpec> other)
+  {
+    return other == NoneShardSpec.class;
+  }
+
+  @Override
   public boolean equals(Object obj)
   {
     return obj instanceof NoneShardSpec;

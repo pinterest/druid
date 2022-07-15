@@ -19,6 +19,7 @@
 
 package org.apache.druid.query.topn;
 
+import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import org.apache.druid.collections.NonBlockingPool;
@@ -29,10 +30,10 @@ import org.apache.druid.query.Result;
 import org.apache.druid.query.aggregation.AggregatorFactory;
 import org.apache.druid.query.extraction.ExtractionFn;
 import org.apache.druid.query.filter.Filter;
+import org.apache.druid.segment.Cursor;
 import org.apache.druid.segment.SegmentMissingException;
 import org.apache.druid.segment.StorageAdapter;
 import org.apache.druid.segment.column.ColumnCapabilities;
-import org.apache.druid.segment.column.ColumnHolder;
 import org.apache.druid.segment.column.Types;
 import org.apache.druid.segment.column.ValueType;
 import org.apache.druid.segment.filter.Filters;
@@ -57,7 +58,7 @@ public class TopNQueryEngine
   /**
    * Do the thing - process a {@link StorageAdapter} into a {@link Sequence} of {@link TopNResultValue}, with one of the
    * fine {@link TopNAlgorithm} available chosen based on the type of column being aggregated. The algorithm provides a
-   * mapping function to process rows from the adapter {@link org.apache.druid.segment.Cursor} to apply
+   * mapping function to process rows from the adapter {@links org.apache.druid.segment.Cursor} to apply
    * {@link AggregatorFactory} and create or update {@link TopNResultValue}
    */
   public Sequence<Result<TopNResultValue>> query(
@@ -83,7 +84,7 @@ public class TopNQueryEngine
         queryIntervals
     );
 
-    final boolean useInMemoryBitmapInQuery = query.getContextBoolean("useInMemoryBitmapInQuery", false);
+    final boolean useInMemoryBitmapInQuery = query.getContextBoolean("useInMemoryBitmapInQuery", true);
 
     return Sequences.filter(
         Sequences.map(
@@ -96,11 +97,16 @@ public class TopNQueryEngine
                 queryMetrics,
                 useInMemoryBitmapInQuery
             ),
-            input -> {
-              if (queryMetrics != null) {
-                queryMetrics.cursor(input);
+            new Function<Cursor, Result<TopNResultValue>>()
+            {
+              @Override
+              public Result<TopNResultValue> apply(Cursor input)
+              {
+                if (queryMetrics != null) {
+                  queryMetrics.cursor(input);
+                }
+                return mapFn.apply(input, queryMetrics);
               }
-              return mapFn.apply(input, queryMetrics);
             }
         ),
         Predicates.notNull()
@@ -133,36 +139,28 @@ public class TopNQueryEngine
     final ColumnCapabilities columnCapabilities = query.getVirtualColumns()
                                                        .getColumnCapabilitiesWithFallback(adapter, dimension);
 
-
-    final TopNAlgorithm<?, ?> topNAlgorithm;
+    final TopNAlgorithm topNAlgorithm;
     if (canUsePooledAlgorithm(selector, query, columnCapabilities)) {
-      // pool based algorithm selection, if we can
-      if (selector.isAggregateAllMetrics()) {
-        // if sorted by dimension we should aggregate all metrics in a single pass, use the regular pooled algorithm for
-        // this
-        topNAlgorithm = new PooledTopNAlgorithm(adapter, query, bufferPool);
-      } else if (selector.isAggregateTopNMetricFirst() || query.getContextBoolean("doAggregateTopNMetricFirst", false)) {
-        // for high cardinality dimensions with larger result sets we aggregate with only the ordering aggregation to
-        // compute the first 'n' values, and then for the rest of the metrics but for only the 'n' values
-        topNAlgorithm = new AggregateTopNMetricFirstAlgorithm(adapter, query, bufferPool);
-      } else {
-        // anything else, use the regular pooled algorithm
-        topNAlgorithm = new PooledTopNAlgorithm(adapter, query, bufferPool);
-      }
+      // A special TimeExtractionTopNAlgorithm is required, since DimExtractionTopNAlgorithm
+      // currently relies on the dimension cardinality to support lexicographic sorting
+      topNAlgorithm = new TimeExtractionTopNAlgorithm(adapter, query);
+      //Commented below code as DimExtractionTopNAlgorithm not avaialbe in 0.23 - might need to revist again
+    //} else if (selector.isHasExtractionFn()) {
+      //topNAlgorithm = new DimExtractionTopNAlgorithm(adapter, query);
+    //} else if (columnCapabilities != null && !(columnCapabilities.getType() == ValueType.STRING
+    //                                           && columnCapabilities.isDictionaryEncoded().isTrue())) {
+      // Use DimExtraction for non-Strings and for non-dictionary-encoded Strings.
+     // topNAlgorithm = new DimExtractionTopNAlgorithm(adapter, query);
+    //} else if (query.getDimensionSpec().getOutputType().getType() != ValueType.STRING) {
+      // Use DimExtraction when the dimension output type is a non-String. (It's like an extractionFn: there can be
+      // a many-to-one mapping, since numeric types can't represent all possible values of other types.)
+      //topNAlgorithm = new DimExtractionTopNAlgorithm(adapter, query);
+    } else if (selector.isAggregateAllMetrics()) {
+      topNAlgorithm = new PooledTopNAlgorithm(adapter, query, bufferPool);
+    } else if (selector.isAggregateTopNMetricFirst() || query.getContextBoolean("doAggregateTopNMetricFirst", false)) {
+      topNAlgorithm = new AggregateTopNMetricFirstAlgorithm(adapter, query, bufferPool);
     } else {
-      // heap based algorithm selection, if we must
-      if (selector.isHasExtractionFn() && dimension.equals(ColumnHolder.TIME_COLUMN_NAME)) {
-        // TimeExtractionTopNAlgorithm can work on any single-value dimension of type long.
-        // We might be able to use this for any long column with an extraction function, that is
-        //  ValueType.LONG.equals(columnCapabilities.getType())
-        // but this needs investigation to ensure that it is an improvement over HeapBasedTopNAlgorithm
-
-        // A special TimeExtractionTopNAlgorithm is required since HeapBasedTopNAlgorithm
-        // currently relies on the dimension cardinality to support lexicographic sorting
-        topNAlgorithm = new TimeExtractionTopNAlgorithm(adapter, query);
-      } else {
-        topNAlgorithm = new HeapBasedTopNAlgorithm(adapter, query);
-      }
+      topNAlgorithm = new PooledTopNAlgorithm(adapter, query, bufferPool);
     }
     if (queryMetrics != null) {
       queryMetrics.algorithm(topNAlgorithm);

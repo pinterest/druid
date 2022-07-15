@@ -22,6 +22,7 @@ package org.apache.druid.segment;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.google.common.hash.BloomFilter;
 import com.google.common.io.Files;
 import com.google.common.primitives.Ints;
 import com.google.inject.Inject;
@@ -33,6 +34,7 @@ import org.apache.druid.java.util.common.FileUtils;
 import org.apache.druid.java.util.common.IAE;
 import org.apache.druid.java.util.common.ISE;
 import org.apache.druid.java.util.common.JodaUtils;
+import org.apache.druid.java.util.common.Pair;
 import org.apache.druid.java.util.common.guava.Comparators;
 import org.apache.druid.java.util.common.io.Closer;
 import org.apache.druid.java.util.common.io.smoosh.FileSmoosher;
@@ -45,6 +47,7 @@ import org.apache.druid.segment.column.ColumnDescriptor;
 import org.apache.druid.segment.column.ColumnHolder;
 import org.apache.druid.segment.column.ValueType;
 import org.apache.druid.segment.data.GenericIndexed;
+import org.apache.druid.segment.data.GenericIndexedWriter;
 import org.apache.druid.segment.incremental.IncrementalIndex;
 import org.apache.druid.segment.incremental.IncrementalIndexAdapter;
 import org.apache.druid.segment.loading.MMappedQueryableSegmentizerFactory;
@@ -78,6 +81,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
@@ -86,6 +90,53 @@ import java.util.stream.Collectors;
 public class IndexMergerV9 implements IndexMerger
 {
   private static final Logger log = new Logger(IndexMergerV9.class);
+  private final ObjectMapper mapper;
+  private final IndexIO indexIO;
+  private final SegmentWriteOutMediumFactory defaultSegmentWriteOutMediumFactory;
+
+  public enum SupplimentalIndex
+  {
+    BLOOM_FILTERS("bloom_filters", 0x1);
+
+    private final String typeName;
+    private final byte version;
+
+    SupplimentalIndex(String typeName, int version)
+    {
+      this.typeName = typeName;
+      this.version = (byte) version;
+    }
+
+    public String getTypeName()
+    {
+      return typeName;
+    }
+
+    public String getOutDir()
+    {
+      return typeName;
+    }
+
+    public String getBinFile()
+    {
+      return typeName + ".bin";
+    }
+
+    public String getMetaFile()
+    {
+      return typeName + ".meta";
+    }
+
+    public String getZipFile()
+    {
+      return typeName + ".zip";
+    }
+
+    public byte getCurVersion()
+    {
+      return version;
+    }
+  }
 
   // merge logic for the state capabilities will be in after incremental index is persisted
   public static final ColumnCapabilities.CoercionLogic DIMENSION_CAPABILITY_MERGE_LOGIC =
@@ -156,10 +207,6 @@ public class IndexMergerV9 implements IndexMerger
         }
       };
 
-  private final ObjectMapper mapper;
-  private final IndexIO indexIO;
-  private final SegmentWriteOutMediumFactory defaultSegmentWriteOutMediumFactory;
-
   @Inject
   public IndexMergerV9(ObjectMapper mapper, IndexIO indexIO, SegmentWriteOutMediumFactory defaultSegmentWriteOutMediumFactory)
   {
@@ -170,9 +217,41 @@ public class IndexMergerV9 implements IndexMerger
   }
 
   private File makeIndexFiles(
+          final List<IndexableAdapter> adapters,
+          final @Nullable AggregatorFactory[] metricAggs,
+          final File indexOutDir,
+          final ProgressIndicator progress,
+          final List<String> mergedDimensions,
+          final List<String> mergedMetrics,
+          final Function<List<TransformableRowIterator>, TimeAndDimsIterator> rowMergerFn,
+          final boolean fillRowNumConversions,
+          final IndexSpec indexSpec,
+          final @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory
+  ) throws IOException
+  {
+    return Objects.requireNonNull(makeIndexFiles(adapters,
+            metricAggs,
+            indexOutDir,
+            null,
+            progress,
+            mergedDimensions,
+            mergedMetrics,
+            rowMergerFn,
+            fillRowNumConversions,
+            indexSpec,
+            segmentWriteOutMediumFactory
+    ).lhs);
+  }
+
+  /**
+   *
+   * @return A pair with left being index data output directory and right being supplimental index data output directory
+   */
+  private Pair<File, File> makeIndexFiles(
       final List<IndexableAdapter> adapters,
       final @Nullable AggregatorFactory[] metricAggs,
-      final File outDir,
+      final File indexOutDir,
+      final @Nullable File supplimentalIndexOutDir,
       final ProgressIndicator progress,
       final List<String> mergedDimensions,
       final List<String> mergedMetrics,
@@ -206,21 +285,21 @@ public class IndexMergerV9 implements IndexMerger
 
     Closer closer = Closer.create();
     try {
-      final FileSmoosher v9Smoosher = new FileSmoosher(outDir);
-      FileUtils.mkdirp(outDir);
+      final FileSmoosher v9Smoosher = new FileSmoosher(indexOutDir);
+      FileUtils.mkdirp(indexOutDir);
 
       SegmentWriteOutMediumFactory omf = segmentWriteOutMediumFactory != null ? segmentWriteOutMediumFactory
                                                                               : defaultSegmentWriteOutMediumFactory;
       log.debug("Using SegmentWriteOutMediumFactory[%s]", omf.getClass().getSimpleName());
-      SegmentWriteOutMedium segmentWriteOutMedium = omf.makeSegmentWriteOutMedium(outDir);
+      SegmentWriteOutMedium segmentWriteOutMedium = omf.makeSegmentWriteOutMedium(indexOutDir);
       closer.register(segmentWriteOutMedium);
       long startTime = System.currentTimeMillis();
-      Files.asByteSink(new File(outDir, "version.bin")).write(Ints.toByteArray(IndexIO.V9_VERSION));
+      Files.asByteSink(new File(indexOutDir, "version.bin")).write(Ints.toByteArray(IndexIO.V9_VERSION));
       log.debug("Completed version.bin in %,d millis.", System.currentTimeMillis() - startTime);
 
       progress.progress();
       startTime = System.currentTimeMillis();
-      try (FileOutputStream fos = new FileOutputStream(new File(outDir, "factory.json"))) {
+      try (FileOutputStream fos = new FileOutputStream(new File(indexOutDir, "factory.json"))) {
         SegmentizerFactory customSegmentLoader = indexSpec.getSegmentLoader();
         if (customSegmentLoader != null) {
           mapper.writeValue(fos, customSegmentLoader);
@@ -301,13 +380,73 @@ public class IndexMergerV9 implements IndexMerger
 
       /************* Make index.drd & metadata.drd files **************/
       progress.progress();
-      makeIndexBinary(v9Smoosher, adapters, outDir, mergedDimensions, mergedMetrics, progress, indexSpec, mergers);
+      makeIndexBinary(v9Smoosher, adapters, indexOutDir, mergedDimensions, mergedMetrics, progress, indexSpec, mergers);
       makeMetadataBinary(v9Smoosher, progress, segmentMetadata);
+
+      if (supplimentalIndexOutDir != null) {
+        /************* Create supplimental index files **************/
+        final String supplimentalIndexSection = "build supplimental indexes";
+        progress.startSection(supplimentalIndexSection);
+        FileUtils.mkdirp(supplimentalIndexOutDir);
+
+        // Start to persist supplimental indexes into files, right now the only supplimental index in use is bloom
+        // filter, but in the future there may be more kinds
+        /************* Create supplimental index type: bloom filter **************/
+        startTime = System.currentTimeMillis();
+        List<StringDimensionMergerV9> mergersWithBloomfilter =
+                mergers.stream()
+                        .filter(m -> (m instanceof StringDimensionMergerV9) &&
+                                ((StringDimensionMergerV9) m).hasBloomFilterIndexes())
+                        .map(m -> (StringDimensionMergerV9) m)
+                        .collect(Collectors.toList());
+
+        if (!mergersWithBloomfilter.isEmpty()) {
+          final File bloomFilterDir = new File(
+                  supplimentalIndexOutDir,
+                  SupplimentalIndex.BLOOM_FILTERS.getOutDir()
+          );
+          FileUtils.mkdirp(bloomFilterDir);
+          // Write bloom filter metadata
+          mapper.writeValue(
+                  new File(
+                          bloomFilterDir,
+                          SupplimentalIndex.BLOOM_FILTERS.getMetaFile()
+                  ),
+                  new BloomFilterMetadata(
+                          SupplimentalIndex.BLOOM_FILTERS.getCurVersion(),
+                          mergersWithBloomfilter.stream()
+                                  .map(StringDimensionMergerV9::getDimensionName)
+                                  .collect(Collectors.toList())
+                  )
+          );
+
+          // Write bloom filter serialized binaries
+          SegmentWriteOutMedium bloomFilterWriteOutMedium = omf.makeSegmentWriteOutMedium(bloomFilterDir);
+          closer.register(bloomFilterWriteOutMedium);
+
+          GenericIndexedWriter<BloomFilter> bloomFiltersWriter = new GenericIndexedWriter<>(
+                  bloomFilterWriteOutMedium,
+                  "%s." + SupplimentalIndex.BLOOM_FILTERS.getBinFile(),
+                  BloomFilterObjectStrategy.STRATEGY
+          );
+          bloomFiltersWriter.open();
+          bloomFiltersWriter.setObjectsNotSorted();
+          for (StringDimensionMergerV9 m : mergersWithBloomfilter) {
+            bloomFiltersWriter.write(m.getBloomFilter());
+          }
+          try (FileOutputStream out = new FileOutputStream(new File(bloomFilterDir, SupplimentalIndex.BLOOM_FILTERS.getBinFile()))) {
+            bloomFiltersWriter.writeTo(out.getChannel(), null);
+          }
+        }
+
+        log.info("Completed persisting bloom filter index in %,d millis.", System.currentTimeMillis() - startTime);
+        progress.stopSection(supplimentalIndexSection);
+      }
 
       v9Smoosher.close();
       progress.stop();
 
-      return outDir;
+      return Pair.of(indexOutDir, supplimentalIndexOutDir);
     }
     catch (Throwable t) {
       throw closer.rethrow(t);
@@ -811,9 +950,81 @@ public class IndexMergerV9 implements IndexMerger
 
   @Override
   public File persist(
+          final IncrementalIndex index,
+          File indexOutDir,
+          IndexSpec indexSpec,
+          @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory
+  ) throws IOException
+  {
+    return Objects.requireNonNull(persist(index, indexOutDir, null, indexSpec, segmentWriteOutMediumFactory).lhs);
+  }
+
+  @Override
+  public Pair<File, File> persist(
+          IncrementalIndex index,
+          File indexOutDir,
+          @Nullable File supplimentalIndexOutDir,
+          IndexSpec indexSpec,
+          @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory
+  ) throws IOException
+  {
+    return persist(index, index.getInterval(), indexOutDir, supplimentalIndexOutDir, indexSpec, segmentWriteOutMediumFactory);
+  }
+
+  @Override
+  public File persist(
+          final IncrementalIndex index,
+          final Interval dataInterval,
+          File indexOutDir,
+          IndexSpec indexSpec,
+          @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory
+  ) throws IOException
+  {
+    return persist(index, dataInterval, indexOutDir, indexSpec, new BaseProgressIndicator(),
+            segmentWriteOutMediumFactory);
+  }
+
+  @Override
+  public Pair<File, File> persist(
+          IncrementalIndex index,
+          Interval dataInterval,
+          File indexOutDir,
+          @Nullable File supplimentalIndexOutDir,
+          IndexSpec indexSpec,
+          @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory
+  ) throws IOException
+  {
+    return persist(index, dataInterval, indexOutDir, supplimentalIndexOutDir, indexSpec, new BaseProgressIndicator(),
+            segmentWriteOutMediumFactory);
+  }
+
+  @Override
+  public File persist(
+          IncrementalIndex index,
+          Interval dataInterval,
+          File indexOutDir,
+          IndexSpec indexSpec,
+          ProgressIndicator progress,
+          @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory
+  ) throws IOException
+  {
+    return Objects.requireNonNull(persist(
+            index,
+            dataInterval,
+            indexOutDir,
+            null,
+            indexSpec,
+            progress,
+            segmentWriteOutMediumFactory
+    ).lhs);
+  }
+
+  @Override
+  public Pair<File, File> persist(
       final IncrementalIndex index,
       final Interval dataInterval,
-      File outDir,
+      File indexOutDir,
+      @Nullable File supplimentalIndexOutDir,
       IndexSpec indexSpec,
       ProgressIndicator progress,
       @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory
@@ -834,7 +1045,7 @@ public class IndexMergerV9 implements IndexMerger
       );
     }
 
-    FileUtils.mkdirp(outDir);
+    FileUtils.mkdirp(indexOutDir);
 
     log.debug("Starting persist for interval[%s], rows[%,d]", dataInterval, index.size());
     return multiphaseMerge(
@@ -852,7 +1063,8 @@ public class IndexMergerV9 implements IndexMerger
         false,
         index.getMetricAggs(),
         null,
-        outDir,
+        indexOutDir,
+        supplimentalIndexOutDir,
         indexSpec,
         indexSpec,
         progress,
@@ -862,31 +1074,99 @@ public class IndexMergerV9 implements IndexMerger
   }
 
   @Override
-  public File mergeQueryableIndex(
-      List<QueryableIndex> indexes,
-      boolean rollup,
-      final AggregatorFactory[] metricAggs,
-      @Nullable DimensionsSpec dimensionsSpec,
-      File outDir,
-      IndexSpec indexSpec,
-      IndexSpec indexSpecForIntermediatePersists,
-      ProgressIndicator progress,
-      @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory,
-      int maxColumnsToMerge
+  public Pair<File, File> mergeQueryableIndex(
+          List<QueryableIndex> indexes,
+          boolean rollup,
+          AggregatorFactory[] metricAggs,
+          File indexOutDir,
+          @Nullable File supplimentalIndexOutDir,
+          IndexSpec indexSpec,
+          @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory
+  ) throws IOException
+  {
+    return mergeQueryableIndex(
+            indexes,
+            rollup,
+            metricAggs,
+            indexOutDir,
+            supplimentalIndexOutDir,
+            indexSpec,
+            new BaseProgressIndicator(),
+            segmentWriteOutMediumFactory
+    );
+  }
+
+  @Override
+  public Pair<File, File> mergeQueryableIndex(
+          List<QueryableIndex> indexes,
+          boolean rollup,
+          final AggregatorFactory[] metricAggs,
+          File indexOutDir,
+          @Nullable File supplimentalIndexDir,
+          IndexSpec indexSpec,
+          ProgressIndicator progress,
+          @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory
   ) throws IOException
   {
     return multiphaseMerge(
-        IndexMerger.toIndexableAdapters(indexes),
-        rollup,
-        metricAggs,
-        dimensionsSpec,
-        outDir,
-        indexSpec,
-        indexSpecForIntermediatePersists,
-        progress,
-        segmentWriteOutMediumFactory,
-        maxColumnsToMerge
+            IndexMerger.toIndexableAdapters(indexes),
+            rollup,
+            metricAggs,
+            null,
+            indexOutDir,
+            supplimentalIndexDir,
+            indexSpec,
+            indexSpec,
+            progress,
+            segmentWriteOutMediumFactory,
+            -1
     );
+  }
+
+  @Override
+  public File mergeQueryableIndex(List<QueryableIndex> indexes, boolean rollup, AggregatorFactory[] metricAggs, File indexOutDir, IndexSpec indexSpec, @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory) throws IOException
+  {
+    return IndexMerger.super.mergeQueryableIndex(indexes, rollup, metricAggs, indexOutDir, indexSpec, segmentWriteOutMediumFactory);
+  }
+
+  @Override
+  public File mergeQueryableIndex(List<QueryableIndex> indexes, boolean rollup, AggregatorFactory[] metricAggs, File indexOutDir, IndexSpec indexSpec, ProgressIndicator progress, @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory) throws IOException
+  {
+    return IndexMerger.super.mergeQueryableIndex(indexes, rollup, metricAggs, indexOutDir, indexSpec, progress, segmentWriteOutMediumFactory);
+  }
+
+  @Override
+  public File mergeQueryableIndex(
+          List<QueryableIndex> indexes,
+          boolean rollup,
+          final AggregatorFactory[] metricAggs,
+          @Nullable DimensionsSpec dimensionsSpec,
+          File outDir,
+          IndexSpec indexSpec,
+          IndexSpec indexSpecForIntermediatePersists,
+          ProgressIndicator progress,
+          @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory,
+          int maxColumnsToMerge
+  ) throws IOException
+  {
+    return multiphaseMerge(
+            IndexMerger.toIndexableAdapters(indexes),
+            rollup,
+            metricAggs,
+            dimensionsSpec,
+            outDir,
+            indexSpec,
+            indexSpecForIntermediatePersists,
+            progress,
+            segmentWriteOutMediumFactory,
+            maxColumnsToMerge
+    );
+  }
+
+  @Override
+  public Pair<File, File> mergeQueryableIndex(List<QueryableIndex> indexes, boolean rollup, AggregatorFactory[] metricAggs, @Nullable DimensionsSpec dimensionsSpec, File outDir, @Nullable File supplimentalIndexDir, IndexSpec indexSpec, IndexSpec indexSpecForIntermediatePersists, ProgressIndicator progress, @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory, int maxColumnsToMerge) throws IOException
+  {
+    return null;
   }
 
   @Override
@@ -894,36 +1174,155 @@ public class IndexMergerV9 implements IndexMerger
       List<IndexableAdapter> indexes,
       boolean rollup,
       final AggregatorFactory[] metricAggs,
-      File outDir,
+      File indexOutDir,
       IndexSpec indexSpec,
       int maxColumnsToMerge
   ) throws IOException
   {
     return multiphaseMerge(
-        indexes,
-        rollup,
-        metricAggs,
-        null,
-        outDir,
-        indexSpec,
-        indexSpec,
-        new BaseProgressIndicator(),
-        null,
-        maxColumnsToMerge
+            indexes,
+            rollup,
+            metricAggs,
+            null,
+            indexOutDir,
+            indexSpec,
+            indexSpec,
+            new BaseProgressIndicator(),
+            null,
+            maxColumnsToMerge
     );
   }
 
-  private File multiphaseMerge(
+  private Pair<File, File> multiphaseMerge(
       List<IndexableAdapter> indexes,
       final boolean rollup,
       final AggregatorFactory[] metricAggs,
       @Nullable DimensionsSpec dimensionsSpec,
-      File outDir,
+      File indexOutDir,
+      @Nullable File supplimentalIndexOutDir,
       IndexSpec indexSpec,
       IndexSpec indexSpecForIntermediatePersists,
       ProgressIndicator progress,
       @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory,
       int maxColumnsToMerge
+  ) throws IOException
+  {
+    FileUtils.deleteDirectory(indexOutDir);
+    FileUtils.mkdirp(indexOutDir);
+
+    if (supplimentalIndexOutDir != null) {
+      FileUtils.deleteDirectory(supplimentalIndexOutDir);
+      FileUtils.mkdirp(supplimentalIndexOutDir);
+    }
+
+    List<File> tempDirs = new ArrayList<>();
+  //Need to have relook for this code and fix
+
+    if (maxColumnsToMerge == IndexMerger.UNLIMITED_MAX_COLUMNS_TO_MERGE) {
+      return merge(
+              indexes,
+              rollup,
+              metricAggs,
+              dimensionsSpec,
+              indexOutDir,
+              supplimentalIndexOutDir,
+              indexSpec,
+              progress,
+              segmentWriteOutMediumFactory
+      );
+    }
+
+    List<List<IndexableAdapter>> currentPhases = getMergePhases(indexes, maxColumnsToMerge);
+    List<File> currentOutputs = new ArrayList<>();
+
+    log.debug("base outDir: " + indexOutDir);
+
+    try {
+      int tierCounter = 0;
+      while (true) {
+        log.info("Merging %d phases, tiers finished processed so far: %d.", currentPhases.size(), tierCounter);
+        for (List<IndexableAdapter> phase : currentPhases) {
+          final File phaseOutDir;
+          final boolean isFinalPhase = currentPhases.size() == 1;
+          if (isFinalPhase) {
+            // use the given outDir on the final merge phase
+            phaseOutDir = indexOutDir;
+            log.info("Performing final merge phase.");
+          } else {
+            phaseOutDir = FileUtils.createTempDir();
+            tempDirs.add(phaseOutDir);
+          }
+          log.info("Merging phase with %d indexes.", phase.size());
+          log.debug("phase outDir: " + phaseOutDir);
+
+          File phaseOutput = merge(
+              phase,
+              rollup,
+              metricAggs,
+              dimensionsSpec,
+              phaseOutDir,
+              isFinalPhase ? indexSpec : indexSpecForIntermediatePersists,
+              progress,
+              segmentWriteOutMediumFactory
+          );
+          currentOutputs.add(phaseOutput);
+        }
+
+        if (currentOutputs.size() == 1) {
+          // we're done, we made a single File output
+         // return currentOutputs.get(0);
+
+         /* return makeIndexFiles(
+                  indexes,
+                  metricAggs,
+                  indexOutDir,
+                  supplimentalIndexOutDir,
+                  progress,
+                  dimensionsSpec,
+                  currentOutputs.get(0),
+                  rowMergerFn,
+                  true,
+                  indexSpec,
+                  segmentWriteOutMediumFactory
+          ); */
+
+        } else {
+          // convert Files to QueryableIndexIndexableAdapter and do another merge phase
+          List<IndexableAdapter> qIndexAdapters = new ArrayList<>();
+          for (File outputFile : currentOutputs) {
+            QueryableIndex qIndex = indexIO.loadIndex(outputFile, true, SegmentLazyLoadFailCallback.NOOP);
+            qIndexAdapters.add(new QueryableIndexIndexableAdapter(qIndex));
+          }
+          currentPhases = getMergePhases(qIndexAdapters, maxColumnsToMerge);
+          currentOutputs = new ArrayList<>();
+          tierCounter += 1;
+        }
+      }
+    }
+    finally {
+      for (File tempDir : tempDirs) {
+        if (tempDir.exists()) {
+          try {
+            FileUtils.deleteDirectory(tempDir);
+          }
+          catch (Exception e) {
+            log.warn(e, "Failed to remove directory[%s]", tempDir);
+          }
+        }
+      }
+    }
+  }
+  private File multiphaseMerge(
+          List<IndexableAdapter> indexes,
+          final boolean rollup,
+          final AggregatorFactory[] metricAggs,
+          @Nullable DimensionsSpec dimensionsSpec,
+          File outDir,
+          IndexSpec indexSpec,
+          IndexSpec indexSpecForIntermediatePersists,
+          ProgressIndicator progress,
+          @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory,
+          int maxColumnsToMerge
   ) throws IOException
   {
     FileUtils.deleteDirectory(outDir);
@@ -933,14 +1332,14 @@ public class IndexMergerV9 implements IndexMerger
 
     if (maxColumnsToMerge == IndexMerger.UNLIMITED_MAX_COLUMNS_TO_MERGE) {
       return merge(
-          indexes,
-          rollup,
-          metricAggs,
-          dimensionsSpec,
-          outDir,
-          indexSpec,
-          progress,
-          segmentWriteOutMediumFactory
+              indexes,
+              rollup,
+              metricAggs,
+              dimensionsSpec,
+              outDir,
+              indexSpec,
+              progress,
+              segmentWriteOutMediumFactory
       );
     }
 
@@ -968,14 +1367,14 @@ public class IndexMergerV9 implements IndexMerger
           log.debug("phase outDir: " + phaseOutDir);
 
           File phaseOutput = merge(
-              phase,
-              rollup,
-              metricAggs,
-              dimensionsSpec,
-              phaseOutDir,
-              isFinalPhase ? indexSpec : indexSpecForIntermediatePersists,
-              progress,
-              segmentWriteOutMediumFactory
+                  phase,
+                  rollup,
+                  metricAggs,
+                  dimensionsSpec,
+                  phaseOutDir,
+                  isFinalPhase ? indexSpec : indexSpecForIntermediatePersists,
+                  progress,
+                  segmentWriteOutMediumFactory
           );
           currentOutputs.add(phaseOutput);
         }
@@ -1126,6 +1525,79 @@ public class IndexMergerV9 implements IndexMerger
         true,
         indexSpec,
         segmentWriteOutMediumFactory
+    );
+  }
+
+  private Pair<File, File> merge(
+          List<IndexableAdapter> indexes,
+          final boolean rollup,
+          final AggregatorFactory[] metricAggs,
+          @Nullable DimensionsSpec dimensionsSpec,
+          File indexOutDir,
+          @Nullable File supplimentalIndexOutDir,
+          IndexSpec indexSpec,
+          ProgressIndicator progress,
+          @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory
+  ) throws IOException
+  {
+    final List<String> mergedDimensions = IndexMerger.getMergedDimensions(indexes, dimensionsSpec);
+
+    final List<String> mergedMetrics = IndexMerger.mergeIndexed(
+            indexes.stream().map(IndexableAdapter::getMetricNames).collect(Collectors.toList())
+    );
+
+    final AggregatorFactory[] sortedMetricAggs = new AggregatorFactory[mergedMetrics.size()];
+    for (AggregatorFactory metricAgg : metricAggs) {
+      int metricIndex = mergedMetrics.indexOf(metricAgg.getName());
+      /*
+        If metricIndex is negative, one of the metricAggs was not present in the union of metrics from the indices
+        we are merging
+       */
+      if (metricIndex > -1) {
+        sortedMetricAggs[metricIndex] = metricAgg;
+      }
+    }
+
+    /*
+      If there is nothing at sortedMetricAggs[i], then we did not have a metricAgg whose name matched the name
+      of the ith element of mergedMetrics. I.e. There was a metric in the indices to merge that we did not ask for.
+     */
+    for (int i = 0; i < sortedMetricAggs.length; i++) {
+      if (sortedMetricAggs[i] == null) {
+        throw new IAE("Indices to merge contained metric[%s], but requested metrics did not", mergedMetrics.get(i));
+      }
+    }
+
+    for (int i = 0; i < mergedMetrics.size(); i++) {
+      if (!sortedMetricAggs[i].getName().equals(mergedMetrics.get(i))) {
+        throw new IAE(
+                "Metric mismatch, index[%d] [%s] != [%s]",
+                i,
+                sortedMetricAggs[i].getName(),
+                mergedMetrics.get(i)
+        );
+      }
+    }
+
+    Function<List<TransformableRowIterator>, TimeAndDimsIterator> rowMergerFn;
+    if (rollup) {
+      rowMergerFn = rowIterators -> new RowCombiningTimeAndDimsIterator(rowIterators, sortedMetricAggs, mergedMetrics);
+    } else {
+      rowMergerFn = MergingRowIterator::new;
+    }
+
+    return makeIndexFiles(
+            indexes,
+            sortedMetricAggs,
+            indexOutDir,
+            supplimentalIndexOutDir,
+            progress,
+            mergedDimensions,
+            mergedMetrics,
+            rowMergerFn,
+            true,
+            indexSpec,
+            segmentWriteOutMediumFactory
     );
   }
 

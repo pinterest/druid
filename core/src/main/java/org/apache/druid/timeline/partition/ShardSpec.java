@@ -55,6 +55,8 @@ import java.util.Map;
     @JsonSubTypes.Type(name = ShardSpec.Type.STREAM_FANOUT_HASHED, value = StreamFanOutHashBasedNumberedShardSpec.class),
     @JsonSubTypes.Type(name = ShardSpec.Type.STREAM_HASHED, value = StreamHashBasedNumberedShardSpec.class),
     @JsonSubTypes.Type(name = ShardSpec.Type.BUCKET_RANGE, value = DimensionRangeBucketShardSpec.class)
+    @JsonSubTypes.Type(name = ShardSpec.Type.BUCKET_RANGE, value = DimensionRangeBucketShardSpec.class),
+    @JsonSubTypes.Type(name = ShardSpec.Type.STREAM_FANOUT_NAMED_HASHED, value = StreamFanOutNamedHashBasedNumberedShardSpec.class)
 })
 
 public interface ShardSpec
@@ -158,6 +160,11 @@ public interface ShardSpec
   }
 
   /**
+   * Returns true if two segments of this and other shardSpecs can exist in the same timeChunk.
+   */
+  boolean isCompatible(Class<? extends ShardSpec> other);
+
+  /**
    * ShardSpec type names.
    */
   interface Type
@@ -182,8 +189,8 @@ public interface ShardSpec
     String BUCKET_HASH = "bucket_hash";
     String BUCKET_SINGLE_DIM = "bucket_single_dim";
     String BUCKET_RANGE = "bucket_range";
-
     String STREAM_FANOUT_HASHED = "stream_fanout_hashed";
     String STREAM_HASHED = "stream_hashed";
+    String STREAM_FANOUT_NAMED_HASHED = "stream_fanout_named_hashed";
   }
 }

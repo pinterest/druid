@@ -93,8 +93,10 @@ public abstract class DimensionSchema
   private final String name;
   private final MultiValueHandling multiValueHandling;
   private final boolean createBitmapIndex;
+  private final boolean createBloomFilterIndex;
 
-  protected DimensionSchema(String name, MultiValueHandling multiValueHandling, boolean createBitmapIndex)
+  protected DimensionSchema(String name, MultiValueHandling multiValueHandling, boolean createBitmapIndex,
+                            boolean createBloomFilterIndex)
   {
     if (Strings.isNullOrEmpty(name)) {
       log.warn("Null or Empty Dimension found");
@@ -102,6 +104,7 @@ public abstract class DimensionSchema
     this.name = name;
     this.multiValueHandling = multiValueHandling == null ? MultiValueHandling.ofDefault() : multiValueHandling;
     this.createBitmapIndex = createBitmapIndex;
+    this.createBloomFilterIndex = createBloomFilterIndex;
   }
 
   @JsonProperty
@@ -122,6 +125,12 @@ public abstract class DimensionSchema
     return createBitmapIndex;
   }
 
+  @JsonProperty("createBloomFilterIndex")
+  public boolean hasBloomFilterIndexes()
+  {
+    return createBloomFilterIndex;
+  }
+
   @JsonIgnore
   public abstract String getTypeName();
 
@@ -139,6 +148,7 @@ public abstract class DimensionSchema
     }
     final DimensionSchema that = (DimensionSchema) o;
     return createBitmapIndex == that.createBitmapIndex &&
+           createBloomFilterIndex == that.createBloomFilterIndex &&
            Objects.equals(name, that.name) &&
            Objects.equals(getTypeName(), that.getTypeName()) &&
            Objects.equals(getColumnType(), that.getColumnType()) &&
@@ -148,7 +158,8 @@ public abstract class DimensionSchema
   @Override
   public int hashCode()
   {
-    return Objects.hash(name, multiValueHandling, createBitmapIndex, getTypeName(), getColumnType());
+    return Objects.hash(name, multiValueHandling, createBitmapIndex, createBloomFilterIndex, getTypeName(),
+            getColumnType());
   }
 
   @Override
@@ -160,6 +171,7 @@ public abstract class DimensionSchema
            ", typeName=" + getTypeName() +
            ", multiValueHandling=" + multiValueHandling +
            ", createBitmapIndex=" + createBitmapIndex +
+           ", createBloomFilterIndex=" + createBloomFilterIndex +
            '}';
   }
 }

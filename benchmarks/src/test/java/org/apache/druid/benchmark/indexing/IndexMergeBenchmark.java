@@ -27,10 +27,7 @@ import org.apache.druid.java.util.common.FileUtils;
 import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.math.expr.ExprMacroTable;
 import org.apache.druid.query.aggregation.hyperloglog.HyperUniquesSerde;
-import org.apache.druid.segment.IndexIO;
-import org.apache.druid.segment.IndexMergerV9;
-import org.apache.druid.segment.IndexSpec;
-import org.apache.druid.segment.QueryableIndex;
+import org.apache.druid.segment.*;
 import org.apache.druid.segment.generator.DataGenerator;
 import org.apache.druid.segment.generator.GeneratorBasicSchemas;
 import org.apache.druid.segment.generator.GeneratorSchemaInfo;
@@ -166,9 +163,9 @@ public class IndexMergeBenchmark
           rollup,
           schemaInfo.getAggsArray(),
           tmpFile,
-          new IndexSpec(),
           null,
-          -1
+            new BaseProgressIndicator(),
+          null
       );
 
       blackhole.consume(mergedFile);

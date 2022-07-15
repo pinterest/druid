@@ -31,7 +31,9 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.druid.data.input.MapBasedInputRow;
 import org.apache.druid.data.input.Row;
+import org.apache.druid.data.input.impl.DimensionSchema;
 import org.apache.druid.data.input.impl.DimensionsSpec;
+import org.apache.druid.data.input.impl.StringDimensionSchema;
 import org.apache.druid.java.util.common.Intervals;
 import org.apache.druid.java.util.common.StringUtils;
 import org.apache.druid.java.util.common.granularity.Granularities;
@@ -85,6 +87,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -145,6 +148,27 @@ public class IncrementalIndexTest extends InitializedNullHandlingTest
     return new OnheapIncrementalIndex.Builder()
         .setSimpleTestingIndexSchema(aggregatorFactories)
         .setMaxRowCount(1000000)
+        .build();
+  }
+
+  public static IncrementalIndex createIndexWithDimensions(List<String> dimensions, boolean createBloomFilterIndex)
+  {
+    return new OnheapIncrementalIndex.Builder()
+        .setIndexSchema(
+            new IncrementalIndexSchema.Builder()
+                .withDimensionsSpec(
+                    new DimensionsSpec(
+                        dimensions.stream()
+                                  .map(d -> new StringDimensionSchema(d,
+                                                                      DimensionSchema.MultiValueHandling.ofDefault(),
+                                                                      true,
+                                                                      createBloomFilterIndex))
+                                  .collect(Collectors.toList())
+                    )
+                )
+                .build()
+        )
+        .setMaxRowCount(10)
         .build();
   }
 

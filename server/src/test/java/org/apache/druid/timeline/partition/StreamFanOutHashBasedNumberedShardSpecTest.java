@@ -43,12 +43,9 @@ public class StreamFanOutHashBasedNumberedShardSpecTest
         new StreamFanOutHashBasedNumberedShardSpec(
             1,
             2,
-            1,
-            2,
             ImmutableList.of("partner_id"),
             ImmutableSet.of(1, 3, 5),
             10,
-            null,
             fanoutSize,
             ServerTestHelper.MAPPER
         ),
@@ -92,12 +89,9 @@ public class StreamFanOutHashBasedNumberedShardSpecTest
     final StreamFanOutHashBasedNumberedShardSpec spec = new StreamFanOutHashBasedNumberedShardSpec(
         1,
         2,
-        1,
-        2,
         ImmutableList.of("partner_id"),
         ImmutableSet.of(1, 3, 5),
         10,
-        null,
         fanoutSize,
         ServerTestHelper.MAPPER
     );
@@ -121,36 +115,27 @@ public class StreamFanOutHashBasedNumberedShardSpecTest
         new StreamFanOutHashBasedNumberedShardSpec(
             1,
             0,
-            1,
-            0,
             ImmutableList.of("partner_id"),
             ImmutableSet.of(1, 3, 5),
             streamPartitions,
-            null,
             fanoutSize,
             ServerTestHelper.MAPPER
         ),
         new StreamFanOutHashBasedNumberedShardSpec(
             2,
             0,
-            2,
-             0,
             ImmutableList.of("partner_id"),
             ImmutableSet.of(2, 4, 6),
             streamPartitions,
-            null,
             fanoutSize,
             ServerTestHelper.MAPPER
         ),
         new StreamFanOutHashBasedNumberedShardSpec(
             3,
             0,
-            2,
-            0,
             ImmutableList.of("partner_id"),
             ImmutableSet.of(7, 8, 9, 10),
             streamPartitions,
-            null,
             fanoutSize,
             ServerTestHelper.MAPPER
         )
@@ -176,48 +161,36 @@ public class StreamFanOutHashBasedNumberedShardSpecTest
         new StreamFanOutHashBasedNumberedShardSpec(
             1,
             0,
-            1,
-            0,
             ImmutableList.of("partner_id"),
             ImmutableSet.of(1, 5),
             streamPartitions,
-            null,
             fanoutSize,
             ServerTestHelper.MAPPER
         ),
         new StreamFanOutHashBasedNumberedShardSpec(
-            2,
-            0,
             2,
             0,
             ImmutableList.of("partner_id"),
             ImmutableSet.of(2, 6),
             streamPartitions,
-            null,
             fanoutSize,
             ServerTestHelper.MAPPER
         ),
         new StreamFanOutHashBasedNumberedShardSpec(
-            3,
-            0,
             3,
             0,
             ImmutableList.of("partner_id"),
             ImmutableSet.of(3, 7, 9),
             streamPartitions,
-            null,
             fanoutSize,
             ServerTestHelper.MAPPER
         ),
         new StreamFanOutHashBasedNumberedShardSpec(
             4,
             0,
-            4,
-            0,
             ImmutableList.of("partner_id"),
             ImmutableSet.of(4, 8, 10),
             streamPartitions,
-            null,
             fanoutSize,
             ServerTestHelper.MAPPER
         )

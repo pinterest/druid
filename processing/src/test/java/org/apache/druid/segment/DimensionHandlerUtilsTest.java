@@ -160,7 +160,7 @@ public class DimensionHandlerUtilsTest extends InitializedNullHandlingTest
         boolean createBitmapIndex
     )
     {
-      super(name, multiValueHandling, createBitmapIndex);
+      super(name, multiValueHandling, createBitmapIndex, true);
     }
 
     @Override

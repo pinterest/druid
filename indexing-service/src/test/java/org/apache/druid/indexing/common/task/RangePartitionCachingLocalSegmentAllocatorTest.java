@@ -220,7 +220,7 @@ public class RangePartitionCachingLocalSegmentAllocatorTest
   private SegmentIdWithShardSpec allocate(InputRow row, String sequenceName)
   {
     try {
-      return target.allocate(row, sequenceName, null, false);
+      return target.allocate(row, sequenceName, null, false, false);
     }
     catch (IOException e) {
       throw new RuntimeException(e);

@@ -39,6 +39,7 @@ public interface SegmentAllocateActionGenerator
       InputRow row,
       String sequenceName,
       String previousSegmentId,
-      boolean skipSegmentLineageCheck
+      boolean skipSegmentLineageCheck,
+      boolean allowMixedShardSpecType
   );
 }

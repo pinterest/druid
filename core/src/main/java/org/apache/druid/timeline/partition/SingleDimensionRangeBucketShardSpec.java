@@ -114,6 +114,12 @@ public class SingleDimensionRangeBucketShardSpec implements BucketNumberedShardS
   }
 
   @Override
+  public boolean isCompatible(Class<? extends ShardSpec> other)
+  {
+    return false;
+  }
+
+  @Override
   public boolean equals(Object o)
   {
     if (this == o) {

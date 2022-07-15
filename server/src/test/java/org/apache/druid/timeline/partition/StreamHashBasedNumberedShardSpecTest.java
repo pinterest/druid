@@ -46,11 +46,8 @@ public class StreamHashBasedNumberedShardSpecTest
         new StreamHashBasedNumberedShardSpec(
             1,
             2,
-            0,
-            1,
             ImmutableList.of("partner_id"),
             ImmutableSet.of(1, 3, 5),
-            null,
             10,
             ServerTestHelper.MAPPER
         ),
@@ -89,11 +86,8 @@ public class StreamHashBasedNumberedShardSpecTest
     final StreamHashBasedNumberedShardSpec spec = new StreamHashBasedNumberedShardSpec(
         1,
         2,
-        0,
-        1,
         ImmutableList.of("partner_id"),
         ImmutableSet.of(1, 3, 5),
-        null,
         10,
         ServerTestHelper.MAPPER
     );
@@ -116,33 +110,24 @@ public class StreamHashBasedNumberedShardSpecTest
         new StreamHashBasedNumberedShardSpec(
             1,
             0,
-            0,
-            1,
             ImmutableList.of("partner_id"),
             ImmutableSet.of(1, 3, 5),
-            null,
             streamPartitions,
             ServerTestHelper.MAPPER
         ),
         new StreamHashBasedNumberedShardSpec(
             2,
             0,
-            0,
-            1,
             ImmutableList.of("partner_id"),
             ImmutableSet.of(2, 4, 6),
-            null,
             streamPartitions,
             ServerTestHelper.MAPPER
         ),
         new StreamHashBasedNumberedShardSpec(
             3,
             0,
-            0,
-            1,
             ImmutableList.of("partner_id"),
             ImmutableSet.of(7, 8, 9, 10),
-            null,
             streamPartitions,
             ServerTestHelper.MAPPER
         )

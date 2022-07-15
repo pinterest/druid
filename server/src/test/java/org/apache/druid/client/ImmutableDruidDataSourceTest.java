@@ -96,6 +96,7 @@ public class ImmutableDruidDataSourceTest
         null,
         1,
         100L,
+        null,
         PruneSpecsHolder.DEFAULT
     );
   }

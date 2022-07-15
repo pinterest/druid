@@ -218,6 +218,19 @@ public class ClosedSegmensSinksBatchAppenderatorTester implements AutoCloseable
       }
 
       @Override
+      public DataSegment push(File indexFilesDir, File supplimentalIndexFilesDir, DataSegment segment, boolean useUniquePath) throws IOException
+      {
+        if (enablePushFailure && mustFail) {
+          mustFail = false;
+          throw new IOException("Push failure test");
+        } else if (enablePushFailure) {
+          mustFail = true;
+        }
+        pushedSegments.add(segment);
+        return segment;
+      }
+
+      @Override
       public DataSegment push(File file, DataSegment segment, boolean useUniquePath) throws IOException
       {
         if (enablePushFailure && mustFail) {

@@ -2362,7 +2362,7 @@ public class CompactionTaskTest
         boolean createBitmapIndex
     )
     {
-      super(name, multiValueHandling, createBitmapIndex);
+      super(name, multiValueHandling, createBitmapIndex, false);
     }
 
     @Override

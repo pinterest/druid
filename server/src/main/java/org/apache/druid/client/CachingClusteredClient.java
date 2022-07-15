@@ -404,6 +404,15 @@ public class CachingClusteredClient implements QuerySegmentWalker
       }
 
       final Set<SegmentServerSelector> segmentServers = computeSegmentsToQuery(timeline, specificSegments);
+
+
+      // For debugging purpose only, at this point, we have got the candidate segments to query but we will just return
+      // empty results without sending requests to data nodes. This is mainly used to profile broker side segment
+      // pruning performance.
+      if (QueryContexts.isReturnEmptyResults(query)) {
+        return (ClusterQueryResult<T>) Sequences.empty();
+      }
+
       @Nullable
       final byte[] queryCacheKey = cacheKeyManager.computeSegmentLevelQueryCacheKey();
       if (query.getContext().get(QueryResource.HEADER_IF_NONE_MATCH) != null) {
@@ -491,7 +500,11 @@ public class CachingClusteredClient implements QuerySegmentWalker
       final Set<SegmentServerSelector> segments = new LinkedHashSet<>();
       final Map<String, Optional<RangeSet<String>>> dimensionRangeCache = new HashMap<>();
       // Filter unneeded chunks based on partition dimension
+      int numSegmentsBeforeFiltering = 0;
       for (TimelineObjectHolder<String, ServerSelector> holder : serversLookup) {
+        numSegmentsBeforeFiltering += (long) holder.getObject().getOvershadowed().size();
+
+        final long startNs = System.nanoTime();
         final Set<PartitionChunk<ServerSelector>> filteredChunks;
         if (QueryContexts.isSecondaryPartitionPruningEnabled(query)) {
           filteredChunks = DimFilterUtils.filterShards(
@@ -503,6 +516,10 @@ public class CachingClusteredClient implements QuerySegmentWalker
         } else {
           filteredChunks = Sets.newHashSet(holder.getObject());
         }
+
+        final long segmentFilteringTime = System.nanoTime() - startNs;
+        queryMetrics.reportSegmentFilteringTime(segmentFilteringTime);
+
         for (PartitionChunk<ServerSelector> chunk : filteredChunks) {
           ServerSelector server = chunk.getObject();
           final SegmentDescriptor segment = new SegmentDescriptor(
@@ -514,6 +531,8 @@ public class CachingClusteredClient implements QuerySegmentWalker
           segments.add(new SegmentServerSelector(server, segment));
         }
       }
+      queryMetrics.reportSegmentBeforeFilteringCount(numSegmentsBeforeFiltering);
+      queryMetrics.reportSegmentAfterFilteringCount(segments.size());
       return segments;
     }
 

@@ -157,7 +157,7 @@ public class StreamAppenderatorDriver extends BaseAppenderatorDriver
       final Supplier<Committer> committerSupplier
   ) throws IOException
   {
-    return append(row, sequenceName, committerSupplier, false, true);
+    return append(row, sequenceName, committerSupplier, false, true, false);
   }
 
   /**
@@ -183,10 +183,12 @@ public class StreamAppenderatorDriver extends BaseAppenderatorDriver
       final String sequenceName,
       final Supplier<Committer> committerSupplier,
       final boolean skipSegmentLineageCheck,
-      final boolean allowIncrementalPersists
+      final boolean allowIncrementalPersists,
+      final boolean allowMixedShardSpecType
   ) throws IOException
   {
-    return append(row, sequenceName, committerSupplier, skipSegmentLineageCheck, allowIncrementalPersists);
+    return append(row, sequenceName, committerSupplier, skipSegmentLineageCheck, allowIncrementalPersists,
+                  allowMixedShardSpecType);
   }
 
   /**

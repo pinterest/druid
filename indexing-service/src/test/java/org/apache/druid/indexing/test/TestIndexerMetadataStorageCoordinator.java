@@ -162,7 +162,8 @@ public class TestIndexerMetadataStorageCoordinator implements IndexerMetadataSto
       PartialShardSpec partialShardSpec,
       String maxVersion,
       boolean skipSegmentLineageCheck,
-      @Nullable String nameSpace)
+      @Nullable String nameSpace,
+      boolean allowMixedShardSpecType)
   {
     return new SegmentIdWithShardSpec(
         dataSource,

@@ -26,7 +26,6 @@ import org.apache.druid.java.util.common.ISE;
 import org.apache.druid.java.util.common.granularity.Granularities;
 import org.apache.druid.java.util.common.guava.BaseSequence;
 import org.apache.druid.java.util.common.guava.Sequence;
-import org.apache.druid.query.ChainedExecutionQueryRunner;
 import org.apache.druid.query.Query;
 import org.apache.druid.query.QueryPlus;
 import org.apache.druid.query.QueryProcessingPool;
@@ -48,6 +47,7 @@ import org.joda.time.DateTime;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 /**
  */
@@ -71,11 +71,19 @@ public class TimeBoundaryQueryRunnerFactory
 
   @Override
   public QueryRunner<Result<TimeBoundaryResultValue>> mergeRunners(
-      QueryProcessingPool queryProcessingPool,
+      ExecutorService queryExecutor,
       Iterable<QueryRunner<Result<TimeBoundaryResultValue>>> queryRunners
   )
   {
-    return new ChainedExecutionQueryRunner<>(queryProcessingPool, queryWatcher, queryRunners);
+    //return new ChainedExecutionQueryRunner<>(queryExecutor, queryWatcher, queryRunners);
+    //Method is deprecated so returning null.
+    return null;
+  }
+
+  //@Override
+  public QueryRunner<Result<TimeBoundaryResultValue>> mergeRunners(QueryProcessingPool queryProcessingPool, Iterable<QueryRunner<Result<TimeBoundaryResultValue>>> queryRunners)
+  {
+    return null;
   }
 
   @Override
@@ -111,7 +119,7 @@ public class TimeBoundaryQueryRunnerFactory
 
     private DateTime getTimeBoundary(StorageAdapter adapter, TimeBoundaryQuery legacyQuery, boolean descending)
     {
-      final boolean useInMemoryBitmapInQuery = legacyQuery.getContextBoolean("useInMemoryBitmapInQuery", false);
+      final boolean useInMemoryBitmapInQuery = legacyQuery.getContextBoolean("useInMemoryBitmapInQuery", true);
 
       final Sequence<Result<DateTime>> resultSequence = QueryRunnerHelper.makeCursorBasedQuery(
           adapter,

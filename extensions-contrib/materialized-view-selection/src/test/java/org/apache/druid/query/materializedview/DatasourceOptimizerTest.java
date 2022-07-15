@@ -311,7 +311,8 @@ public class DatasourceOptimizerTest extends CuratorTestBase
             return null;
           }
         },
-        new BrokerDataSourceLifetimeConfig()
+        new BrokerDataSourceLifetimeConfig(),
+        new ObjectMapper()
     );
     baseView.start();
   }

@@ -28,6 +28,7 @@ import org.apache.druid.data.input.impl.DimensionsSpec;
 import org.apache.druid.data.input.impl.TimestampSpec;
 import org.apache.druid.indexing.worker.config.WorkerConfig;
 import org.apache.druid.java.util.common.Intervals;
+import org.apache.druid.java.util.common.Pair;
 import org.apache.druid.java.util.common.granularity.Granularities;
 import org.apache.druid.query.DefaultQueryRunnerFactoryConglomerate;
 import org.apache.druid.query.DirectQueryProcessingPool;
@@ -176,8 +177,8 @@ public class UnifiedIndexerAppenderatorsManagerTest extends InitializedNullHandl
 
     // Three forms of persist.
 
-    Assert.assertEquals(file, limitedPoolIndexMerger.persist(null, null, file, null, null, null));
-    Assert.assertEquals(file, limitedPoolIndexMerger.persist(null, null, file, null, null));
+    Assert.assertEquals(file, limitedPoolIndexMerger.persist(null, null, file, file, null, null, null));
+    Assert.assertEquals(file, limitedPoolIndexMerger.persist(null, file, null, null));
 
     // Need a mocked index for this test, since getInterval is called on it.
     final IncrementalIndex index = EasyMock.createMock(IncrementalIndex.class);
@@ -201,7 +202,7 @@ public class UnifiedIndexerAppenderatorsManagerTest extends InitializedNullHandl
     Assert.assertThrows(
         "failed",
         RuntimeException.class, // Wrapped IOException
-        () -> limitedPoolIndexMerger.persist(null, null, file, null, null, null)
+        () -> limitedPoolIndexMerger.persist(null, null, file, file, null, null, null)
     );
   }
 
@@ -246,7 +247,7 @@ public class UnifiedIndexerAppenderatorsManagerTest extends InitializedNullHandl
     final File file = new File("xyz");
 
     // Two forms of mergeQueryableIndex
-    Assert.assertEquals(file, limitedPoolIndexMerger.mergeQueryableIndex(null, false, null, file, null, null, -1));
+    Assert.assertEquals(file, limitedPoolIndexMerger.mergeQueryableIndex(null, false, null, file, null, null));
     Assert.assertEquals(
         file,
         limitedPoolIndexMerger.mergeQueryableIndex(
@@ -298,6 +299,18 @@ public class UnifiedIndexerAppenderatorsManagerTest extends InitializedNullHandl
     }
 
     @Override
+    public Pair<File, File> persist(IncrementalIndex index, File indexOutDir, @Nullable File supplimentalIndexOutDir, IndexSpec indexSpec, @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory) throws IOException
+    {
+      return null;
+    }
+
+    @Override
+    public Pair<File, File> persist(IncrementalIndex index, Interval dataInterval, File indexOutDir, @Nullable File supplimentalIndexOutDir, IndexSpec indexSpec, @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory) throws IOException
+    {
+      return null;
+    }
+
+    @Override
     public File persist(
         IncrementalIndex index,
         Interval dataInterval,
@@ -312,6 +325,24 @@ public class UnifiedIndexerAppenderatorsManagerTest extends InitializedNullHandl
       }
 
       return outDir;
+    }
+
+    @Override
+    public Pair<File, File> persist(IncrementalIndex index, Interval dataInterval, File indexOutDir, @Nullable File supplimentalIndexOutDir, IndexSpec indexSpec, ProgressIndicator progress, @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory) throws IOException
+    {
+      return null;
+    }
+
+    @Override
+    public Pair<File, File> mergeQueryableIndex(List<QueryableIndex> indexes, boolean rollup, AggregatorFactory[] metricAggs, File indexOutDir, @Nullable File supplimentalIndexOutDir, IndexSpec indexSpec, @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory) throws IOException
+    {
+      return null;
+    }
+
+    @Override
+    public Pair<File, File> mergeQueryableIndex(List<QueryableIndex> indexes, boolean rollup, AggregatorFactory[] metricAggs, File indexOutDir, @Nullable File supplimentalIndexOutDir, IndexSpec indexSpec, ProgressIndicator progress, @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory) throws IOException
+    {
+      return null;
     }
 
     @Override
@@ -333,6 +364,12 @@ public class UnifiedIndexerAppenderatorsManagerTest extends InitializedNullHandl
       }
 
       return outDir;
+    }
+
+    @Override
+    public Pair<File, File> mergeQueryableIndex(List<QueryableIndex> indexes, boolean rollup, AggregatorFactory[] metricAggs, @Nullable DimensionsSpec dimensionsSpec, File outDir, @Nullable File supplimentalIndexDir, IndexSpec indexSpec, IndexSpec indexSpecForIntermediatePersists, ProgressIndicator progress, @Nullable SegmentWriteOutMediumFactory segmentWriteOutMediumFactory, int maxColumnsToMerge) throws IOException
+    {
+      return null;
     }
 
     @Override

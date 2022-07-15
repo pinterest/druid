@@ -148,7 +148,7 @@ public class StreamAppenderatorDriverFailTest extends EasyMockSupport
 
     for (int i = 0; i < ROWS.size(); i++) {
       committerSupplier.setMetadata(i + 1);
-      Assert.assertTrue(driver.add(ROWS.get(i), "dummy", committerSupplier, false, true).isOk());
+      Assert.assertTrue(driver.add(ROWS.get(i), "dummy", committerSupplier, false, true, false).isOk());
     }
 
     driver.publish(
@@ -186,7 +186,7 @@ public class StreamAppenderatorDriverFailTest extends EasyMockSupport
 
     for (int i = 0; i < ROWS.size(); i++) {
       committerSupplier.setMetadata(i + 1);
-      Assert.assertTrue(driver.add(ROWS.get(i), "dummy", committerSupplier, false, true).isOk());
+      Assert.assertTrue(driver.add(ROWS.get(i), "dummy", committerSupplier, false, true, false).isOk());
     }
 
     driver.publish(
@@ -224,7 +224,7 @@ public class StreamAppenderatorDriverFailTest extends EasyMockSupport
 
     for (int i = 0; i < ROWS.size(); i++) {
       committerSupplier.setMetadata(i + 1);
-      Assert.assertTrue(driver.add(ROWS.get(i), "dummy", committerSupplier, false, true).isOk());
+      Assert.assertTrue(driver.add(ROWS.get(i), "dummy", committerSupplier, false, true, false).isOk());
     }
 
     final SegmentsAndCommitMetadata published = driver.publish(
@@ -277,7 +277,7 @@ public class StreamAppenderatorDriverFailTest extends EasyMockSupport
 
     for (int i = 0; i < ROWS.size(); i++) {
       committerSupplier.setMetadata(i + 1);
-      Assert.assertTrue(driver.add(ROWS.get(i), "dummy", committerSupplier, false, true).isOk());
+      Assert.assertTrue(driver.add(ROWS.get(i), "dummy", committerSupplier, false, true, false).isOk());
     }
 
     if (!failWithException) {
