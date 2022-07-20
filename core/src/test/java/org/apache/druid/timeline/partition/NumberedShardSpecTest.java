@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.apache.druid.java.util.common.Intervals;
 import org.apache.druid.timeline.Overshadowable;
 import org.apache.druid.timeline.TimelineObjectHolder;
@@ -45,7 +46,8 @@ public class NumberedShardSpecTest
   @Test
   public void testEquals()
   {
-    EqualsVerifier.forClass(NumberedShardSpec.class).usingGetClass().verify();
+    EqualsVerifier.forClass(NumberedShardSpec.class).suppress(Warning.ALL_FIELDS_SHOULD_BE_USED)
+          .suppress(Warning.STRICT_HASHCODE).usingGetClass().verify();
   }
 
   @Test

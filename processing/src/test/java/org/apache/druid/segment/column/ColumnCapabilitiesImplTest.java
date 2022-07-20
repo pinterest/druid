@@ -67,7 +67,7 @@ public class ColumnCapabilitiesImplTest
                   + "  \"hasMultipleValues\":true,\n"
                   + "  \"hasBitmapIndexes\":true,\n"
                   + "  \"hasNulls\":true,\n"
-                  + "  \"filterable\":true\n"
+                  + "  \"filterable\":true,\n"
                   + "  \"hasBloomFilterIndexes\":true\n"
                   + "}";
 

@@ -28,6 +28,7 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.apache.druid.data.input.InputRow;
 import org.apache.druid.data.input.MapBasedInputRow;
 import org.apache.druid.data.input.Row;
@@ -51,6 +52,8 @@ public class HashBasedNumberedShardSpecTest
   public void testEquals()
   {
     EqualsVerifier.forClass(HashBasedNumberedShardSpec.class)
+                  .suppress(Warning.ALL_FIELDS_SHOULD_BE_USED)
+                  .suppress(Warning.STRICT_HASHCODE)
                   .withIgnoredFields("jsonMapper")
                   .withPrefabValues(ObjectMapper.class, new ObjectMapper(), new ObjectMapper())
                   .usingGetClass()

@@ -641,7 +641,7 @@ public class CompactionTaskTest
         null,
         null, // null to compute maxRowsPerSegment automatically
         null,
-        null,
+        500000,
         500000,
         1000000L,
         null,
@@ -719,7 +719,7 @@ public class CompactionTaskTest
         null,
         null, // null to compute maxRowsPerSegment automatically
         null,
-        null,
+        500000,
         500000,
         1000000L,
         null,

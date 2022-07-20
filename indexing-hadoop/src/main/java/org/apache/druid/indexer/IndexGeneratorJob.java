@@ -779,11 +779,13 @@ public class IndexGeneratorJob implements Jobby
           if (index.isEmpty()) {
             throw new IAE("If you try to persist empty indexes you are going to have a bad time");
           }
-          // commented below link to fix compile time error ..need to revisit this part
-         // IndexMerger.setHasBloomFilterIndexesInColumnCapabilities(
-           //   dimensionNamesHasBloomFilterIndexes,
-             // indexes::getCapabilities
-         // );
+
+          // FIXME (ssagare):  below line need to revisit, as this added as part of cherry-pick with refactored code
+          IndexMerger.setHasBloomFilterIndexesInColumnCapabilities(
+              dimensionNamesHasBloomFilterIndexes,
+                  index::getColumnCapabilities
+          );
+
           Pair<File, File> p = persist(index, interval, new File(baseFlushFile, "merged"),
                                        mergedSupplimentalIndexBase, progressIndicator);
           mergedIndexOutDir = p.lhs;
@@ -863,7 +865,7 @@ public class IndexGeneratorJob implements Jobby
                 outputFS,
                 segmentTemplate,
                 JobHelper.SUPPLIMENTAL_INDEX_KEY_PREFIX + '/' + dir.getName() + ".zip",
-                config.DATA_SEGMENT_PUSHER)
+                    HadoopDruidIndexerConfig.DATA_SEGMENT_PUSHER)
             );
 
             tmpSupplimentalIndexZipFilePaths.add(JobHelper.makeTmpPath(
@@ -872,7 +874,7 @@ public class IndexGeneratorJob implements Jobby
                 outputFS,
                 segmentTemplate,
                 context.getTaskAttemptID(),
-                config.DATA_SEGMENT_PUSHER)
+                    HadoopDruidIndexerConfig.DATA_SEGMENT_PUSHER)
             );
           }
         }

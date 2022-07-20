@@ -52,7 +52,7 @@ public class MetricsEmittingQueryProcessingPoolTest
       }
     };
     monitor.doMonitor(serviceEmitter);
-    Assert.assertEquals(1, events.size());
+    Assert.assertEquals(4, events.size());
     Assert.assertEquals(((ServiceMetricEvent) (events.get(0))).getMetric(), "segment/scan/pending");
     Assert.assertEquals(((ServiceMetricEvent) (events.get(0))).getValue(), 10);
   }

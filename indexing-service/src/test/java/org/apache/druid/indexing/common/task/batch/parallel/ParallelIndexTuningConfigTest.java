@@ -399,6 +399,7 @@ public class ParallelIndexTuningConfigTest
   public void testEqualsAndHashCode()
   {
     EqualsVerifier.forClass(ParallelIndexTuningConfig.class)
+        .withIgnoredFields("maxRowsInMemoryPerSegment")
         .usingGetClass()
         .verify();
   }

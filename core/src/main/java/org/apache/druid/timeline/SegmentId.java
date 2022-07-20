@@ -94,7 +94,7 @@ public final class SegmentId implements Comparable<SegmentId>
 
   public static SegmentId of(String dataSource, Interval interval, String version, @Nullable ShardSpec shardSpec)
   {
-    return of(dataSource, interval, version, shardSpec != null ? shardSpec.getIdentifier() : 0);
+    return of(dataSource, interval, version, (shardSpec != null && shardSpec.getIdentifier() != null) ? shardSpec.getIdentifier() : 0);
   }
 
   /**
