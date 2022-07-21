@@ -658,145 +658,111 @@ public class IndexGeneratorJobTest
     verifyJob(new IndexGeneratorJob(config));
   }
 
-  private void verifyJob(IndexGeneratorJob job) throws IOException
-  {
-    Assert.assertTrue(JobHelper.runJobs(ImmutableList.of(job)));
+  private void verifyJob(IndexGeneratorJob job) throws IOException {
+      Assert.assertTrue(JobHelper.runJobs(ImmutableList.of(job)));
 
-    final Map<Interval, List<DataSegment>> intervalToSegments = new HashMap<>();
-    IndexGeneratorJob
-        .getPublishedSegmentAndIndexZipFilePaths(config)
-        .forEach(segmentAndIndexZipFilePath -> intervalToSegments.computeIfAbsent(segmentAndIndexZipFilePath.getSegment().getInterval(), k -> new ArrayList<>())
-                                              .add(segmentAndIndexZipFilePath.getSegment()));
+      final Map<Interval, List<DataSegment>> intervalToSegments = new HashMap<>();
+      IndexGeneratorJob
+              .getPublishedSegmentAndIndexZipFilePaths(config)
+              .forEach(segmentAndIndexZipFilePath -> intervalToSegments.computeIfAbsent(segmentAndIndexZipFilePath.getSegment().getInterval(), k -> new ArrayList<>())
+                      .add(segmentAndIndexZipFilePath.getSegment()));
 
-    List<DataSegmentAndIndexZipFilePath> dataSegmentAndIndexZipFilePaths =
-        IndexGeneratorJob.getPublishedSegmentAndIndexZipFilePaths(config);
-    JobHelper.renameIndexFilesForSegments(config.getSchema(), dataSegmentAndIndexZipFilePaths);
+      List<DataSegmentAndIndexZipFilePath> dataSegmentAndIndexZipFilePaths =
+              IndexGeneratorJob.getPublishedSegmentAndIndexZipFilePaths(config);
+      JobHelper.renameIndexFilesForSegments(config.getSchema(), dataSegmentAndIndexZipFilePaths);
 
-    JobHelper.maybeDeleteIntermediatePath(true, config.getSchema());
-    File workingPath = new File(config.makeIntermediatePath().toUri().getPath());
-    Assert.assertTrue(workingPath.exists());
+      JobHelper.maybeDeleteIntermediatePath(true, config.getSchema());
+      File workingPath = new File(config.makeIntermediatePath().toUri().getPath());
+      Assert.assertTrue(workingPath.exists());
 
-    final Map<Interval, List<File>> intervalToIndexFiles = new HashMap<>();
-    final Map<Interval, List<List<String>>> intervalToAvailableSupplimentalIndexes = new HashMap<>();
-    int segmentNum = 0;
-    for (DateTime currTime = interval.getStart(); currTime.isBefore(interval.getEnd()); currTime = currTime.plusDays(1)) {
-      Object[][] shardInfo = shardInfoForEachSegment[segmentNum++];
-      File segmentOutputFolder = new File(
-          StringUtils.format(
-              "%s/%s/%s_%s/%s",
-              config.getSchema().getIOConfig().getSegmentOutputPath(),
-              config.getSchema().getDataSchema().getDataSource(),
-              currTime.toString(),
-              currTime.plusDays(1).toString(),
-              config.getSchema().getTuningConfig().getVersion()
-          )
-      );
-      Assert.assertTrue(segmentOutputFolder.exists());
-      Assert.assertEquals(shardInfo.length, segmentOutputFolder.list().length);
+      final Map<Interval, List<File>> intervalToIndexFiles = new HashMap<>();
+      int segmentNum = 0;
+      for (DateTime currTime = interval.getStart(); currTime.isBefore(interval.getEnd()); currTime = currTime.plusDays(1)) {
+          Object[][] shardInfo = shardInfoForEachSegment[segmentNum++];
+          File segmentOutputFolder = new File(
+                  StringUtils.format(
+                          "%s/%s/%s_%s/%s",
+                          config.getSchema().getIOConfig().getSegmentOutputPath(),
+                          config.getSchema().getDataSchema().getDataSource(),
+                          currTime.toString(),
+                          currTime.plusDays(1).toString(),
+                          config.getSchema().getTuningConfig().getVersion()
+                  )
+          );
+          Assert.assertTrue(segmentOutputFolder.exists());
+          Assert.assertEquals(shardInfo.length, segmentOutputFolder.list().length);
 
-      for (int partitionNum = 0; partitionNum < shardInfo.length; ++partitionNum) {
-        File individualSegmentFolder = new File(segmentOutputFolder, Integer.toString(partitionNum));
-        Assert.assertTrue(individualSegmentFolder.exists());
+          for (int partitionNum = 0; partitionNum < shardInfo.length; ++partitionNum) {
+              File individualSegmentFolder = new File(segmentOutputFolder, Integer.toString(partitionNum));
+              Assert.assertTrue(individualSegmentFolder.exists());
 
-        File indexZip = new File(individualSegmentFolder, "index.zip");
-        Assert.assertTrue(indexZip.exists());
+              File indexZip = new File(individualSegmentFolder, "index.zip");
+              Assert.assertTrue(indexZip.exists());
 
-        intervalToIndexFiles.computeIfAbsent(new Interval(currTime, currTime.plusDays(1)), k -> new ArrayList<>())
-                            .add(indexZip);
-        intervalToAvailableSupplimentalIndexes.computeIfAbsent(
-            new Interval(currTime, currTime.plusDays(1)),
-            k -> new ArrayList<>()
-        );
-        DimensionsSpec dimensionsSpec = config.getSchema()
-                                              .getDataSchema()
-                                              .getParser()
-                                              .getParseSpec()
-                                              .getDimensionsSpec();
-        boolean hasSupplimentalIndex = IndexMerger.hasSupplimentalIndex(dimensionsSpec);
-        if (hasSupplimentalIndex) {
-          File supplimentalIndexOutDir = new File(individualSegmentFolder, "supplimental_index");
-          Assert.assertTrue(supplimentalIndexOutDir.exists());
-          Assert.assertTrue(supplimentalIndexOutDir.isDirectory());
-
-          boolean hasBloomFilterIndexes = IndexMerger.hasBloomFilterIndexes(dimensionsSpec);
-          if (hasBloomFilterIndexes) {
-            File bloomFilterIndexZipFile = new File(supplimentalIndexOutDir,
-                                                   IndexMergerV9.SupplimentalIndex.BLOOM_FILTERS.getZipFile());
-            Assert.assertTrue(bloomFilterIndexZipFile.exists());
-            Assert.assertTrue(bloomFilterIndexZipFile.isFile());
-            intervalToAvailableSupplimentalIndexes.get(new Interval(currTime, currTime.plusDays(1)))
-                                                  .add(ImmutableList.of(
-                                                      IndexMergerV9.SupplimentalIndex.BLOOM_FILTERS.getTypeName()));
+              intervalToIndexFiles.computeIfAbsent(new Interval(currTime, currTime.plusDays(1)), k -> new ArrayList<>())
+                      .add(indexZip);
           }
-        } else {
-          intervalToAvailableSupplimentalIndexes.get(new Interval(currTime, currTime.plusDays(1)))
-                                                .add(ImmutableList.of());
-        }
       }
-    }
 
-    Assert.assertEquals(intervalToSegments.size(), intervalToIndexFiles.size());
+      Assert.assertEquals(intervalToSegments.size(), intervalToIndexFiles.size());
 
-    segmentNum = 0;
-    for (Entry<Interval, List<DataSegment>> entry : intervalToSegments.entrySet()) {
-      final Interval interval = entry.getKey();
-      final List<DataSegment> segments = entry.getValue();
-      final List<File> indexFiles = intervalToIndexFiles.get(interval);
-      final List<List<String>> availableSupplimentalIndexes = intervalToAvailableSupplimentalIndexes.get(interval);
-      Collections.sort(segments);
-      indexFiles.sort(Comparator.comparing(File::getAbsolutePath));
+      segmentNum = 0;
+      for (Entry<Interval, List<DataSegment>> entry : intervalToSegments.entrySet()) {
+          final Interval interval = entry.getKey();
+          final List<DataSegment> segments = entry.getValue();
+          final List<File> indexFiles = intervalToIndexFiles.get(interval);
+          Collections.sort(segments);
+          indexFiles.sort(Comparator.comparing(File::getAbsolutePath));
 
-      Assert.assertNotNull(indexFiles);
-      Assert.assertEquals(segments.size(), indexFiles.size());
+          Assert.assertNotNull(indexFiles);
+          Assert.assertEquals(segments.size(), indexFiles.size());
 
-      Object[][] shardInfo = shardInfoForEachSegment[segmentNum++];
+          Object[][] shardInfo = shardInfoForEachSegment[segmentNum++];
 
-      for (int i = 0; i < segments.size(); i++) {
-        final DataSegment dataSegment = segments.get(i);
-        final File indexZip = indexFiles.get(i);
+          for (int i = 0; i < segments.size(); i++) {
+              final DataSegment dataSegment = segments.get(i);
+              final File indexZip = indexFiles.get(i);
 
-        Assert.assertEquals(config.getSchema().getTuningConfig().getVersion(), dataSegment.getVersion());
-        Assert.assertEquals("local", dataSegment.getLoadSpec().get("type"));
-        Assert.assertEquals(indexZip.getCanonicalPath(), dataSegment.getLoadSpec().get("path"));
-        Assert.assertEquals(Integer.valueOf(9), dataSegment.getBinaryVersion());
+              Assert.assertEquals(config.getSchema().getTuningConfig().getVersion(), dataSegment.getVersion());
+              Assert.assertEquals("local", dataSegment.getLoadSpec().get("type"));
+              Assert.assertEquals(indexZip.getCanonicalPath(), dataSegment.getLoadSpec().get("path"));
+              Assert.assertEquals(Integer.valueOf(9), dataSegment.getBinaryVersion());
 
-        if ("website".equals(datasourceName)) {
-          Assert.assertEquals("website", dataSegment.getDataSource());
-          Assert.assertEquals("host", dataSegment.getDimensions().get(0));
-          Assert.assertEquals("visited_num", dataSegment.getMetrics().get(0));
-          Assert.assertEquals("unique_hosts", dataSegment.getMetrics().get(1));
-        } else if ("inherit_dims".equals(datasourceName)) {
-          Assert.assertEquals("inherit_dims", dataSegment.getDataSource());
-          Assert.assertEquals(ImmutableList.of("X", "Y", "M", "Q", "B", "F"), dataSegment.getDimensions());
-          Assert.assertEquals("count", dataSegment.getMetrics().get(0));
-        } else if ("inherit_dims2".equals(datasourceName)) {
-          Assert.assertEquals("inherit_dims2", dataSegment.getDataSource());
-          Assert.assertEquals(ImmutableList.of("B", "F", "M", "Q", "X", "Y"), dataSegment.getDimensions());
-          Assert.assertEquals("count", dataSegment.getMetrics().get(0));
-        } else {
-          Assert.fail("Test did not specify supported datasource name");
-        }
+              if ("website".equals(datasourceName)) {
+                  Assert.assertEquals("website", dataSegment.getDataSource());
+                  Assert.assertEquals("host", dataSegment.getDimensions().get(0));
+                  Assert.assertEquals("visited_num", dataSegment.getMetrics().get(0));
+                  Assert.assertEquals("unique_hosts", dataSegment.getMetrics().get(1));
+              } else if ("inherit_dims".equals(datasourceName)) {
+                  Assert.assertEquals("inherit_dims", dataSegment.getDataSource());
+                  Assert.assertEquals(ImmutableList.of("X", "Y", "M", "Q", "B", "F"), dataSegment.getDimensions());
+                  Assert.assertEquals("count", dataSegment.getMetrics().get(0));
+              } else if ("inherit_dims2".equals(datasourceName)) {
+                  Assert.assertEquals("inherit_dims2", dataSegment.getDataSource());
+                  Assert.assertEquals(ImmutableList.of("B", "F", "M", "Q", "X", "Y"), dataSegment.getDimensions());
+                  Assert.assertEquals("count", dataSegment.getMetrics().get(0));
+              } else {
+                  Assert.fail("Test did not specify supported datasource name");
+              }
 
-        Assert.assertEquals(availableSupplimentalIndexes.get(i), dataSegment.getAvailableSupplimentalIndexes());
-
-        if (forceExtendableShardSpecs) {
-          NumberedShardSpec spec = (NumberedShardSpec) dataSegment.getShardSpec();
-          Assert.assertEquals(i, spec.getPartitionNum());
-          Assert.assertEquals(shardInfo.length, spec.getNumCorePartitions());
-        } else if ("hashed".equals(partitionType)) {
-          Integer[] hashShardInfo = (Integer[]) shardInfo[i];
-          HashBasedNumberedShardSpec spec = (HashBasedNumberedShardSpec) dataSegment.getShardSpec();
-          Assert.assertEquals((int) hashShardInfo[0], spec.getPartitionNum());
-          Assert.assertEquals((int) hashShardInfo[1], spec.getNumCorePartitions());
-        } else if ("single".equals(partitionType)) {
-          String[] singleDimensionShardInfo = (String[]) shardInfo[i];
-          SingleDimensionShardSpec spec = (SingleDimensionShardSpec) dataSegment.getShardSpec();
-          Assert.assertEquals(singleDimensionShardInfo[0], spec.getStart());
-          Assert.assertEquals(singleDimensionShardInfo[1], spec.getEnd());
-        } else {
-          throw new RE("Invalid partition type:[%s]", partitionType);
-        }
+              if (forceExtendableShardSpecs) {
+                  NumberedShardSpec spec = (NumberedShardSpec) dataSegment.getShardSpec();
+                  Assert.assertEquals(i, spec.getPartitionNum());
+                  Assert.assertEquals(shardInfo.length, spec.getNumCorePartitions());
+              } else if ("hashed".equals(partitionType)) {
+                  Integer[] hashShardInfo = (Integer[]) shardInfo[i];
+                  HashBasedNumberedShardSpec spec = (HashBasedNumberedShardSpec) dataSegment.getShardSpec();
+                  Assert.assertEquals((int) hashShardInfo[0], spec.getPartitionNum());
+                  Assert.assertEquals((int) hashShardInfo[1], spec.getNumCorePartitions());
+              } else if ("single".equals(partitionType)) {
+                  String[] singleDimensionShardInfo = (String[]) shardInfo[i];
+                  SingleDimensionShardSpec spec = (SingleDimensionShardSpec) dataSegment.getShardSpec();
+                  Assert.assertEquals(singleDimensionShardInfo[0], spec.getStart());
+                  Assert.assertEquals(singleDimensionShardInfo[1], spec.getEnd());
+              } else {
+                  throw new RE("Invalid partition type:[%s]", partitionType);
+              }
+          }
       }
-    }
   }
 }
