@@ -4035,9 +4035,24 @@ public abstract class SeekableStreamSupervisor<PartitionIdType, SequenceOffsetTy
         );
       };
 
+      //Added below logic to print kafka igesting lag
+      if (partitionTimeLags != null) {
+        LagStats lagStatsKafka = computeLags(partitionTimeLags);
+        emitter.emit(
+                ServiceMetricEvent.builder().setDimension("dataSource", dataSource).build("ingest/kafka/timeLag", lagStatsKafka.getTotalLag())
+        );
+        emitter.emit(
+                ServiceMetricEvent.builder().setDimension("dataSource", dataSource).build("ingest/kafka/maxTimeLag", lagStatsKafka.getMaxLag())
+        );
+        emitter.emit(
+                ServiceMetricEvent.builder().setDimension("dataSource", dataSource).build("ingest/kafka/avgTimeLag", lagStatsKafka.getAvgLag())
+        );
+      }
+
       // this should probably really be /count or /records or something.. but keeping like this for backwards compat
       emitFn.accept(partitionRecordLags, "");
       emitFn.accept(partitionTimeLags, "/time");
+
     }
     catch (Exception e) {
       log.warn(e, "Unable to compute lag");
