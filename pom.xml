@@ -122,7 +122,9 @@
         <com.google.apis.storage.version>v1-rev20190523-${com.google.apis.client.version}</com.google.apis.storage.version>
         <repoOrgId>apache.snapshots</repoOrgId>
         <repoOrgName>Apache Snapshot Repository</repoOrgName>
-        <repoOrgUrl>https://repository.apache.org/snapshots</repoOrgUrl>
+        <!--- <repoOrgUrl>https://repository.apache.org/snapshots</repoOrgUrl> -->
+        <!--- Replace apache url with private repo -->
+        <repoOrgUrl>https://artifacts-prod-use1.pinadmin.com/artifactory/maven-jar-bazel-prod-virtual</repoOrgUrl>
 
         <!-- Allow the handful of flaky tests with transient failures to pass. -->
         <surefire.rerunFailingTestsCount>3</surefire.rerunFailingTestsCount>
@@ -219,12 +221,6 @@
         <repository>
           <id>sigar</id>
           <url>https://repository.jboss.org/nexus/content/repositories/thirdparty-uploads/</url>
-        </repository>
-
-        <repository>
-            <id>artifactory-private-local</id>
-            <name>artifactory-private-local</name>
-            <url>https://artifacts-prod-use1.pinadmin.com/artifactory/maven-jar-bazel-prod-virtual</url>
         </repository>
     </repositories>
 
