@@ -220,6 +220,12 @@
           <id>sigar</id>
           <url>https://repository.jboss.org/nexus/content/repositories/thirdparty-uploads/</url>
         </repository>
+
+        <repository>
+            <id>artifactory-private-local</id>
+            <name>artifactory-private-local</name>
+            <url>https://artifacts-prod-use1.pinadmin.com/artifactory/maven-jar-bazel-prod-virtual</url>
+        </repository>
     </repositories>
 
     <dependencyManagement>
