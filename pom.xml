@@ -1857,12 +1857,7 @@
           </modules>
         </profile>
         <profile>
-            <id>default</id>
-            <activation>
-                <property>
-                    <name>reducedBuild-1</name>
-                </property>
-            </activation>
+            <id>child-default</id>
             <modules>
                 <module>core</module>
                 <module>indexing-hadoop</module>
@@ -1880,10 +1875,13 @@
                 <module>cloud/aws-common</module>
                 <module>cloud/gcp-common</module>
                 <!-- Core extensions -->
+                <module>extensions-core/kubernetes-extensions</module>
                 <module>extensions-core/avro-extensions</module>
+                <module>extensions-core/azure-extensions</module>
                 <module>extensions-core/datasketches</module>
                 <module>extensions-core/druid-bloom-filter</module>
                 <module>extensions-core/druid-kerberos</module>
+                <module>extensions-core/druid-pac4j</module>
                 <module>extensions-core/hdfs-storage</module>
                 <module>extensions-core/histogram</module>
                 <module>extensions-core/stats</module>
@@ -1899,13 +1897,16 @@
                 <module>extensions-core/lookups-cached-single</module>
                 <module>extensions-core/ec2-extensions</module>
                 <module>extensions-core/s3-extensions</module>
+                <module>extensions-core/druid-aws-rds-extensions</module>
                 <module>extensions-core/simple-client-sslcontext</module>
                 <module>extensions-core/druid-basic-security</module>
                 <module>extensions-core/google-extensions</module>
+                <module>extensions-core/druid-ranger-security</module>
+                <module>extensions-core/testing-tools</module>
                 <!-- Community extensions -->
                 <module>extensions-contrib/influx-extensions</module>
-                <module>extensions-core/azure-extensions</module>
                 <module>extensions-contrib/cassandra-storage</module>
+                <module>extensions-contrib/dropwizard-emitter</module>
                 <module>extensions-contrib/cloudfiles-extensions</module>
                 <module>extensions-contrib/graphite-emitter</module>
                 <module>extensions-contrib/distinctcount</module>
@@ -1924,6 +1925,10 @@
                 <module>extensions-contrib/moving-average-query</module>
                 <module>extensions-contrib/tdigestsketch</module>
                 <module>extensions-contrib/influxdb-emitter</module>
+                <module>extensions-contrib/gce-extensions</module>
+                <module>extensions-contrib/aliyun-oss-extensions</module>
+                <module>extensions-contrib/prometheus-emitter</module>
+                <module>extensions-contrib/name-numbered-shard-spec</module>
                 <module>extensions-contrib/knox-password-provider</module>
                 <module>extensions-contrib/hash-name-numbered-shard-spec</module>
                 <module>extensions-contrib/bloomfilter-name-numbered-shard-spec</module>
