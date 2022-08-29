@@ -1860,7 +1860,7 @@
             <id>default</id>
             <activation>
                 <property>
-                    <name>!reducedBuild</name>
+                    <name>reducedBuild-1</name>
                 </property>
             </activation>
             <modules>
