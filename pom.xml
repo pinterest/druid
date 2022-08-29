@@ -1858,6 +1858,9 @@
         </profile>
         <profile>
             <id>child-default</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
             <modules>
                 <module>core</module>
                 <module>indexing-hadoop</module>
@@ -1945,6 +1948,8 @@
                 <property>
                     <name>reducedBuild</name>
                 </property>
+                <activeByDefault>true</activeByDefault>
+
             </activation>
             <modules>
                 <module>core</module>

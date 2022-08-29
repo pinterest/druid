@@ -215,7 +215,7 @@
         <profile>
             <id>dist</id>
             <activation>
-                <activeByDefault>false</activeByDefault>
+                <activeByDefault>true</activeByDefault>
                 <property>
                     <name>tar</name>
                 </property>
@@ -719,6 +719,9 @@
          <profile>
             <!-- Bundle the subset of community extensions we care about. -->
             <id>bundle-contrib-pinterest</id>
+             <activation>
+                 <activeByDefault>true</activeByDefault>
+             </activation>
             <build>
                 <plugins>
                     <plugin>
