@@ -1857,7 +1857,8 @@
           </modules>
         </profile>
         <profile>
-            <id>child-default</id>
+            <id>child</id>
+            <echo>building docker image for check-docker-build</echo>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>

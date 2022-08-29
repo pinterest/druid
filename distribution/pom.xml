@@ -318,13 +318,16 @@
                                     <phase>package</phase>
                                     <configuration>
                                         <target>
+                                            <echo>building docker image for check-docker-build</echo>
                                             <condition else="false" property="docker.build.skip" value="true">
                                                 <or>
                                                     <not>
                                                         <available file="Dockerfile"/>
+                                                        <echo>building docker image for check-docker-build ifff</echo>
                                                     </not>
                                                     <not>
                                                         <isset property="docker.build"/>
+                                                        <echo>building docker image for check-docker-build elseee</echo>
                                                     </not>
                                                 </or>
                                             </condition>
