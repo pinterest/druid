@@ -215,7 +215,7 @@
         <profile>
             <id>dist</id>
             <activation>
-                <activeByDefault>true</activeByDefault>
+                <activeByDefault>false</activeByDefault>
                 <property>
                     <name>tar</name>
                 </property>
@@ -318,16 +318,13 @@
                                     <phase>package</phase>
                                     <configuration>
                                         <target>
-                                            <echo>building docker image for check-docker-build</echo>
                                             <condition else="false" property="docker.build.skip" value="true">
                                                 <or>
                                                     <not>
                                                         <available file="Dockerfile"/>
-                                                        <echo>building docker image for check-docker-build ifff</echo>
                                                     </not>
                                                     <not>
                                                         <isset property="docker.build"/>
-                                                        <echo>building docker image for check-docker-build elseee</echo>
                                                     </not>
                                                 </or>
                                             </condition>
@@ -722,9 +719,6 @@
          <profile>
             <!-- Bundle the subset of community extensions we care about. -->
             <id>bundle-contrib-pinterest</id>
-             <activation>
-                 <activeByDefault>true</activeByDefault>
-             </activation>
             <build>
                 <plugins>
                     <plugin>
