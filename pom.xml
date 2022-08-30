@@ -1856,12 +1856,13 @@
             <module>website</module>
           </modules>
         </profile>
-       <!-- <profile>
-            <id>child</id>
-            <echo>building docker image for check-docker-build</echo>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
+       <profile>
+            <id>default</id>
+           <activation>
+               <property>
+                   <name>!reducedBuild</name>
+               </property>
+           </activation>
             <modules>
                 <module>core</module>
                 <module>indexing-hadoop</module>
@@ -1874,12 +1875,12 @@
                 <module>benchmarks</module>
                 <module>extendedset</module>
                 <module>hll</module>
-                <module>web-console</module> -->
+                <module>web-console</module>
                 <!-- Core cloud functionality -->
-          <!--      <module>cloud/aws-common</module>
-                <module>cloud/gcp-common</module> -->
+                <module>cloud/aws-common</module>
+                <module>cloud/gcp-common</module>
                 <!-- Core extensions -->
-          <!--      <module>extensions-core/kubernetes-extensions</module>
+                <module>extensions-core/kubernetes-extensions</module>
                 <module>extensions-core/avro-extensions</module>
                 <module>extensions-core/azure-extensions</module>
                 <module>extensions-core/datasketches</module>
@@ -1906,9 +1907,9 @@
                 <module>extensions-core/druid-basic-security</module>
                 <module>extensions-core/google-extensions</module>
                 <module>extensions-core/druid-ranger-security</module>
-                <module>extensions-core/testing-tools</module> -->
+                <module>extensions-core/testing-tools</module>
                 <!-- Community extensions -->
-            <!--    <module>extensions-contrib/influx-extensions</module>
+                <module>extensions-contrib/influx-extensions</module>
                 <module>extensions-contrib/cassandra-storage</module>
                 <module>extensions-contrib/dropwizard-emitter</module>
                 <module>extensions-contrib/cloudfiles-extensions</module>
@@ -1937,19 +1938,18 @@
                 <module>extensions-contrib/hash-name-numbered-shard-spec</module>
                 <module>extensions-contrib/bloomfilter-name-numbered-shard-spec</module>
                 <module>extensions-contrib/collectset</module>
-                <module>extensions-contrib/serverset-password-provider</module> -->
+                <module>extensions-contrib/serverset-password-provider</module>
                 <!-- distribution packaging -->
-             <!--   <module>distribution</module>
+               <module>distribution</module>
             </modules>
-        </profile>-->
+        </profile>
         <profile>
             <!-- Build only the modules we deploy -->
-            <id>reducedBuild</id>
+            <id>reduced-build</id>
             <activation>
                 <property>
                     <name>reducedBuild</name>
                 </property>
-                <activeByDefault>true</activeByDefault>
             </activation>
             <modules>
                 <module>core</module>
