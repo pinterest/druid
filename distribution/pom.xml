@@ -318,6 +318,7 @@
                                     <phase>package</phase>
                                     <configuration>
                                         <target>
+                                            <echo>execute task here </echo>
                                             <condition else="false" property="docker.build.skip" value="true">
                                                 <or>
                                                     <not>

@@ -1944,7 +1944,7 @@
         </profile>-->
         <profile>
             <!-- Build only the modules we deploy -->
-            <id>reduced-build</id>
+            <id>reducedBuild</id>
             <activation>
                 <property>
                     <name>reducedBuild</name>
