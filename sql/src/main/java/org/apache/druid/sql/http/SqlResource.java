@@ -121,11 +121,11 @@ public class SqlResource
       sqlLifecycleManager.add(sqlQueryId, lifecycle);
 
       lifecycle.plan();
-
+      log.info("Here in SqlResource ");
       final SqlRowTransformer rowTransformer = lifecycle.createRowTransformer();
       final Sequence<Object[]> sequence = lifecycle.execute();
       final Yielder<Object[]> yielder0 = Yielders.each(sequence);
-
+      log.info("Here in SqlResource after yielder0");
       try {
         final Response.ResponseBuilder responseBuilder = Response
             .ok(

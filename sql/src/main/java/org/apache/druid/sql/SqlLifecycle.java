@@ -138,6 +138,7 @@ public class SqlLifecycle
   public String initialize(String sql, Map<String, Object> queryContext)
   {
     transition(State.NEW, State.INITIALIZED);
+   // this.sql = sql.replaceAll("=\\s+", "=").replaceAll("([^,\\d]+)=(\\s?\\d+(?:\\.\\d+)?)", "$1='$2'");
     this.sql = sql;
     this.queryContext = contextWithSqlId(queryContext);
     return sqlQueryId();
@@ -345,6 +346,21 @@ public class SqlLifecycle
   ) throws RelConversionException
   {
     Sequence<Object[]> result;
+    //
+    //int index = sql.indexOf("FROM");
+//Sachin : cancel
+ /*   if(index > 0) {
+      String formSql = sql.substring(index, sql.length());
+      String[] formp =formSql.split("AND",sql.length());
+      for (String str:formp){
+        if(str.indexOf('=') > 0){
+          System.out.println(str);
+        }
+      }
+
+    }
+*/
+
 
     initialize(sql, queryContext);
     try {
