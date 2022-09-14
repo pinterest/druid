@@ -438,7 +438,7 @@ public class TimeseriesQueryQueryToolChest extends QueryToolChest<Result<Timeser
           final Object[] retVal = new Object[fields.size()];
 
           // Position 0 is always __time.
-          retVal[0] = result.getTimestamp().getMillis();
+          retVal[0] = result.getTimestamp() == null ? 0 : result.getTimestamp().getMillis();
 
           // Add other fields.
           final Map<String, Object> resultMap = result.getValue().getBaseObject();
