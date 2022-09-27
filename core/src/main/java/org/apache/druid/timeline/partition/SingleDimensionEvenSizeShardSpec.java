@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
@@ -63,15 +64,10 @@ public class SingleDimensionEvenSizeShardSpec extends SingleDimensionShardSpec
   )
   {
     super(dimension, start, end, partitionNum, numCorePartitions);
-/*  Preconditions.checkArgument(dimension != null && !dimension.isEmpty(), "dimension");
-    Preconditions.checkArgument(start != null && !start.isEmpty(), "start");
-    Preconditions.checkArgument(end != null && !end.isEmpty(), "end");
+    Preconditions.checkArgument(dimension != null && !dimension.isEmpty(), "dimension");
     Preconditions.checkArgument(partitionNum >= 0, "partitionNum");
-    Preconditions.checkArgument(partitions > 0, "partitions");
-    Preconditions.checkArgument(partitionSize > 0, "partitionSize");
-    Preconditions.checkArgument(startCount > 0, "startCount");
-    Preconditions.checkArgument(endCount > 0, "endCount");*/
-
+    Preconditions.checkArgument(startCount >= 0, "startCount");
+    Preconditions.checkArgument(endCount >= 0, "endCount");
     this.partitions = partitions;
     this.partitionSize = partitionSize;
     this.startCount = startCount;
