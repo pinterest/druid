@@ -339,6 +339,7 @@ public class Sink implements Iterable<FireHydrant>, Overshadowable<Sink>
         .setIndexSchema(indexSchema)
         .setMaxRowCount(maxRowsInMemory)
         .setMaxBytesInMemory(maxBytesInMemory)
+        .setEnableInMemoryBitmap(enableInMemoryBitmap)
         .build();
 
     final FireHydrant old;

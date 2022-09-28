@@ -125,7 +125,7 @@ public class StreamAppenderatorTester implements AutoCloseable
       final boolean enablePushFailure
   )
   {
-    this(maxRowsInMemory, maxSizeInBytes, basePersistDirectory, enablePushFailure, new SimpleRowIngestionMeters(), false, false);
+    this(maxRowsInMemory, maxSizeInBytes, basePersistDirectory, enablePushFailure, new SimpleRowIngestionMeters(), false, null, false, true);
   }
 
   public StreamAppenderatorTester(
@@ -136,7 +136,7 @@ public class StreamAppenderatorTester implements AutoCloseable
       final RowIngestionMeters rowIngestionMeters
   )
   {
-    this(maxRowsInMemory, maxSizeInBytes, basePersistDirectory, enablePushFailure, rowIngestionMeters, false, false);
+    this(maxRowsInMemory, maxSizeInBytes, basePersistDirectory, enablePushFailure, rowIngestionMeters, false, null, false, true);
   }
 
   public StreamAppenderatorTester(
@@ -146,7 +146,9 @@ public class StreamAppenderatorTester implements AutoCloseable
       final boolean enablePushFailure,
       final RowIngestionMeters rowIngestionMeters,
       final boolean skipBytesInMemoryOverheadCheck,
-      final boolean enableInMemoryBitmap
+      List<String> dimensionNames,
+      final boolean enableInMemoryBitmap,
+      final boolean rollup
   )
   {
     objectMapper = new DefaultObjectMapper();
@@ -156,7 +158,8 @@ public class StreamAppenderatorTester implements AutoCloseable
         new MapInputRowParser(
             new JSONParseSpec(
                 new TimestampSpec("ts", "auto", null),
-                new DimensionsSpec(null, null, null),
+                dimensionNames == null ? new DimensionsSpec(null, null, null) :
+                new DimensionsSpec(DimensionsSpec.getDefaultSchemas(dimensionNames), null, null),
                 null,
                 null,
                 null
@@ -171,7 +174,7 @@ public class StreamAppenderatorTester implements AutoCloseable
             new CountAggregatorFactory("count"),
             new LongSumAggregatorFactory("met", "met")
         },
-        new UniformGranularitySpec(Granularities.MINUTE, Granularities.NONE, null),
+        new UniformGranularitySpec(Granularities.MINUTE, Granularities.NONE, rollup, null),
         null,
         objectMapper
     );

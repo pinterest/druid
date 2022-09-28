@@ -38,6 +38,12 @@ import org.apache.druid.query.Result;
 import org.apache.druid.query.SegmentDescriptor;
 import org.apache.druid.query.aggregation.LongSumAggregatorFactory;
 import org.apache.druid.query.context.ResponseContext;
+import org.apache.druid.query.filter.AndDimFilter;
+import org.apache.druid.query.filter.BoundDimFilter;
+import org.apache.druid.query.filter.DimFilter;
+import org.apache.druid.query.filter.NotDimFilter;
+import org.apache.druid.query.filter.SelectorDimFilter;
+import org.apache.druid.query.ordering.StringComparators;
 import org.apache.druid.query.scan.ScanQuery;
 import org.apache.druid.query.scan.ScanResultValue;
 import org.apache.druid.query.spec.MultipleSpecificSegmentSpec;
@@ -164,7 +170,9 @@ public class StreamAppenderatorTest extends InitializedNullHandlingTest
             true,
             new SimpleRowIngestionMeters(),
             true,
-            false
+            null,
+            false,
+            true
         )
     ) {
       final Appenderator appenderator = tester.getAppenderator();
@@ -217,7 +225,9 @@ public class StreamAppenderatorTest extends InitializedNullHandlingTest
             true,
             new SimpleRowIngestionMeters(),
             true,
-            false
+            null,
+            false,
+            true
         )
     ) {
       final Appenderator appenderator = tester.getAppenderator();
@@ -403,7 +413,9 @@ public class StreamAppenderatorTest extends InitializedNullHandlingTest
             true,
             new SimpleRowIngestionMeters(),
             true,
-            false
+            null,
+            false,
+            true
         )
     ) {
       final Appenderator appenderator = tester.getAppenderator();
@@ -1195,6 +1207,117 @@ public class StreamAppenderatorTest extends InitializedNullHandlingTest
           new Object[]{DateTimes.of("2001T03").getMillis(), "foo", 1L, 64L},
           ((List<Object>) ((List<Object>) results4.get(1).getEvents()).get(0)).toArray()
       );
+    }
+  }
+
+  private void testQueryByIntervalsInMemoryBitmapHelper(DimFilter filters,
+                                                        Map<String, Object> expectedResult,
+                                                        List<String> dimensionNamesInSchema,
+                                                        boolean enableInMemoryBitmapInIngestionSpec,
+                                                        boolean useInMemoryBitmapInQueryContext,
+                                                        boolean rollup) throws Exception
+  {
+    // Use a large enough threshold to make sure persist doesn't trigger
+    int maxRowsInMemory = 8;
+
+    try (final StreamAppenderatorTester tester = new StreamAppenderatorTester(maxRowsInMemory, -1, null, true, new SimpleRowIngestionMeters(), true, dimensionNamesInSchema, enableInMemoryBitmapInIngestionSpec, rollup)) {
+      final Appenderator appenderator = tester.getAppenderator();
+
+      appenderator.startJob();
+      appenderator.add(IDENTIFIERS.get(0), ir("2000", "foo2", "bar", 1), Suppliers.ofInstance(Committers.nil()));
+      appenderator.add(IDENTIFIERS.get(0), ir("2000", "foo1", "bar1", 2), Suppliers.ofInstance(Committers.nil()));
+      appenderator.add(IDENTIFIERS.get(0), ir("2000", "foo2", "bar3", 1), Suppliers.ofInstance(Committers.nil()));
+      appenderator.add(IDENTIFIERS.get(0), ir("2000", "foo1", "bar", 1), Suppliers.ofInstance(Committers.nil()));
+
+      final TimeseriesQuery query1 = Druids.newTimeseriesQueryBuilder()
+                                           .dataSource(StreamAppenderatorTester.DATASOURCE)
+                                           .intervals(ImmutableList.of(Intervals.of("2000/2001")))
+                                           .aggregators(
+                                               Arrays.asList(
+                                                   new LongSumAggregatorFactory("count", "count"),
+                                                   new LongSumAggregatorFactory("met", "met")
+                                               )
+                                           )
+                                           .filters(filters)
+                                           .granularity(Granularities.DAY)
+                                           .context(ImmutableMap.of("useInMemoryBitmapInQuery", useInMemoryBitmapInQueryContext))
+                                           .build();
+
+      final List<Result<TimeseriesResultValue>> results1 =
+          QueryPlus.wrap(query1).run(appenderator, ResponseContext.createEmpty()).toList();
+      Assert.assertEquals(
+          ImmutableList.of(
+              new Result<>(
+                  DateTimes.of("2000"),
+                  new TimeseriesResultValue(expectedResult)
+              )
+          ),
+          results1
+      );
+    }
+  }
+
+  @Test
+  public void testQueryByIntervalsInMemoryBitmap() throws Exception
+  {
+    // Test schemaless and explicitly defined schema
+    for (List<String> dimensionNamesInSchema : Arrays.asList(null, ImmutableList.of("dim1", "dim2"))) {
+      // Test roll up rows during ingestion
+      for (boolean rollup : Arrays.asList(false, true)) {
+        // Test turn on/off in memory bitmap during index
+        for (boolean enableInMemoryBitmapInIngestionSpec : Arrays.asList(false, true)) {
+          // Test query using/not using in memory bitmap
+          for (boolean useInMemoryBitmapInQueryContext : Arrays.asList(false, true)) {
+            // Test filtering with select filter on existing values on dimension with in memory bitmap
+            testQueryByIntervalsInMemoryBitmapHelper(
+                new AndDimFilter(
+                    new SelectorDimFilter("dim1", "foo2", null),
+                    new SelectorDimFilter("dim2", "bar3", null)
+                ),
+                ImmutableMap.of("count", 1L, "met", 1L),
+                dimensionNamesInSchema,
+                enableInMemoryBitmapInIngestionSpec,
+                useInMemoryBitmapInQueryContext,
+                rollup
+            );
+
+            // Test filtering with select filter on non existing values on dimension with in memory bitmap
+            testQueryByIntervalsInMemoryBitmapHelper(
+                new AndDimFilter(
+                    new SelectorDimFilter("dim1", "foo2", null),
+                    new SelectorDimFilter("dim2", "bar4", null)
+                ),
+                ImmutableMap.of("count", 0L, "met", 0L),
+                dimensionNamesInSchema,
+                enableInMemoryBitmapInIngestionSpec,
+                useInMemoryBitmapInQueryContext,
+                rollup
+            );
+
+            // Test filtering with not filter on dimension with in memory bitmap
+            testQueryByIntervalsInMemoryBitmapHelper(
+                new NotDimFilter(
+                    new SelectorDimFilter("dim1", "foo2", null)
+                ),
+                ImmutableMap.of("count", 2L, "met", 3L),
+                dimensionNamesInSchema,
+                enableInMemoryBitmapInIngestionSpec,
+                useInMemoryBitmapInQueryContext,
+                rollup
+            );
+
+            // Test filtering with bound filter on dimension with in memory bitmap
+            testQueryByIntervalsInMemoryBitmapHelper(
+                new BoundDimFilter("dim2", "bar", null, true, false, null, null, StringComparators.ALPHANUMERIC),
+                ImmutableMap.of("count", 2L, "met", 3L),
+                dimensionNamesInSchema,
+                enableInMemoryBitmapInIngestionSpec,
+                useInMemoryBitmapInQueryContext,
+                rollup
+            );
+          }
+        }
+      }
     }
   }
 
