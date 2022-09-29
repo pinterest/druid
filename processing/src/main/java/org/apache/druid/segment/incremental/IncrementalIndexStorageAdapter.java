@@ -25,6 +25,7 @@ import com.google.common.collect.Lists;
 import org.apache.druid.java.util.common.granularity.Granularity;
 import org.apache.druid.java.util.common.guava.Sequence;
 import org.apache.druid.java.util.common.guava.Sequences;
+import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.query.BaseQuery;
 import org.apache.druid.query.QueryMetrics;
 import org.apache.druid.query.filter.Filter;
@@ -55,6 +56,7 @@ import java.util.Objects;
  */
 public class IncrementalIndexStorageAdapter implements StorageAdapter
 {
+  private static final Logger log = new Logger(OnheapIncrementalIndex.class);
   private static final ColumnCapabilities.CoercionLogic STORAGE_ADAPTER_CAPABILITIES_COERCE_LOGIC =
       new ColumnCapabilities.CoercionLogic()
       {
@@ -276,12 +278,14 @@ public class IncrementalIndexStorageAdapter implements StorageAdapter
     if (descending) {
       intervals = Lists.reverse(ImmutableList.copyOf(intervals));
     }
-
+    log.error("debasatwa: before if(!index.isEnableInMemoryBitmap() || !useInMemoryBitmapInQuery");
     if (!index.isEnableInMemoryBitmap() || !useInMemoryBitmapInQuery) {
+      log.error("debasatwa: inside of (!index.isEnableInMemoryBitmap() || !useInMemoryBitmapInQuery");
       return Sequences
           .simple(intervals)
           .map(i -> new IncrementalIndexCursor(virtualColumns, descending, filter, i, actualInterval, gran));
     } else {
+      log.error("debasatwa: in the else of (!index.isEnableInMemoryBitmap() || !useInMemoryBitmapInQuery");
       final ColumnSelectorBitmapIndexSelector bitmapIndexSelector = makeBitmapIndexSelector(virtualColumns);
       final QueryableIndexStorageAdapter.FilterAnalysis filterAnalysis = QueryableIndexStorageAdapter
           .analyzeFilter(filter, bitmapIndexSelector, queryMetrics);
