@@ -44,6 +44,7 @@ import org.apache.druid.java.util.common.DateTimes;
 import org.apache.druid.java.util.common.IAE;
 import org.apache.druid.java.util.common.ISE;
 import org.apache.druid.java.util.common.granularity.Granularity;
+import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.java.util.common.parsers.ParseException;
 import org.apache.druid.java.util.common.parsers.UnparseableColumnsParseException;
 import org.apache.druid.query.aggregation.AggregatorFactory;
@@ -250,7 +251,7 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
 
   private volatile DateTime maxIngestedEventTime;
 
-
+  private static final Logger log = new Logger(IncrementalIndex.class);
   /**
    * Setting deserializeComplexMetrics to false is necessary for intermediate aggregation such as groupBy that
    * should not deserialize input columns using ComplexMetricSerde for aggregators that return complex metrics.
@@ -353,6 +354,7 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
               ColumnHolder.TIME_COLUMN_NAME,
               ColumnCapabilitiesImpl.createSimpleNumericColumnCapabilities(ColumnType.LONG)
       );
+      log.error("debasatwa:before if (enableInMemoryBitmap) 358 incrementalindex %s", enableInMemoryBitmap);
       if (enableInMemoryBitmap) {
         columns.put(
                 ColumnHolder.TIME_COLUMN_NAME,
