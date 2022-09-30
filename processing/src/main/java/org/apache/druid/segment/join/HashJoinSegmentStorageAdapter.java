@@ -25,6 +25,7 @@ import org.apache.druid.java.util.common.granularity.Granularity;
 import org.apache.druid.java.util.common.guava.Sequence;
 import org.apache.druid.java.util.common.guava.Sequences;
 import org.apache.druid.java.util.common.io.Closer;
+import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.query.QueryMetrics;
 import org.apache.druid.query.filter.Filter;
 import org.apache.druid.segment.Cursor;
@@ -56,6 +57,7 @@ import java.util.Set;
 
 public class HashJoinSegmentStorageAdapter implements StorageAdapter
 {
+  private static final Logger log = new Logger(HashJoinSegmentStorageAdapter.class);
   private final StorageAdapter baseAdapter;
 
   @Nullable
@@ -264,6 +266,7 @@ public class HashJoinSegmentStorageAdapter implements StorageAdapter
       boolean useInMemoryBitmapInQuery
   )
   {
+    log.error("debasatwa: 2nd line processNonVectorized useInMemoryBitmapInQuery %s", useInMemoryBitmapInQuery);
     final Filter combinedFilter = baseFilterAnd(filter);
 
     if (clauses.isEmpty()) {
@@ -274,7 +277,7 @@ public class HashJoinSegmentStorageAdapter implements StorageAdapter
           gran,
           descending,
           queryMetrics,
-           false
+          useInMemoryBitmapInQuery
       );
     }
 

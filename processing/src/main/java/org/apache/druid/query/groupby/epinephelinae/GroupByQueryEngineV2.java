@@ -68,6 +68,7 @@ import org.apache.druid.segment.column.Types;
 import org.apache.druid.segment.column.ValueType;
 import org.apache.druid.segment.data.IndexedInts;
 import org.apache.druid.segment.filter.Filters;
+import org.apache.druid.segment.incremental.OnheapIncrementalIndex;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 
@@ -91,6 +92,7 @@ import java.util.stream.Stream;
  */
 public class GroupByQueryEngineV2
 {
+  private static final Logger log = new Logger(GroupByQueryEngineV2.class);
   private static final GroupByStrategyFactory STRATEGY_FACTORY = new GroupByStrategyFactory();
 
   private static GroupByColumnSelectorPlus[] createGroupBySelectorPlus(
@@ -191,7 +193,7 @@ public class GroupByQueryEngineV2
   )
   {
     final boolean useInMemoryBitmapInQuery = query.getContextBoolean("useInMemoryBitmapInQuery", true);
-
+    log.error("debasatwa: 2nd line processNonVectorized useInMemoryBitmapInQuery %s", useInMemoryBitmapInQuery);
     final Sequence<Cursor> cursors = storageAdapter.makeCursors(
         filter,
         interval,

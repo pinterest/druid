@@ -56,7 +56,7 @@ import java.util.Objects;
  */
 public class IncrementalIndexStorageAdapter implements StorageAdapter
 {
-  private static final Logger log = new Logger(OnheapIncrementalIndex.class);
+  private static final Logger log = new Logger(IncrementalIndexStorageAdapter.class);
   private static final ColumnCapabilities.CoercionLogic STORAGE_ADAPTER_CAPABILITIES_COERCE_LOGIC =
       new ColumnCapabilities.CoercionLogic()
       {
@@ -264,6 +264,7 @@ public class IncrementalIndexStorageAdapter implements StorageAdapter
       final boolean useInMemoryBitmapInQuery
   )
   {
+    log.error("debasatwa: first line makeCursors %s", useInMemoryBitmapInQuery);
     if (index.isEmpty()) {
       return Sequences.empty();
     }
