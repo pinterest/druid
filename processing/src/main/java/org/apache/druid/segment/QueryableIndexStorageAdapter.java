@@ -28,6 +28,7 @@ import org.apache.druid.java.util.common.granularity.Granularities;
 import org.apache.druid.java.util.common.granularity.Granularity;
 import org.apache.druid.java.util.common.guava.Sequence;
 import org.apache.druid.java.util.common.guava.Sequences;
+import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.query.BitmapResultFactory;
 import org.apache.druid.query.DefaultBitmapResultFactory;
 import org.apache.druid.query.QueryMetrics;
@@ -59,6 +60,7 @@ import java.util.Objects;
  */
 public class QueryableIndexStorageAdapter implements StorageAdapter
 {
+  private static final Logger log = new Logger(QueryableIndexStorageAdapter.class);
   public static final int DEFAULT_VECTOR_SIZE = 512;
 
   private final QueryableIndex index;
@@ -251,6 +253,7 @@ public class QueryableIndexStorageAdapter implements StorageAdapter
       boolean useInMemoryBitmapInQuery
   )
   {
+    log.error("debasatwa: first line QueryableIndexStorageAdapter makeCursors %s", useInMemoryBitmapInQuery);
     if (queryMetrics != null) {
       queryMetrics.vectorized(false);
     }

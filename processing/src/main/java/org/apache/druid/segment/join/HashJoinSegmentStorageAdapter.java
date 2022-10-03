@@ -266,7 +266,7 @@ public class HashJoinSegmentStorageAdapter implements StorageAdapter
       boolean useInMemoryBitmapInQuery
   )
   {
-    log.error("debasatwa: 2nd line processNonVectorized useInMemoryBitmapInQuery %s", useInMemoryBitmapInQuery);
+    log.error("debasatwa: 2nd line HashJoinSegmentStorageAdapter in public Sequence<Cursor> makeCursors useInMemoryBitmapInQuery %s", useInMemoryBitmapInQuery);
     final Filter combinedFilter = baseFilterAnd(filter);
 
     if (clauses.isEmpty()) {

@@ -264,7 +264,7 @@ public class IncrementalIndexStorageAdapter implements StorageAdapter
       final boolean useInMemoryBitmapInQuery
   )
   {
-    log.error("debasatwa: first line makeCursors %s", useInMemoryBitmapInQuery);
+    log.error("debasatwa: first line IncrementalIndexStorageAdapter makeCursors %s", useInMemoryBitmapInQuery);
     if (index.isEmpty()) {
       return Sequences.empty();
     }
