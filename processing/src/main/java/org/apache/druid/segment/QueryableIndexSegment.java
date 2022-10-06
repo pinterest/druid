@@ -19,6 +19,7 @@
 
 package org.apache.druid.segment;
 
+import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.timeline.SegmentId;
 import org.joda.time.Interval;
 
@@ -26,6 +27,7 @@ import org.joda.time.Interval;
  */
 public class QueryableIndexSegment implements Segment
 {
+  private static final Logger log = new Logger(QueryableIndexSegment.class);
   private final QueryableIndex index;
   private final QueryableIndexStorageAdapter storageAdapter;
   private final SegmentId segmentId;
@@ -58,6 +60,7 @@ public class QueryableIndexSegment implements Segment
   @Override
   public StorageAdapter asStorageAdapter()
   {
+    log.error("debasatwa: first line asStorageAdapter returns QueryableIndexStorageAdapter object");
     return storageAdapter;
   }
 

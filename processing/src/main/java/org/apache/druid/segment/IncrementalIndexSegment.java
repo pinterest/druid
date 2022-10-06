@@ -19,6 +19,7 @@
 
 package org.apache.druid.segment;
 
+import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.segment.incremental.IncrementalIndex;
 import org.apache.druid.segment.incremental.IncrementalIndexStorageAdapter;
 import org.apache.druid.timeline.SegmentId;
@@ -28,6 +29,7 @@ import org.joda.time.Interval;
  */
 public class IncrementalIndexSegment implements Segment
 {
+  private static final Logger log = new Logger(IncrementalIndexSegment.class);
   private final IncrementalIndex index;
   private final SegmentId segmentId;
 
@@ -58,6 +60,7 @@ public class IncrementalIndexSegment implements Segment
   @Override
   public StorageAdapter asStorageAdapter()
   {
+    log.error("debasatwa: first line asStorageAdapter creating new IncrementalIndexStorageAdapter");
     return new IncrementalIndexStorageAdapter(index);
   }
 
