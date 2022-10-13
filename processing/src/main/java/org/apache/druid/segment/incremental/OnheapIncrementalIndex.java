@@ -125,7 +125,7 @@ public class OnheapIncrementalIndex extends IncrementalIndex
    */
   private static long getMaxBytesPerRowForAggregators(IncrementalIndexSchema incrementalIndexSchema)
   {
-    log.error("debasatwa:before inside getMaxBytesPerRowForAggregators");
+    //log.error("debasatwa:before inside getMaxBytesPerRowForAggregators");
     final long rowsPerAggregator =
         incrementalIndexSchema.isRollup() ? ROLLUP_RATIO_FOR_AGGREGATOR_FOOTPRINT_ESTIMATION : 1;
 
@@ -153,7 +153,7 @@ public class OnheapIncrementalIndex extends IncrementalIndex
       final boolean concurrentEventAdd
   )
   {
-    log.error("debasatwa:before inside initAggs");
+    //log.error("debasatwa:before inside initAggs");
     selectors = new HashMap<>();
     for (AggregatorFactory agg : metrics) {
       selectors.put(
@@ -175,7 +175,7 @@ public class OnheapIncrementalIndex extends IncrementalIndex
       boolean skipMaxRowsInMemoryCheck
   ) throws IndexSizeExceededException
   {
-    log.error("debasatwa:before if addToFacts");
+    //log.error("debasatwa:before if addToFacts");
     final List<String> parseExceptionMessages = new ArrayList<>();
     final int priorIndex = facts.getPriorIndex(key);
 
@@ -205,11 +205,11 @@ public class OnheapIncrementalIndex extends IncrementalIndex
         );
       }
       final int prev = facts.putIfAbsent(key, rowIndex);
-      log.error("debasatwa:before if (IncrementalIndexRow.EMPTY_ROW_INDEX == prev");
+      //log.error("debasatwa:before if (IncrementalIndexRow.EMPTY_ROW_INDEX == prev");
       if (IncrementalIndexRow.EMPTY_ROW_INDEX == prev) {
-        log.error("debasatwa:before if (isEnableInMemoryBitmap()) ");
+        //log.error("debasatwa:before if (isEnableInMemoryBitmap()) ");
         if (isEnableInMemoryBitmap()) {
-          log.error("debasatwa:inside if (isEnableInMemoryBitmap())");
+          //log.error("debasatwa:inside if (isEnableInMemoryBitmap())");
           // After a new row is added, update indexes for all dimensions that enable bitmaps
           for (int i = 0; i < key.getDims().length; i++) {
             if (key.getDimensionDescsList().get(i).getCapabilities().hasBitmapIndexes()) {
@@ -256,7 +256,7 @@ public class OnheapIncrementalIndex extends IncrementalIndex
    */
   private long estimateRowSizeInBytes(IncrementalIndexRow key, long maxBytesPerRowForAggregators)
   {
-    log.error("debasatwa: inside estimateRowSizeInBytes");
+    //log.error("debasatwa: inside estimateRowSizeInBytes");
     return ROUGH_OVERHEAD_PER_MAP_ENTRY + key.estimateBytesInMemory() + maxBytesPerRowForAggregators;
   }
 
@@ -273,7 +273,7 @@ public class OnheapIncrementalIndex extends IncrementalIndex
       InputRow row
   )
   {
-    log.error("debasatwa:before inside factorizeAggs");
+    //log.error("debasatwa:before inside factorizeAggs");
     rowContainer.set(row);
     for (int i = 0; i < metrics.length; i++) {
       final AggregatorFactory agg = metrics[i];
@@ -290,7 +290,7 @@ public class OnheapIncrementalIndex extends IncrementalIndex
       List<String> parseExceptionsHolder
   )
   {
-    log.error("debasatwa:before inside doAggregate");
+    //log.error("debasatwa:before inside doAggregate");
     rowContainer.set(row);
 
     for (int i = 0; i < aggs.length; i++) {
@@ -312,7 +312,7 @@ public class OnheapIncrementalIndex extends IncrementalIndex
 
   private void closeAggregators()
   {
-    log.error("debasatwa:before inside closeAggregators");
+    //log.error("debasatwa:before inside closeAggregators");
     Closer closer = Closer.create();
     for (Aggregator[] aggs : aggregators.values()) {
       for (Aggregator agg : aggs) {
@@ -347,7 +347,7 @@ public class OnheapIncrementalIndex extends IncrementalIndex
   @Override
   public boolean canAppendRow()
   {
-    log.error("debasatwa:before inside canAppendRow");
+    //log.error("debasatwa:before inside canAppendRow");
     final boolean countCheck = size() < maxRowCount;
     // if maxBytesInMemory = -1, then ignore sizeCheck
     final boolean sizeCheck = maxBytesInMemory <= 0 || getBytesInMemory().get() < maxBytesInMemory;

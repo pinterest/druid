@@ -192,7 +192,7 @@ public class GroupByQueryEngineV2
   )
   {
     final boolean useInMemoryBitmapInQuery = query.getContextBoolean("useInMemoryBitmapInQuery", true);
-    log.error("debasatwa: 2nd line processNonVectorized useInMemoryBitmapInQuery %s", useInMemoryBitmapInQuery);
+    //log.error("debasatwa: 2nd line processNonVectorized useInMemoryBitmapInQuery %s", useInMemoryBitmapInQuery);
     final Sequence<Cursor> cursors = storageAdapter.makeCursors(
         filter,
         interval,

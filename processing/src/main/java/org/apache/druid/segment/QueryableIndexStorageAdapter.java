@@ -253,7 +253,7 @@ public class QueryableIndexStorageAdapter implements StorageAdapter
       boolean useInMemoryBitmapInQuery
   )
   {
-    log.error("debasatwa: first line QueryableIndexStorageAdapter makeCursors %s", useInMemoryBitmapInQuery);
+    //log.error("debasatwa: first line QueryableIndexStorageAdapter makeCursors %s", useInMemoryBitmapInQuery);
     if (queryMetrics != null) {
       queryMetrics.vectorized(false);
     }

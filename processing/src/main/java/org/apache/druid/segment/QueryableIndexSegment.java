@@ -60,7 +60,7 @@ public class QueryableIndexSegment implements Segment
   @Override
   public StorageAdapter asStorageAdapter()
   {
-    log.error("debasatwa: first line asStorageAdapter returns QueryableIndexStorageAdapter object");
+    //log.error("debasatwa: first line asStorageAdapter returns QueryableIndexStorageAdapter object");
     return storageAdapter;
   }
 
