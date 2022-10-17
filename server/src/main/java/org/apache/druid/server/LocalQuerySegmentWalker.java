@@ -23,6 +23,7 @@ import com.google.inject.Inject;
 import org.apache.druid.java.util.common.IAE;
 import org.apache.druid.java.util.common.ISE;
 import org.apache.druid.java.util.common.guava.FunctionalIterable;
+import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.java.util.emitter.service.ServiceEmitter;
 import org.apache.druid.query.DirectQueryProcessingPool;
 import org.apache.druid.query.FluentQueryRunnerBuilder;
@@ -56,6 +57,7 @@ import java.util.stream.StreamSupport;
  */
 public class LocalQuerySegmentWalker implements QuerySegmentWalker
 {
+  private static final Logger log = new Logger(LocalQuerySegmentWalker.class);
   private final QueryRunnerFactoryConglomerate conglomerate;
   private final SegmentWrangler segmentWrangler;
   private final JoinableFactoryWrapper joinableFactoryWrapper;
@@ -86,7 +88,7 @@ public class LocalQuerySegmentWalker implements QuerySegmentWalker
     if (!analysis.isConcreteBased() || !analysis.isGlobal()) {
       throw new IAE("Cannot query dataSource locally: %s", analysis.getDataSource());
     }
-
+    log.error("debasatwa: first line getQueryRunnerForIntervals in LocalQuerySegmentWalker ");
     // wrap in ReferenceCountingSegment, these aren't currently managed by SegmentManager so reference tracking doesn't
     // matter, but at least some or all will be in a future PR
     final Iterable<ReferenceCountingSegment> segments =
