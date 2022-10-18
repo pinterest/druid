@@ -62,6 +62,7 @@ public class QueryableIndexStorageAdapter implements StorageAdapter
 {
   private static final Logger log = new Logger(QueryableIndexStorageAdapter.class);
   public static final int DEFAULT_VECTOR_SIZE = 512;
+  private static int countLogPrints =0;
 
   private final QueryableIndex index;
 
@@ -253,7 +254,10 @@ public class QueryableIndexStorageAdapter implements StorageAdapter
       boolean useInMemoryBitmapInQuery
   )
   {
-    //log.error("debasatwa: first line QueryableIndexStorageAdapter makeCursors %s", useInMemoryBitmapInQuery);
+    countLogPrints++;
+    if (countLogPrints< 6000) {
+      log.error("debasatwa: first line QueryableIndexStorageAdapter makeCursors %s", useInMemoryBitmapInQuery);
+    }
     if (queryMetrics != null) {
       queryMetrics.vectorized(false);
     }

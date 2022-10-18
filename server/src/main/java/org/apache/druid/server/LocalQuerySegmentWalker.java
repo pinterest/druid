@@ -63,6 +63,7 @@ public class LocalQuerySegmentWalker implements QuerySegmentWalker
   private final JoinableFactoryWrapper joinableFactoryWrapper;
   private final QueryScheduler scheduler;
   private final ServiceEmitter emitter;
+  private static int countLogPrints =0;
 
   @Inject
   public LocalQuerySegmentWalker(
@@ -88,7 +89,12 @@ public class LocalQuerySegmentWalker implements QuerySegmentWalker
     if (!analysis.isConcreteBased() || !analysis.isGlobal()) {
       throw new IAE("Cannot query dataSource locally: %s", analysis.getDataSource());
     }
-    log.error("debasatwa: first line getQueryRunnerForIntervals in LocalQuerySegmentWalker ");
+
+    countLogPrints++;
+
+    if (countLogPrints< 6000) {
+      log.error("debasatwa: first line getQueryRunnerForIntervals in LocalQuerySegmentWalker ");
+    }
     // wrap in ReferenceCountingSegment, these aren't currently managed by SegmentManager so reference tracking doesn't
     // matter, but at least some or all will be in a future PR
     final Iterable<ReferenceCountingSegment> segments =

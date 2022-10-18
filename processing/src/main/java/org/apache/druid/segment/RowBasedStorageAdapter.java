@@ -54,6 +54,7 @@ public class RowBasedStorageAdapter<RowType> implements StorageAdapter
   private final Sequence<RowType> rowSequence;
   private final RowAdapter<RowType> rowAdapter;
   private final RowSignature rowSignature;
+  private static int countLogPrints =0;
 
   RowBasedStorageAdapter(
       final Sequence<RowType> rowSequence,
@@ -168,7 +169,11 @@ public class RowBasedStorageAdapter<RowType> implements StorageAdapter
       boolean useInMemoryBitmapInQuery
   )
   {
-    log.error("debasatwa: first line RowBasedStorageAdapter makeCursors %s", useInMemoryBitmapInQuery);
+    countLogPrints++;
+    if (countLogPrints< 6000) {
+      log.error("debasatwa: first line RowBasedStorageAdapter makeCursors %s", useInMemoryBitmapInQuery);
+    }
+
     final Interval actualInterval = queryInterval.overlap(new Interval(getMinTime(), gran.bucketEnd(getMaxTime())));
 
     if (actualInterval == null) {

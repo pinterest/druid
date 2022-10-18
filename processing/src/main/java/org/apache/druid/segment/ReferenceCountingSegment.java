@@ -48,11 +48,14 @@ public class ReferenceCountingSegment extends ReferenceCountingCloseableObject<S
   private final short endRootPartitionId;
   private final short minorVersion;
   private final short atomicUpdateGroupSize;
+  private static int countLogPrints =0;
 
   public static ReferenceCountingSegment wrapRootGenerationSegment(Segment baseSegment)
   {
-    log.error("debasatwa: first line ReferenceCountingSegment wrapRootGenerationSegment %s", baseSegment.toString());
-
+    countLogPrints++;
+    if (countLogPrints< 6000) {
+        log.error("debasatwa: first line ReferenceCountingSegment wrapRootGenerationSegment %s", baseSegment.toString());
+    }
     return new ReferenceCountingSegment(
         Preconditions.checkNotNull(baseSegment, "baseSegment"),
         baseSegment.getId().getPartitionNum(),

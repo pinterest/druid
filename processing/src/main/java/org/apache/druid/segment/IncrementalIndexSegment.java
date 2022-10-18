@@ -32,6 +32,7 @@ public class IncrementalIndexSegment implements Segment
   private static final Logger log = new Logger(IncrementalIndexSegment.class);
   private final IncrementalIndex index;
   private final SegmentId segmentId;
+  private static int countLogPrints =0;
 
   public IncrementalIndexSegment(IncrementalIndex index, SegmentId segmentId)
   {
@@ -60,7 +61,10 @@ public class IncrementalIndexSegment implements Segment
   @Override
   public StorageAdapter asStorageAdapter()
   {
-    log.error("debasatwa: first line asStorageAdapter creating new IncrementalIndexStorageAdapter");
+    countLogPrints++;
+    if (countLogPrints< 6000) {
+      log.error("debasatwa: first line asStorageAdapter creating new IncrementalIndexStorageAdapter");
+    }
     return new IncrementalIndexStorageAdapter(index);
   }
 
