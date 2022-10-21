@@ -29,6 +29,7 @@ import com.google.inject.Inject;
 import org.apache.druid.java.util.common.IAE;
 import org.apache.druid.java.util.common.guava.Sequence;
 import org.apache.druid.java.util.common.guava.Sequences;
+import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.query.GroupByMergedQueryRunner;
 import org.apache.druid.query.QueryPlus;
 import org.apache.druid.query.QueryProcessingPool;
@@ -60,6 +61,8 @@ public class GroupByStrategyV1 implements GroupByStrategy
   private final Supplier<GroupByQueryConfig> configSupplier;
   private final GroupByQueryEngine engine;
   private final QueryWatcher queryWatcher;
+  private static int countLogPrints =0;
+  private static final Logger log = new Logger(GroupByStrategyV1.class);
 
   @Inject
   public GroupByStrategyV1(
@@ -151,6 +154,10 @@ public class GroupByStrategyV1 implements GroupByStrategy
       boolean wasQueryPushedDown
   )
   {
+    countLogPrints++;
+    if (countLogPrints< 6000) {
+      log.error("debasatwa: first line processSubqueryResult in GroupByStrategyV1 ");
+    }
     final Set<AggregatorFactory> aggs = new HashSet<>();
 
     // Nested group-bys work by first running the inner query and then materializing the results in an incremental
@@ -212,6 +219,10 @@ public class GroupByStrategyV1 implements GroupByStrategy
         configSupplier.get(),
         subqueryResult
     );
+
+    if (countLogPrints< 6000) {
+      log.error("debasatwa: before IncrementalIndexStorageAdapter is created ");
+    }
 
     //Outer query might have multiple intervals, but they are expected to be non-overlapping and sorted which
     //is ensured by QuerySegmentSpec.
