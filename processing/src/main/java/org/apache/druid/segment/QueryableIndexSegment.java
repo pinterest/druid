@@ -31,6 +31,7 @@ public class QueryableIndexSegment implements Segment
   private final QueryableIndex index;
   private final QueryableIndexStorageAdapter storageAdapter;
   private final SegmentId segmentId;
+  private static int countLogPrints =0;
 
   public QueryableIndexSegment(QueryableIndex index, final SegmentId segmentId)
   {
@@ -60,7 +61,10 @@ public class QueryableIndexSegment implements Segment
   @Override
   public StorageAdapter asStorageAdapter()
   {
-    //log.error("debasatwa: first line asStorageAdapter returns QueryableIndexStorageAdapter object");
+    countLogPrints++;
+    if (countLogPrints< 6000) {
+      log.error("debasatwa: first line asStorageAdapter returns QueryableIndexStorageAdapter object");
+    }
     return storageAdapter;
   }
 

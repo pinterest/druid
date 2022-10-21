@@ -92,7 +92,7 @@ public class LocalQuerySegmentWalker implements QuerySegmentWalker
 
     countLogPrints++;
 
-    if (countLogPrints< 6000) {
+    if (countLogPrints< 10000) {
       log.error("debasatwa: first line getQueryRunnerForIntervals in LocalQuerySegmentWalker ");
     }
     // wrap in ReferenceCountingSegment, these aren't currently managed by SegmentManager so reference tracking doesn't
