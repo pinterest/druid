@@ -78,6 +78,7 @@ public class OnheapIncrementalIndex extends IncrementalIndex
   private final long maxBytesPerRowForAggregators;
   protected final int maxRowCount;
   protected final long maxBytesInMemory;
+  private static int countLogPrints =0;
 
   @Nullable
   private volatile Map<String, ColumnSelectorFactory> selectors;
@@ -125,6 +126,12 @@ public class OnheapIncrementalIndex extends IncrementalIndex
    */
   private static long getMaxBytesPerRowForAggregators(IncrementalIndexSchema incrementalIndexSchema)
   {
+
+    countLogPrints++;
+    if (countLogPrints< 6000) {
+      log.error("debasatwa: static long getMaxBytesPerRowForAggregators");
+    }
+
     //log.error("debasatwa:before inside getMaxBytesPerRowForAggregators");
     final long rowsPerAggregator =
         incrementalIndexSchema.isRollup() ? ROLLUP_RATIO_FOR_AGGREGATOR_FOOTPRINT_ESTIMATION : 1;
@@ -153,6 +160,10 @@ public class OnheapIncrementalIndex extends IncrementalIndex
       final boolean concurrentEventAdd
   )
   {
+    countLogPrints++;
+    if (countLogPrints< 6000) {
+      log.error("debasatwa: initAggs");
+    }
     //log.error("debasatwa:before inside initAggs");
     selectors = new HashMap<>();
     for (AggregatorFactory agg : metrics) {
@@ -175,6 +186,10 @@ public class OnheapIncrementalIndex extends IncrementalIndex
       boolean skipMaxRowsInMemoryCheck
   ) throws IndexSizeExceededException
   {
+    countLogPrints++;
+    if (countLogPrints< 6000) {
+      log.error("debasatwa: AddToFactsResult addToFacts");
+    }
     //log.error("debasatwa:before if addToFacts");
     final List<String> parseExceptionMessages = new ArrayList<>();
     final int priorIndex = facts.getPriorIndex(key);
@@ -256,6 +271,10 @@ public class OnheapIncrementalIndex extends IncrementalIndex
    */
   private long estimateRowSizeInBytes(IncrementalIndexRow key, long maxBytesPerRowForAggregators)
   {
+    countLogPrints++;
+    if (countLogPrints< 6000) {
+      log.error("debasatwa: estimateRowSizeInBytes");
+    }
     //log.error("debasatwa: inside estimateRowSizeInBytes");
     return ROUGH_OVERHEAD_PER_MAP_ENTRY + key.estimateBytesInMemory() + maxBytesPerRowForAggregators;
   }
@@ -273,6 +292,10 @@ public class OnheapIncrementalIndex extends IncrementalIndex
       InputRow row
   )
   {
+    countLogPrints++;
+    if (countLogPrints< 6000) {
+      log.error("debasatwa: factorizeAggs");
+    }
     //log.error("debasatwa:before inside factorizeAggs");
     rowContainer.set(row);
     for (int i = 0; i < metrics.length; i++) {
@@ -290,6 +313,10 @@ public class OnheapIncrementalIndex extends IncrementalIndex
       List<String> parseExceptionsHolder
   )
   {
+    countLogPrints++;
+    if (countLogPrints< 6000) {
+      log.error("debasatwa: doAggregate");
+    }
     //log.error("debasatwa:before inside doAggregate");
     rowContainer.set(row);
 
@@ -312,6 +339,10 @@ public class OnheapIncrementalIndex extends IncrementalIndex
 
   private void closeAggregators()
   {
+    countLogPrints++;
+    if (countLogPrints< 6000) {
+      log.error("debasatwa: closeAggregators");
+    }
     //log.error("debasatwa:before inside closeAggregators");
     Closer closer = Closer.create();
     for (Aggregator[] aggs : aggregators.values()) {
@@ -330,6 +361,10 @@ public class OnheapIncrementalIndex extends IncrementalIndex
 
   protected Aggregator[] concurrentGet(int offset)
   {
+    countLogPrints++;
+    if (countLogPrints< 6000) {
+      log.error("debasatwa: OnheapIncrementalIndex concurrentGet");
+    }
     // All get operations should be fine
     return aggregators.get(offset);
   }
@@ -347,6 +382,10 @@ public class OnheapIncrementalIndex extends IncrementalIndex
   @Override
   public boolean canAppendRow()
   {
+    countLogPrints++;
+    if (countLogPrints< 6000) {
+      log.error("debasatwa: boolean canAppendRow");
+    }
     //log.error("debasatwa:before inside canAppendRow");
     final boolean countCheck = size() < maxRowCount;
     // if maxBytesInMemory = -1, then ignore sizeCheck
@@ -416,6 +455,10 @@ public class OnheapIncrementalIndex extends IncrementalIndex
       final boolean descending
   )
   {
+    countLogPrints++;
+    if (countLogPrints< 6000) {
+      log.error("debasatwa: iterableWithPostAggregations");
+    }
     final AggregatorFactory[] metrics = getMetricAggs();
 
     {
