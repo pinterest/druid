@@ -497,19 +497,19 @@ public class AsyncQueryForwardingServletTest extends BaseJettyTest
     {
       private boolean finished;
 
-      @Override
+     // @Override
       public boolean isFinished()
       {
         return finished;
       }
 
-      @Override
+      //@Override
       public boolean isReady()
       {
         return true;
       }
 
-      @Override
+     // @Override
       public void setReadListener(final ReadListener readListener)
       {
         // do nothing

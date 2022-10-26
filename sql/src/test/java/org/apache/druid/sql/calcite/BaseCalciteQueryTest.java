@@ -76,7 +76,9 @@ import org.apache.druid.segment.virtual.ExpressionVirtualColumn;
 import org.apache.druid.server.QueryStackTests;
 import org.apache.druid.server.security.AuthenticationResult;
 import org.apache.druid.server.security.AuthorizerMapper;
+import org.apache.druid.server.security.BrokerPinAuthorizationConfig;
 import org.apache.druid.server.security.ForbiddenException;
+import org.apache.druid.server.security.PinAuthenticator;
 import org.apache.druid.server.security.ResourceAction;
 import org.apache.druid.sql.SqlLifecycle;
 import org.apache.druid.sql.SqlLifecycleFactory;
@@ -991,6 +993,8 @@ public class BaseCalciteQueryTest extends CalciteTestBase
   )
   {
     final InProcessViewManager viewManager = new InProcessViewManager(CalciteTests.DRUID_VIEW_MACRO_FACTORY);
+    final PinAuthenticator pinAuthenticator = new PinAuthenticator(new BrokerPinAuthorizationConfig());
+
     DruidSchemaCatalog rootSchema = CalciteTests.createMockRootSchema(
         conglomerate,
         walker,
@@ -1011,7 +1015,8 @@ public class BaseCalciteQueryTest extends CalciteTestBase
         plannerConfig,
         authorizerMapper,
         objectMapper,
-        CalciteTests.DRUID_SCHEMA_NAME
+        CalciteTests.DRUID_SCHEMA_NAME,
+        pinAuthenticator
     );
     final SqlLifecycleFactory sqlLifecycleFactory = CalciteTests.createSqlLifecycleFactory(plannerFactory);
 

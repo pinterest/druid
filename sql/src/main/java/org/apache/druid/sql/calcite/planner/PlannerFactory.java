@@ -40,6 +40,7 @@ import org.apache.druid.guice.annotations.Json;
 import org.apache.druid.math.expr.ExprMacroTable;
 import org.apache.druid.server.security.Access;
 import org.apache.druid.server.security.AuthorizerMapper;
+import org.apache.druid.server.security.PinAuthenticator;
 import org.apache.druid.server.security.NoopEscalator;
 import org.apache.druid.sql.calcite.run.QueryMakerFactory;
 import org.apache.druid.sql.calcite.schema.DruidSchemaCatalog;
@@ -66,6 +67,7 @@ public class PlannerFactory
   private final PlannerConfig plannerConfig;
   private final ObjectMapper jsonMapper;
   private final AuthorizerMapper authorizerMapper;
+  private final PinAuthenticator pinAuthenticator;
   private final String druidSchemaName;
 
   @Inject
@@ -77,7 +79,8 @@ public class PlannerFactory
       final PlannerConfig plannerConfig,
       final AuthorizerMapper authorizerMapper,
       final @Json ObjectMapper jsonMapper,
-      final @DruidSchemaName String druidSchemaName
+      final @DruidSchemaName String druidSchemaName,
+      final PinAuthenticator pinAuthenticator
   )
   {
     this.rootSchema = rootSchema;
@@ -88,6 +91,7 @@ public class PlannerFactory
     this.authorizerMapper = authorizerMapper;
     this.jsonMapper = jsonMapper;
     this.druidSchemaName = druidSchemaName;
+    this.pinAuthenticator = pinAuthenticator;
   }
 
   /**
@@ -139,6 +143,12 @@ public class PlannerFactory
   public AuthorizerMapper getAuthorizerMapper()
   {
     return authorizerMapper;
+  }
+
+
+  public PinAuthenticator getPinAuthenticator()
+  {
+    return pinAuthenticator;
   }
 
   private FrameworkConfig buildFrameworkConfig(PlannerContext plannerContext)

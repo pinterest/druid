@@ -49,6 +49,7 @@ import org.apache.druid.indexing.seekablestream.SeekableStreamSequenceNumbers;
 import org.apache.druid.indexing.seekablestream.SeekableStreamStartSequenceNumbers;
 import org.apache.druid.indexing.seekablestream.common.OrderedSequenceNumber;
 import org.apache.druid.indexing.seekablestream.common.RecordSupplier;
+import org.apache.druid.indexing.seekablestream.common.StreamPartition;
 import org.apache.druid.indexing.seekablestream.supervisor.SeekableStreamSupervisor;
 import org.apache.druid.indexing.seekablestream.supervisor.SeekableStreamSupervisorIOConfig;
 import org.apache.druid.indexing.seekablestream.supervisor.SeekableStreamSupervisorReportPayload;
@@ -345,12 +346,6 @@ public class KinesisSupervisor extends SeekableStreamSupervisor<String, String, 
   }
 
   @Override
-  protected void updateLatestSequenceFromStream()
-  {
-
-  }
-
-  @Override
   protected String baseTaskName()
   {
     return "index_kinesis";
@@ -415,6 +410,11 @@ public class KinesisSupervisor extends SeekableStreamSupervisor<String, String, 
       }
     }
     return filteredOffsets;
+  }
+
+  @Override
+  protected void updateLatestSequenceFromStream(RecordSupplier<String, String, ByteEntity> recordSupplier, Set<StreamPartition<String>> streamPartitions) {
+    //do nothing
   }
 
   @Override

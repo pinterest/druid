@@ -70,7 +70,9 @@ import org.apache.druid.server.security.AuthTestUtils;
 import org.apache.druid.server.security.AuthenticationResult;
 import org.apache.druid.server.security.Authorizer;
 import org.apache.druid.server.security.AuthorizerMapper;
+import org.apache.druid.server.security.BrokerPinAuthorizationConfig;
 import org.apache.druid.server.security.ForbiddenException;
+import org.apache.druid.server.security.PinAuthenticator;
 import org.apache.druid.server.security.Resource;
 import org.apache.http.HttpStatus;
 import org.easymock.EasyMock;
@@ -204,6 +206,8 @@ public class QueryResourceTest
     EasyMock.expect(testServletRequest.getHeader("Accept")).andReturn(MediaType.APPLICATION_JSON).anyTimes();
     EasyMock.expect(testServletRequest.getHeader(QueryResource.HEADER_IF_NONE_MATCH)).andReturn(null).anyTimes();
     EasyMock.expect(testServletRequest.getHeader(QueryResource.HEADER_RETURN_SEGMENT_COUNT_STATS)).andReturn(null).anyTimes();
+    EasyMock.expect(testServletRequest.getHeader("use-pin-authentication")).andReturn(null).anyTimes();
+    EasyMock.expect(testServletRequest.getHeader("x-forwarded-client-cert")).andReturn(null).anyTimes();
     EasyMock.expect(testServletRequest.getRemoteAddr()).andReturn("localhost").anyTimes();
     queryScheduler = QueryStackTests.DEFAULT_NOOP_SCHEDULER;
     testRequestLogger = new TestRequestLogger();
@@ -221,7 +225,8 @@ public class QueryResourceTest
             testRequestLogger,
             new AuthConfig(),
             AuthTestUtils.TEST_AUTHORIZER_MAPPER,
-            Suppliers.ofInstance(new DefaultQueryConfig(ImmutableMap.of()))
+            Suppliers.ofInstance(new DefaultQueryConfig(ImmutableMap.of())),
+            new PinAuthenticator(new BrokerPinAuthorizationConfig())
         ),
         jsonMapper,
         smileMapper,
@@ -267,7 +272,8 @@ public class QueryResourceTest
             testRequestLogger,
             new AuthConfig(),
             AuthTestUtils.TEST_AUTHORIZER_MAPPER,
-            Suppliers.ofInstance(overrideConfig)
+            Suppliers.ofInstance(overrideConfig),
+            new PinAuthenticator(new BrokerPinAuthorizationConfig())
         ),
         jsonMapper,
         smileMapper,
@@ -319,7 +325,8 @@ public class QueryResourceTest
             testRequestLogger,
             new AuthConfig(),
             AuthTestUtils.TEST_AUTHORIZER_MAPPER,
-            Suppliers.ofInstance(overrideConfig)
+            Suppliers.ofInstance(overrideConfig),
+            new PinAuthenticator(new BrokerPinAuthorizationConfig())
         ),
         jsonMapper,
         smileMapper,
@@ -418,6 +425,8 @@ public class QueryResourceTest
     EasyMock.expect(testServletRequest.getContentType()).andReturn(contentTypeHeader).anyTimes();
     EasyMock.expect(testServletRequest.getHeader(QueryResource.HEADER_IF_NONE_MATCH)).andReturn(null).anyTimes();
     EasyMock.expect(testServletRequest.getHeader(QueryResource.HEADER_RETURN_SEGMENT_COUNT_STATS)).andReturn(null).anyTimes();
+    EasyMock.expect(testServletRequest.getHeader("use-pin-authentication")).andReturn(null).anyTimes();
+    EasyMock.expect(testServletRequest.getHeader("x-forwarded-client-cert")).andReturn(null).anyTimes();
     EasyMock.expect(testServletRequest.getRemoteAddr()).andReturn("localhost").anyTimes();
 
     EasyMock.replay(testServletRequest);
@@ -454,6 +463,8 @@ public class QueryResourceTest
     EasyMock.expect(testServletRequest.getContentType()).andReturn(contentTypeHeader).anyTimes();
     EasyMock.expect(testServletRequest.getHeader(QueryResource.HEADER_IF_NONE_MATCH)).andReturn(null).anyTimes();
     EasyMock.expect(testServletRequest.getHeader(QueryResource.HEADER_RETURN_SEGMENT_COUNT_STATS)).andReturn(null).anyTimes();
+    EasyMock.expect(testServletRequest.getHeader("use-pin-authentication")).andReturn(null).anyTimes();
+    EasyMock.expect(testServletRequest.getHeader("x-forwarded-client-cert")).andReturn(null).anyTimes();
     EasyMock.expect(testServletRequest.getRemoteAddr()).andReturn("localhost").anyTimes();
 
     EasyMock.replay(testServletRequest);
@@ -497,6 +508,8 @@ public class QueryResourceTest
     EasyMock.expect(smileRequest.getHeader("Accept")).andReturn(SmileMediaTypes.APPLICATION_JACKSON_SMILE).anyTimes();
     EasyMock.expect(smileRequest.getHeader(QueryResource.HEADER_IF_NONE_MATCH)).andReturn(null).anyTimes();
     EasyMock.expect(smileRequest.getHeader(QueryResource.HEADER_RETURN_SEGMENT_COUNT_STATS)).andReturn(null).anyTimes();
+    EasyMock.expect(smileRequest.getHeader("use-pin-authentication")).andReturn(null).anyTimes();
+    EasyMock.expect(smileRequest.getHeader("x-forwarded-client-cert")).andReturn(null).anyTimes();
     EasyMock.expect(smileRequest.getRemoteAddr()).andReturn("localhost").anyTimes();
 
     EasyMock.replay(smileRequest);
@@ -709,7 +722,8 @@ public class QueryResourceTest
             testRequestLogger,
             new AuthConfig(),
             authMapper,
-            Suppliers.ofInstance(new DefaultQueryConfig(ImmutableMap.of()))
+            Suppliers.ofInstance(new DefaultQueryConfig(ImmutableMap.of())),
+            new PinAuthenticator(new BrokerPinAuthorizationConfig())
         ),
         jsonMapper,
         smileMapper,
@@ -785,7 +799,8 @@ public class QueryResourceTest
             testRequestLogger,
             new AuthConfig(),
             AuthTestUtils.TEST_AUTHORIZER_MAPPER,
-            Suppliers.ofInstance(new DefaultQueryConfig(ImmutableMap.of()))
+            Suppliers.ofInstance(new DefaultQueryConfig(ImmutableMap.of())),
+            new PinAuthenticator(new BrokerPinAuthorizationConfig())
         ),
         jsonMapper,
         jsonMapper,
@@ -883,7 +898,8 @@ public class QueryResourceTest
             testRequestLogger,
             new AuthConfig(),
             authMapper,
-            Suppliers.ofInstance(new DefaultQueryConfig(ImmutableMap.of()))
+            Suppliers.ofInstance(new DefaultQueryConfig(ImmutableMap.of())),
+            new PinAuthenticator(new BrokerPinAuthorizationConfig())
         ),
         jsonMapper,
         smileMapper,
@@ -1007,7 +1023,8 @@ public class QueryResourceTest
             testRequestLogger,
             new AuthConfig(),
             authMapper,
-            Suppliers.ofInstance(new DefaultQueryConfig(ImmutableMap.of()))
+            Suppliers.ofInstance(new DefaultQueryConfig(ImmutableMap.of())),
+            new PinAuthenticator(new BrokerPinAuthorizationConfig())
         ),
         jsonMapper,
         smileMapper,
@@ -1266,7 +1283,8 @@ public class QueryResourceTest
             testRequestLogger,
             new AuthConfig(),
             AuthTestUtils.TEST_AUTHORIZER_MAPPER,
-            Suppliers.ofInstance(new DefaultQueryConfig(ImmutableMap.of()))
+            Suppliers.ofInstance(new DefaultQueryConfig(ImmutableMap.of())),
+            new PinAuthenticator(new BrokerPinAuthorizationConfig())
         ),
         jsonMapper,
         smileMapper,

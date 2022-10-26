@@ -1682,7 +1682,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
 
     supervisor.start();
     supervisor.runInternal();
-    supervisor.updateCurrentAndLatestOffsetsAndTimestampGaps().run();
+    supervisor.updateCurrentAndLatestOffsetsAndTimestampGaps();
     SupervisorReport<KinesisSupervisorReportPayload> report = supervisor.getStatus();
     verifyAll();
 
@@ -1832,7 +1832,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
 
     supervisor.start();
     supervisor.runInternal();
-    supervisor.updateCurrentAndLatestOffsetsAndTimestampGaps().run();
+    supervisor.updateCurrentAndLatestOffsetsAndTimestampGaps();
     SupervisorReport<KinesisSupervisorReportPayload> report = supervisor.getStatus();
     verifyAll();
 
@@ -2029,7 +2029,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
 
     supervisor.start();
     supervisor.runInternal();
-    supervisor.updateCurrentAndLatestOffsetsAndTimestampGaps().run();
+    supervisor.updateCurrentAndLatestOffsetsAndTimestampGaps();
     SupervisorReport<KinesisSupervisorReportPayload> report = supervisor.getStatus();
     verifyAll();
 

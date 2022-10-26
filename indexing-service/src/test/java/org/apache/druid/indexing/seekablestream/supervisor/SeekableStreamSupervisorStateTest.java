@@ -1106,6 +1106,12 @@ public class SeekableStreamSupervisorStateTest extends EasyMockSupport
       // do nothing
     }
 
+    @Override
+    protected void updateLatestSequenceFromStream(RecordSupplier<String, String, ByteEntity> recordSupplier, Set<StreamPartition<String>> streamPartitions)
+    {
+      //Do nothing
+    }
+
     @Nullable
     @Override
     protected Map<String, Long> getPartitionRecordLag()
@@ -1288,11 +1294,6 @@ public class SeekableStreamSupervisorStateTest extends EasyMockSupport
 
   private class TestSeekableStreamSupervisor extends BaseTestSeekableStreamSupervisor
   {
-    @Override
-    protected void updateLatestSequenceFromStream()
-    {
-
-    }
 
     @Override
     protected void scheduleReporting(ScheduledExecutorService reportingExec)
@@ -1336,12 +1337,6 @@ public class SeekableStreamSupervisorStateTest extends EasyMockSupport
     protected Map<String, Long> getPartitionTimeLag()
     {
       return partitionsTimeLag;
-    }
-
-    @Override
-    protected void updateLatestSequenceFromStream()
-    {
-
     }
 
     @Override
