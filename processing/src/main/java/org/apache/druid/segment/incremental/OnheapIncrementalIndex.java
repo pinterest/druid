@@ -220,11 +220,11 @@ public class OnheapIncrementalIndex extends IncrementalIndex
         );
       }
       final int prev = facts.putIfAbsent(key, rowIndex);
-      //log.error("debasatwa:before if (IncrementalIndexRow.EMPTY_ROW_INDEX == prev");
+      log.error("debasatwa:before if (IncrementalIndexRow.EMPTY_ROW_INDEX == prev");
       if (IncrementalIndexRow.EMPTY_ROW_INDEX == prev) {
-        //log.error("debasatwa:before if (isEnableInMemoryBitmap()) ");
+        log.error("debasatwa:before if (isEnableInMemoryBitmap()) ");
         if (isEnableInMemoryBitmap()) {
-          //log.error("debasatwa:inside if (isEnableInMemoryBitmap())");
+          log.error("debasatwa:inside if (isEnableInMemoryBitmap())");
           // After a new row is added, update indexes for all dimensions that enable bitmaps
           for (int i = 0; i < key.getDims().length; i++) {
             if (key.getDimensionDescsList().get(i).getCapabilities().hasBitmapIndexes()) {
