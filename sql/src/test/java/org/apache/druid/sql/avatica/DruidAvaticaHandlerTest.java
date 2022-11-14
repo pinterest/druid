@@ -62,7 +62,9 @@ import org.apache.druid.server.metrics.NoopServiceEmitter;
 import org.apache.druid.server.security.AuthTestUtils;
 import org.apache.druid.server.security.AuthenticatorMapper;
 import org.apache.druid.server.security.AuthorizerMapper;
+import org.apache.druid.server.security.BrokerPinAuthorizationConfig;
 import org.apache.druid.server.security.Escalator;
+import org.apache.druid.server.security.PinAuthenticator;
 import org.apache.druid.sql.calcite.planner.Calcites;
 import org.apache.druid.sql.calcite.planner.DruidOperatorTable;
 import org.apache.druid.sql.calcite.planner.PlannerConfig;
@@ -176,6 +178,7 @@ public abstract class DruidAvaticaHandlerTest extends CalciteTestBase
     final PlannerConfig plannerConfig = new PlannerConfig();
     final DruidOperatorTable operatorTable = CalciteTests.createOperatorTable();
     final ExprMacroTable macroTable = CalciteTests.createExprMacroTable();
+    final PinAuthenticator pinAuthenticator = new PinAuthenticator(new BrokerPinAuthorizationConfig());
     final DruidSchemaCatalog rootSchema =
         CalciteTests.createMockRootSchema(conglomerate, walker, plannerConfig, CalciteTests.TEST_AUTHORIZER_MAPPER);
     testRequestLogger = new TestRequestLogger();
@@ -888,6 +891,7 @@ public abstract class DruidAvaticaHandlerTest extends CalciteTestBase
     final PlannerConfig plannerConfig = new PlannerConfig();
     final DruidOperatorTable operatorTable = CalciteTests.createOperatorTable();
     final ExprMacroTable macroTable = CalciteTests.createExprMacroTable();
+    final PinAuthenticator pinAuthenticator = new PinAuthenticator(new BrokerPinAuthorizationConfig());
     final List<Meta.Frame> frames = new ArrayList<>();
     DruidSchemaCatalog rootSchema =
         CalciteTests.createMockRootSchema(conglomerate, walker, plannerConfig, AuthTestUtils.TEST_AUTHORIZER_MAPPER);
@@ -901,7 +905,8 @@ public abstract class DruidAvaticaHandlerTest extends CalciteTestBase
               plannerConfig,
               AuthTestUtils.TEST_AUTHORIZER_MAPPER,
               CalciteTests.getJsonMapper(),
-              CalciteTests.DRUID_SCHEMA_NAME
+              CalciteTests.DRUID_SCHEMA_NAME,
+              pinAuthenticator
           )
         ),
         smallFrameConfig,
@@ -978,6 +983,7 @@ public abstract class DruidAvaticaHandlerTest extends CalciteTestBase
     final PlannerConfig plannerConfig = new PlannerConfig();
     final DruidOperatorTable operatorTable = CalciteTests.createOperatorTable();
     final ExprMacroTable macroTable = CalciteTests.createExprMacroTable();
+    final PinAuthenticator pinAuthenticator = new PinAuthenticator(new BrokerPinAuthorizationConfig());
     final List<Meta.Frame> frames = new ArrayList<>();
     DruidSchemaCatalog rootSchema =
         CalciteTests.createMockRootSchema(conglomerate, walker, plannerConfig, AuthTestUtils.TEST_AUTHORIZER_MAPPER);
@@ -991,7 +997,8 @@ public abstract class DruidAvaticaHandlerTest extends CalciteTestBase
                 plannerConfig,
                 AuthTestUtils.TEST_AUTHORIZER_MAPPER,
                 CalciteTests.getJsonMapper(),
-                CalciteTests.DRUID_SCHEMA_NAME
+                CalciteTests.DRUID_SCHEMA_NAME,
+                pinAuthenticator
             )
         ),
         smallFrameConfig,

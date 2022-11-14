@@ -30,6 +30,7 @@ import org.apache.druid.query.QueryToolChestWarehouse;
 import org.apache.druid.server.log.RequestLogger;
 import org.apache.druid.server.security.AuthConfig;
 import org.apache.druid.server.security.AuthorizerMapper;
+import org.apache.druid.server.security.PinAuthenticator;
 
 @LazySingleton
 public class QueryLifecycleFactory
@@ -41,6 +42,7 @@ public class QueryLifecycleFactory
   private final RequestLogger requestLogger;
   private final AuthorizerMapper authorizerMapper;
   private final DefaultQueryConfig defaultQueryConfig;
+  private final PinAuthenticator pinAuthenticator;
 
   @Inject
   public QueryLifecycleFactory(
@@ -51,7 +53,8 @@ public class QueryLifecycleFactory
       final RequestLogger requestLogger,
       final AuthConfig authConfig,
       final AuthorizerMapper authorizerMapper,
-      final Supplier<DefaultQueryConfig> queryConfigSupplier
+      final Supplier<DefaultQueryConfig> queryConfigSupplier,
+      final PinAuthenticator pinAuthenticator
   )
   {
     this.warehouse = warehouse;
@@ -61,6 +64,7 @@ public class QueryLifecycleFactory
     this.requestLogger = requestLogger;
     this.authorizerMapper = authorizerMapper;
     this.defaultQueryConfig = queryConfigSupplier.get();
+    this.pinAuthenticator = pinAuthenticator;
   }
 
   public QueryLifecycle factorize()
@@ -74,7 +78,8 @@ public class QueryLifecycleFactory
         authorizerMapper,
         defaultQueryConfig,
         System.currentTimeMillis(),
-        System.nanoTime()
-    );
+        System.nanoTime(),
+        pinAuthenticator
+        );
   }
 }

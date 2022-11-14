@@ -36,10 +36,7 @@ import org.apache.druid.query.QueryToolChestWarehouse;
 import org.apache.druid.query.aggregation.CountAggregatorFactory;
 import org.apache.druid.query.timeseries.TimeseriesQuery;
 import org.apache.druid.server.log.RequestLogger;
-import org.apache.druid.server.security.Access;
-import org.apache.druid.server.security.AuthenticationResult;
-import org.apache.druid.server.security.Authorizer;
-import org.apache.druid.server.security.AuthorizerMapper;
+import org.apache.druid.server.security.*;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
@@ -86,6 +83,7 @@ public class QueryLifecycleTest
     requestLogger = EasyMock.createNiceMock(RequestLogger.class);
     authzMapper = EasyMock.createMock(AuthorizerMapper.class);
     queryConfig = EasyMock.createMock(DefaultQueryConfig.class);
+    final PinAuthenticator pinAuthenticator = new PinAuthenticator(new BrokerPinAuthorizationConfig());
 
     long nanos = System.nanoTime();
     long millis = System.currentTimeMillis();
@@ -98,7 +96,8 @@ public class QueryLifecycleTest
         authzMapper,
         queryConfig,
         millis,
-        nanos
+        nanos,
+        pinAuthenticator
     );
 
     toolChest = EasyMock.createMock(QueryToolChest.class);

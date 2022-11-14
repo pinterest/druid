@@ -63,6 +63,9 @@ public class PlannerConfig
   private long metadataSegmentPollPeriod = 60000;
 
   @JsonProperty
+  private int metadataRefreshMaxSegmentsPerQuery = 15000;
+
+  @JsonProperty
   private boolean useGroupingSetForExactDistinct = false;
 
   @JsonProperty
@@ -77,6 +80,11 @@ public class PlannerConfig
   public long getMetadataSegmentPollPeriod()
   {
     return metadataSegmentPollPeriod;
+  }
+
+  public int getMetadataRefreshMaxSegmentsPerQuery()
+  {
+    return metadataRefreshMaxSegmentsPerQuery;
   }
 
   public boolean isMetadataSegmentCacheEnable()
@@ -187,6 +195,7 @@ public class PlannerConfig
     newConfig.metadataSegmentPollPeriod = getMetadataSegmentPollPeriod();
     newConfig.serializeComplexValues = shouldSerializeComplexValues();
     newConfig.authorizeSystemTablesDirectly = isAuthorizeSystemTablesDirectly();
+    newConfig.metadataRefreshMaxSegmentsPerQuery = getMetadataRefreshMaxSegmentsPerQuery();
     return newConfig;
   }
 
@@ -226,6 +235,7 @@ public class PlannerConfig
            metadataSegmentCacheEnable == that.metadataSegmentCacheEnable &&
            metadataSegmentPollPeriod == that.metadataSegmentPollPeriod &&
            serializeComplexValues == that.serializeComplexValues &&
+           metadataRefreshMaxSegmentsPerQuery == that.metadataRefreshMaxSegmentsPerQuery &&
            Objects.equals(metadataRefreshPeriod, that.metadataRefreshPeriod) &&
            Objects.equals(sqlTimeZone, that.sqlTimeZone) &&
            useNativeQueryExplain == that.useNativeQueryExplain;
@@ -246,6 +256,7 @@ public class PlannerConfig
         metadataSegmentCacheEnable,
         metadataSegmentPollPeriod,
         serializeComplexValues,
+        metadataRefreshMaxSegmentsPerQuery,
         useNativeQueryExplain
     );
   }
@@ -262,6 +273,7 @@ public class PlannerConfig
            ", awaitInitializationOnStart=" + awaitInitializationOnStart +
            ", metadataSegmentCacheEnable=" + metadataSegmentCacheEnable +
            ", metadataSegmentPollPeriod=" + metadataSegmentPollPeriod +
+           ", metadataRefreshMaxSegmentsPerQuery=" + metadataRefreshMaxSegmentsPerQuery +
            ", sqlTimeZone=" + sqlTimeZone +
            ", serializeComplexValues=" + serializeComplexValues +
            ", useNativeQueryExplain=" + useNativeQueryExplain +

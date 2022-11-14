@@ -73,10 +73,11 @@ import org.apache.druid.server.http.SelfDiscoveryResource;
 import org.apache.druid.server.initialization.jetty.JettyServerInitializer;
 import org.apache.druid.server.metrics.QueryCountStatsProvider;
 import org.apache.druid.server.router.TieredBrokerConfig;
+import org.apache.druid.server.security.BrokerPinAuthorizationConfig;
+import org.apache.druid.server.security.PinAuthenticator;
 import org.apache.druid.sql.guice.SqlModule;
 import org.apache.druid.timeline.PruneLoadSpec;
 import org.eclipse.jetty.server.Server;
-
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -135,7 +136,10 @@ public class CliBroker extends ServerRunnable
           LifecycleModule.register(binder, BrokerServerView.class);
           binder.bind(TimelineServerView.class).to(BrokerServerView.class).in(LazySingleton.class);
 
-          JsonConfigProvider.bind(binder, "druid.broker.cache", CacheConfig.class);
+          JsonConfigProvider.bind(binder, "druid.broker.pinAuthorization", BrokerPinAuthorizationConfig.class);
+          binder.bind(PinAuthenticator.class).in(LazySingleton.class);
+
+            JsonConfigProvider.bind(binder, "druid.broker.cache", CacheConfig.class);
           binder.install(new CacheModule());
 
           JsonConfigProvider.bind(binder, "druid.broker.select", TierSelectorStrategy.class);

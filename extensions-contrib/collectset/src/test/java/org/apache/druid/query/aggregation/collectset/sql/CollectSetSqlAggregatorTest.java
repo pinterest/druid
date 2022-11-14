@@ -46,6 +46,8 @@ import org.apache.druid.segment.writeout.OffHeapMemorySegmentWriteOutMediumFacto
 import org.apache.druid.server.QueryStackTests;
 import org.apache.druid.server.security.AuthTestUtils;
 import org.apache.druid.server.security.AuthenticationResult;
+import org.apache.druid.server.security.BrokerPinAuthorizationConfig;
+import org.apache.druid.server.security.PinAuthenticator;
 import org.apache.druid.sql.SqlLifecycle;
 import org.apache.druid.sql.SqlLifecycleFactory;
 import org.apache.druid.sql.calcite.filtration.Filtration;
@@ -148,6 +150,7 @@ public class CollectSetSqlAggregatorTest extends CalciteTestBase
         ImmutableSet.of(new CollectSetSqlAggregator()),
         ImmutableSet.of()
     );
+    final PinAuthenticator pinAuthenticator = new PinAuthenticator(new BrokerPinAuthorizationConfig());
 
     sqlLifecycleFactory = CalciteTests.createSqlLifecycleFactory(
         new PlannerFactory(
@@ -158,7 +161,8 @@ public class CollectSetSqlAggregatorTest extends CalciteTestBase
             plannerConfig,
             AuthTestUtils.TEST_AUTHORIZER_MAPPER,
             CalciteTests.getJsonMapper(),
-            CalciteTests.DRUID_SCHEMA_NAME
+            CalciteTests.DRUID_SCHEMA_NAME,
+            pinAuthenticator
         )
     );
   }

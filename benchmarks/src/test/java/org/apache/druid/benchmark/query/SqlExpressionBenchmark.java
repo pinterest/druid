@@ -36,6 +36,8 @@ import org.apache.druid.segment.generator.GeneratorSchemaInfo;
 import org.apache.druid.segment.generator.SegmentGenerator;
 import org.apache.druid.server.QueryStackTests;
 import org.apache.druid.server.security.AuthTestUtils;
+import org.apache.druid.server.security.BrokerPinAuthorizationConfig;
+import org.apache.druid.server.security.PinAuthenticator;
 import org.apache.druid.sql.calcite.SqlVectorizedExpressionSanityTest;
 import org.apache.druid.sql.calcite.planner.Calcites;
 import org.apache.druid.sql.calcite.planner.DruidPlanner;
@@ -270,6 +272,7 @@ public class SqlExpressionBenchmark
         dataSegment,
         index
     );
+    final PinAuthenticator pinAuthenticator = new PinAuthenticator(new BrokerPinAuthorizationConfig());
     closer.register(walker);
 
     final DruidSchemaCatalog rootSchema =
@@ -282,7 +285,8 @@ public class SqlExpressionBenchmark
         plannerConfig,
         AuthTestUtils.TEST_AUTHORIZER_MAPPER,
         CalciteTests.getJsonMapper(),
-        CalciteTests.DRUID_SCHEMA_NAME
+        CalciteTests.DRUID_SCHEMA_NAME,
+        pinAuthenticator
     );
 
     try {

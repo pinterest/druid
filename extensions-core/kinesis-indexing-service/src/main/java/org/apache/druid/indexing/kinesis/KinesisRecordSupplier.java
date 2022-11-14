@@ -221,6 +221,7 @@ public class KinesisRecordSupplier implements RecordSupplier<String, String, Byt
                 streamPartition.getStream(),
                 streamPartition.getPartitionId(),
                 KinesisSequenceNumber.END_OF_SHARD_MARKER,
+                0,
                 null
             );
 
@@ -267,6 +268,7 @@ public class KinesisRecordSupplier implements RecordSupplier<String, String, Byt
                 streamPartition.getStream(),
                 streamPartition.getPartitionId(),
                 kinesisRecord.getSequenceNumber(),
+                kinesisRecord.getApproximateArrivalTimestamp().getTime(),
                 data
             );
 
@@ -277,6 +279,7 @@ public class KinesisRecordSupplier implements RecordSupplier<String, String, Byt
                   currRecord.getStream(),
                   currRecord.getPartitionId(),
                   currRecord.getSequenceNumber(),
+                  currRecord.getSequenceTimestamp(),
                   records.remainingCapacity(),
                   currRecord.getData()
                             .stream()

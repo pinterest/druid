@@ -3556,19 +3556,22 @@ public abstract class SeekableStreamSupervisor<PartitionIdType, SequenceOffsetTy
    * monitoring method, fetches current partition offsets and lag in a background reporting thread
    */
   @VisibleForTesting
-  public Runnable updateCurrentAndLatestOffsetsAndTimestampGaps()
+  public void updateCurrentAndLatestOffsetsAndTimestampGaps()
   {
-    return () -> {
+    // if we aren't in a steady state, chill out for a bit, don't worry, we'll get called later, but if we aren't
+    // healthy go ahead and try anyway to try if possible to provide insight into how much time is left to fix the
+    // issue for cluster operators since this feeds the lag metrics
+    if (stateManager.isSteadyState() || !stateManager.isHealthy()) {
       try {
         updateCurrentOffsets();
-        updateLatestOffsetsFromStream();
+        updatePartitionLagFromStream();
         updateTimestampGaps();
         sequenceLastUpdated = DateTimes.nowUtc();
       }
       catch (Exception e) {
         log.warn(e, "Exception while getting current/latest sequences");
       }
-    };
+    }
   }
 
   private void updateCurrentOffsets() throws InterruptedException, ExecutionException, TimeoutException
@@ -3640,10 +3643,12 @@ public abstract class SeekableStreamSupervisor<PartitionIdType, SequenceOffsetTy
 
       recordSupplier.assign(partitions);
       recordSupplier.seekToLatest(partitions);
-      //commented beow lin as in 0.23 its not defined
-      //updateLatestSequenceFromStream(recordSupplier, partitions);
+
+      updateLatestSequenceFromStream(recordSupplier, partitions);
     }
   }
+
+  protected abstract void updateLatestSequenceFromStream(RecordSupplier<PartitionIdType,SequenceOffsetType,RecordType> recordSupplier, Set<StreamPartition<PartitionIdType>> partitions);
 
   protected abstract void updatePartitionLagFromStream();
 
@@ -3681,9 +3686,6 @@ public abstract class SeekableStreamSupervisor<PartitionIdType, SequenceOffsetTy
       return getOffsetsFromMetadataStorage();
     }
   }
-
-  protected abstract void updateLatestSequenceFromStream();
-
 
   protected Map<PartitionIdType, Long> getTimeLagPerPartition()
   {

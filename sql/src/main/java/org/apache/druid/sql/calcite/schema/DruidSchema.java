@@ -96,7 +96,6 @@ public class DruidSchema extends AbstractSchema
       .thenComparing(Function.identity());
 
   private static final EmittingLogger log = new EmittingLogger(DruidSchema.class);
-  private static final int MAX_SEGMENTS_PER_QUERY = 15000;
   private static final long DEFAULT_NUM_ROWS = 0;
 
   private final QueryLifecycleFactory queryLifecycleFactory;
@@ -705,7 +704,7 @@ public class DruidSchema extends AbstractSchema
 
     final Set<SegmentId> retVal = new HashSet<>();
     final Sequence<SegmentAnalysis> sequence = runSegmentMetadataQuery(
-        Iterables.limit(segments, MAX_SEGMENTS_PER_QUERY)
+        Iterables.limit(segments, config.getMetadataRefreshMaxSegmentsPerQuery())
     );
 
     Yielder<SegmentAnalysis> yielder = Yielders.each(sequence);

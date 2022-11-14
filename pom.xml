@@ -1153,13 +1153,13 @@
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-common</artifactId>
             <version>${hadoop.compile.version}</version>
-            <scope>provided</scope>
+            <scope>compile</scope>
           </dependency>
           <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-hdfs-client</artifactId>
             <version>${hadoop.compile.version}</version>
-            <scope>provided</scope>
+            <scope>compile</scope>
           </dependency>
           <dependency>
             <groupId>org.apache.hadoop</groupId>

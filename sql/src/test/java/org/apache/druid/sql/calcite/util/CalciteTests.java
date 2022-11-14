@@ -109,8 +109,10 @@ import org.apache.druid.server.security.Authenticator;
 import org.apache.druid.server.security.AuthenticatorMapper;
 import org.apache.druid.server.security.Authorizer;
 import org.apache.druid.server.security.AuthorizerMapper;
+import org.apache.druid.server.security.BrokerPinAuthorizationConfig;
 import org.apache.druid.server.security.Escalator;
 import org.apache.druid.server.security.NoopEscalator;
+import org.apache.druid.server.security.PinAuthenticator;
 import org.apache.druid.server.security.ResourceType;
 import org.apache.druid.sql.SqlLifecycleFactory;
 import org.apache.druid.sql.calcite.aggregation.SqlAggregationModule;
@@ -812,7 +814,8 @@ public class CalciteTests
         new NoopRequestLogger(),
         new AuthConfig(),
         TEST_AUTHORIZER_MAPPER,
-        Suppliers.ofInstance(new DefaultQueryConfig(ImmutableMap.of()))
+        Suppliers.ofInstance(new DefaultQueryConfig(ImmutableMap.of())),
+        new PinAuthenticator(new BrokerPinAuthorizationConfig("", ImmutableMap.of()))
     );
   }
 

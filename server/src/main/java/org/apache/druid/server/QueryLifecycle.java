@@ -50,6 +50,7 @@ import org.apache.druid.server.security.Access;
 import org.apache.druid.server.security.AuthenticationResult;
 import org.apache.druid.server.security.AuthorizationUtils;
 import org.apache.druid.server.security.AuthorizerMapper;
+import org.apache.druid.server.security.PinAuthenticator;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
@@ -81,6 +82,7 @@ public class QueryLifecycle
   private final ServiceEmitter emitter;
   private final RequestLogger requestLogger;
   private final AuthorizerMapper authorizerMapper;
+  private final PinAuthenticator pinAuthenticator;
   private final DefaultQueryConfig defaultQueryConfig;
   private final long startMs;
   private final long startNs;
@@ -99,7 +101,8 @@ public class QueryLifecycle
       final AuthorizerMapper authorizerMapper,
       final DefaultQueryConfig defaultQueryConfig,
       final long startMs,
-      final long startNs
+      final long startNs,
+      final PinAuthenticator pinAuthenticator
   )
   {
     this.warehouse = warehouse;
@@ -111,6 +114,7 @@ public class QueryLifecycle
     this.defaultQueryConfig = defaultQueryConfig;
     this.startMs = startMs;
     this.startNs = startNs;
+    this.pinAuthenticator = pinAuthenticator;
   }
 
 
@@ -200,6 +204,9 @@ public class QueryLifecycle
   public Access authorize(HttpServletRequest req)
   {
     transition(State.INITIALIZED, State.AUTHORIZING);
+    if (!pinAuthenticator.authenticate(req)) {
+      return new Access(false, "failed Pinterest authorization");
+    }
     return doAuthorize(
         AuthorizationUtils.authenticationResultFromRequest(req),
         AuthorizationUtils.authorizeAllResourceActions(

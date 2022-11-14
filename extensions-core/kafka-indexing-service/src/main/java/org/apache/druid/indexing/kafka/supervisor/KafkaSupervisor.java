@@ -267,9 +267,11 @@ public class KafkaSupervisor extends SeekableStreamSupervisor<Integer, Long, Kaf
   }
 
   @Override
-  protected void updateLatestSequenceFromStream()
+  protected void updateLatestSequenceFromStream(RecordSupplier<Integer, Long, KafkaRecordEntity> recordSupplier,
+                                                Set<StreamPartition<Integer>> partitions)
   {
-
+    latestSequenceFromStream =
+            partitions.stream().collect(Collectors.toMap(StreamPartition::getPartitionId, recordSupplier::getPosition));
   }
 
   @Override

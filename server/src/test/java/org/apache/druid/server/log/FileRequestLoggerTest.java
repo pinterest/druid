@@ -26,6 +26,7 @@ import org.apache.druid.server.RequestLogLine;
 import org.easymock.EasyMock;
 import org.joda.time.DateTime;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -44,6 +45,7 @@ public class FileRequestLoggerTest
   @Rule
   public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
+  @Ignore
   @Test public void testLog() throws Exception
   {
     ObjectMapper objectMapper = new ObjectMapper();
