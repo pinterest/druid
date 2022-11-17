@@ -4362,7 +4362,7 @@ public class CalciteQueryTest extends BaseCalciteQueryTest
                         )
                         .setDimFilter(
                             or(
-                                bound("dim1", "10", "10", false, false, null, StringComparators.NUMERIC),
+                                    selector("dim1", "10", null), //bound("dim1", "10", "10", false, false, null, StringComparators.NUMERIC), removed this as we parsing string value now
                                 and(
                                     selector("v0", "10.00", null),
                                     bound("dim1", "9", "10.5", true, false, null, StringComparators.NUMERIC)
@@ -8874,7 +8874,7 @@ public class CalciteQueryTest extends BaseCalciteQueryTest
             Druids.newTimeseriesQueryBuilder()
                   .dataSource(CalciteTests.DATASOURCE3)
                   .intervals(querySegmentSpec(Filtration.eternity()))
-                  .filters(bound("dim2", "0", "0", false, false, null, StringComparators.NUMERIC))
+                  .filters(selector("dim2", "0", null)) //bound("dim2", "0", "0", false, false, null, StringComparators.NUMERIC) removed this as we added string parsing logic
                   .granularity(Granularities.ALL)
                   .aggregators(
                       aggregators(
@@ -8980,7 +8980,7 @@ public class CalciteQueryTest extends BaseCalciteQueryTest
             Druids.newTimeseriesQueryBuilder()
                   .dataSource(CalciteTests.DATASOURCE3)
                   .intervals(querySegmentSpec(Filtration.eternity()))
-                  .filters(bound("dim2", "0", "0", false, false, null, StringComparators.NUMERIC))
+                  .filters(selector("dim2", "0", null))
                   .granularity(Granularities.ALL)
                   .aggregators(
                       aggregators(
