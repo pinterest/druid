@@ -46,16 +46,23 @@ import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.core.Sort;
+import org.apache.calcite.rel.logical.LogicalAggregate;
+import org.apache.calcite.rel.logical.LogicalFilter;
+import org.apache.calcite.rel.logical.LogicalProject;
 import org.apache.calcite.rel.logical.LogicalSort;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlExplain;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlOrderBy;
+import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlValidator;
@@ -66,6 +73,7 @@ import org.apache.calcite.tools.Planner;
 import org.apache.calcite.tools.RelConversionException;
 import org.apache.calcite.tools.ValidationException;
 import org.apache.calcite.util.Pair;
+import org.apache.calcite.util.Util;
 import org.apache.druid.java.util.common.StringUtils;
 import org.apache.druid.java.util.common.guava.BaseSequence;
 import org.apache.druid.java.util.common.guava.Sequence;
@@ -96,7 +104,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class DruidPlanner implements Closeable
 {
@@ -184,6 +194,52 @@ public class DruidPlanner implements Closeable
   }
 
   /**
+   *Convert all the where condtion to appending value with signle quote to make value as string
+   *
+   */
+  private String convertWhereCondition(String sqlStr, String oprator, String unparseSqlCol, String unparsedSqlCondVal)
+  {
+    //Need to see if we can use calcite function to convert to string
+    switch (oprator) {
+      case "=": case ">=": case "<=":
+        sqlStr = sqlStr.replace("`", "").replaceAll("=\\s+", "=").replace(unparseSqlCol + " " + oprator + unparsedSqlCondVal, unparseSqlCol + " " + oprator + "'" + unparsedSqlCondVal + "'");
+        break;
+      case "IN":
+        List<String> inValues = Stream.of(unparsedSqlCondVal.split(","))
+                .map(String::trim)
+                .collect(Collectors.toList());
+        String parasedVal = String.join("','", inValues);
+        String tempStr = unparseSqlCol + " IN ('" + parasedVal + "')";
+        sqlStr = sqlStr.replaceAll("(?i)" + Pattern.quote(unparseSqlCol + " IN (" + unparsedSqlCondVal + ")"), tempStr);
+        break;
+      case "<>":
+        sqlStr.replace("!=", "<>");
+        sqlStr = sqlStr.replace("`", "").replaceAll("<>\\s+", "<>").replace(unparseSqlCol + " " + oprator + unparsedSqlCondVal, unparseSqlCol + " " + oprator + "'" + unparsedSqlCondVal + "'");
+        break;
+      default:
+        //do nothing just return original sql
+        break;
+    }
+    return sqlStr;
+  }
+
+  /**
+   *Get all the where condations from SQL query string  and return list of columns
+   *
+   */
+  private List<SqlNode> getWhereClauses(SqlNode[] whereColumnsList, List<SqlNode> nodes)
+  {
+    for (SqlNode sqlNode : whereColumnsList) {
+      if (sqlNode.getKind().equals(SqlKind.OR) || sqlNode.getKind().equals(SqlKind.AND)) {
+        getWhereClauses(((SqlBasicCall) sqlNode).getOperands(), nodes);
+      } else {
+        nodes.add(sqlNode);
+      }
+    }
+    return nodes;
+  }
+
+  /**
    * Plan an SQL query for execution, returning a {@link PlannerResult} which can be used to actually execute the query.
    *
    * Ideally, the query can be planned into a native Druid query, using {@link #planWithDruidConvention}, but will
@@ -196,7 +252,59 @@ public class DruidPlanner implements Closeable
   {
     resetPlanner();
 
-    final ParsedNodes parsed = ParsedNodes.create(planner.parse(plannerContext.getSql()));
+    final ParsedNodes tempParsed = ParsedNodes.create(planner.parse(plannerContext.getSql()));
+    String originalSql = plannerContext.getSql(); // This need to use and replace with whereColumns array.
+    final SqlNode[] whereColumns = (tempParsed.query instanceof SqlSelect && ((SqlSelect) tempParsed.query).getWhere() != null) ? ((SqlBasicCall) ((SqlSelect) tempParsed.getQueryNode()).getWhere()).getOperands() :
+            (tempParsed.query instanceof SqlOrderBy && (SqlBasicCall) ((SqlSelect) ((SqlOrderBy) tempParsed.getQueryNode()).query).getWhere() != null ? ((SqlBasicCall) ((SqlSelect) ((SqlOrderBy) tempParsed.getQueryNode()).query).getWhere()).getOperands() : null);
+
+    if (whereColumns != null) {
+      final SqlNode validatedQueryNodeTemp = planner.validate(tempParsed.getQueryNode());
+
+      if (validatedQueryNodeTemp.getKind().toString().equals(SqlKind.SELECT.toString())) {
+        final List<SqlNode> nodes = getWhereClauses(whereColumns, new ArrayList<>());
+        final RelRoot rootQueryRel1 = planner.rel(validatedQueryNodeTemp);
+        final RelParameterizerShuttle parameterizer = new RelParameterizerShuttle(plannerContext);
+        final RelNode relNodeFields = rootQueryRel1.rel.accept(parameterizer);
+        List<RelDataTypeField> tableColumns = new ArrayList<>();
+
+        //Below logic need to revist to get all the table column using table metadata using namespace
+        if (relNodeFields instanceof LogicalProject) {
+          tableColumns = ((((LogicalProject) relNodeFields).getInput()).getRowType()).getFieldList();
+        } else if (relNodeFields instanceof LogicalAggregate) {
+          if (((LogicalAggregate) relNodeFields).getInput() instanceof LogicalFilter) {
+            tableColumns = ((LogicalAggregate) relNodeFields).getInput().getRowType().getFieldList();
+          } else {
+            tableColumns = ((LogicalProject) ((LogicalAggregate) relNodeFields).getInput()).getInput().getRowType().getFieldList();
+          }
+        }
+        Util.discard(tableColumns); // just for now discard this and remove once we get correct column list
+      //To optimize this code mostly collect all the needed fields for parse and apply conversion in one go instated in loop.
+        if (!nodes.get(0).getKind().equals(SqlKind.IDENTIFIER)) {
+          for (SqlNode col : nodes) {
+            if (!col.getKind().equals(SqlKind.SCALAR_QUERY) && col instanceof SqlBasicCall && !col.getKind().equals(SqlKind.IS_NOT_NULL)) {
+              String colName = ((SqlBasicCall) col).getOperandList().get(0).toString();
+              //Removed below column type checking from if condition as we are not getting correct actual table column list
+              //tableColumns.stream().anyMatch(o -> o.getKey().equals(colName) && o.getValue().toString().equals(SqlType.VARCHAR.toString())) &&
+              if (((SqlBasicCall) col).getOperandList().size() > 1 && !((SqlBasicCall) col).getOperandList().get(1).toString().contains("'") && !((SqlBasicCall) col).getOperandList().get(1).toString().contains("?")) {
+                originalSql = convertWhereCondition(originalSql, ((SqlBasicCall) col).getOperator().toString(), colName, ((SqlBasicCall) col).getOperandList().get(1).toString());
+              }
+            }
+          }
+        } else {
+          //&& tableColumns.stream().anyMatch(o -> o.getKey().equals(nodes.get(0).toString()) && o.getValue().toString().equals(SqlType.VARCHAR.toString()))
+          if (nodes.size() > 1 && nodes.get(1).toString().indexOf('\'') == -1 && !nodes.get(1).toString().equals("NULL") && !nodes.get(1).toString().equals("?")) {
+            String sqlOperator = tempParsed.query instanceof SqlSelect ? ((SqlBasicCall) ((SqlSelect) tempParsed.getQueryNode()).getWhere()).getOperator().toString() :
+                    ((SqlBasicCall) ((SqlSelect) ((SqlOrderBy) tempParsed.getQueryNode()).query).getWhere()).getOperator().toString();
+            originalSql = convertWhereCondition(originalSql, sqlOperator, nodes.get(0).toString(), nodes.get(1).toString());
+          }
+        }
+      }
+    }
+    //final ParsedNodes parsed = ParsedNodes.create(planner.parse(plannerContext.getSql()));
+    //Apply resetplanner again so that existing parsed will replace and use modified SQL string
+    resetPlanner();
+
+    final ParsedNodes parsed = ParsedNodes.create(planner.parse(originalSql));
 
     // the planner's type factory is not available until after parsing
     this.rexBuilder = new RexBuilder(planner.getTypeFactory());
