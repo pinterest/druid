@@ -30,7 +30,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import org.apache.calcite.DataContext;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
-import org.apache.calcite.avatica.SqlType;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.config.CalciteConnectionConfigImpl;
 import org.apache.calcite.config.CalciteConnectionProperty;
@@ -62,6 +61,7 @@ import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlOrderBy;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -73,6 +73,7 @@ import org.apache.calcite.tools.Planner;
 import org.apache.calcite.tools.RelConversionException;
 import org.apache.calcite.tools.ValidationException;
 import org.apache.calcite.util.Pair;
+import org.apache.calcite.util.Util;
 import org.apache.druid.java.util.common.StringUtils;
 import org.apache.druid.java.util.common.guava.BaseSequence;
 import org.apache.druid.java.util.common.guava.Sequence;
@@ -193,7 +194,8 @@ public class DruidPlanner implements Closeable
   }
 
   /**
-  This method is used for appending signle quote to all varchar strings
+   *Convert all the where condtion to appending value with signle quote to make value as string
+   *
    */
   private String convertWhereCondition(String sqlStr, String oprator, String unparseSqlCol, String unparsedSqlCondVal)
   {
@@ -222,8 +224,8 @@ public class DruidPlanner implements Closeable
   }
 
   /**
-    Below method is collecting all the where condations and return all as list to parse
-    We need change for loop from this method with recursive call
+   *Get all the where condations from SQL query string  and return list of columns
+   *
    */
   private List<SqlNode> getWhereClauses(SqlNode[] whereColumnsList, List<SqlNode> nodes)
   {
@@ -252,7 +254,8 @@ public class DruidPlanner implements Closeable
 
     final ParsedNodes tempParsed = ParsedNodes.create(planner.parse(plannerContext.getSql()));
     String originalSql = plannerContext.getSql(); // This need to use and replace with whereColumns array.
-    final SqlNode[] whereColumns = (tempParsed.query instanceof SqlSelect && ((SqlSelect) tempParsed.query).getWhere() != null) ? ((SqlBasicCall) ((SqlSelect) tempParsed.getQueryNode()).getWhere()).getOperands() : null;
+    final SqlNode[] whereColumns = (tempParsed.query instanceof SqlSelect && ((SqlSelect) tempParsed.query).getWhere() != null) ? ((SqlBasicCall) ((SqlSelect) tempParsed.getQueryNode()).getWhere()).getOperands() :
+            (tempParsed.query instanceof SqlOrderBy && (SqlBasicCall) ((SqlSelect) ((SqlOrderBy) tempParsed.getQueryNode()).query).getWhere() != null ? ((SqlBasicCall) ((SqlSelect) ((SqlOrderBy) tempParsed.getQueryNode()).query).getWhere()).getOperands() : null);
 
     if (whereColumns != null) {
       final SqlNode validatedQueryNodeTemp = planner.validate(tempParsed.getQueryNode());
@@ -261,10 +264,10 @@ public class DruidPlanner implements Closeable
         final List<SqlNode> nodes = getWhereClauses(whereColumns, new ArrayList<>());
         final RelRoot rootQueryRel1 = planner.rel(validatedQueryNodeTemp);
         final RelParameterizerShuttle parameterizer = new RelParameterizerShuttle(plannerContext);
-
-        RelNode relNodeFields = rootQueryRel1.rel.accept(parameterizer);
+        final RelNode relNodeFields = rootQueryRel1.rel.accept(parameterizer);
         List<RelDataTypeField> tableColumns = new ArrayList<>();
 
+        //Below logic need to revist to get all the table column using table metadata using namespace
         if (relNodeFields instanceof LogicalProject) {
           tableColumns = ((((LogicalProject) relNodeFields).getInput()).getRowType()).getFieldList();
         } else if (relNodeFields instanceof LogicalAggregate) {
@@ -274,20 +277,24 @@ public class DruidPlanner implements Closeable
             tableColumns = ((LogicalProject) ((LogicalAggregate) relNodeFields).getInput()).getInput().getRowType().getFieldList();
           }
         }
-
+        Util.discard(tableColumns); // just for now discard this and remove once we get correct column list
       //To optimize this code mostly collect all the needed fields for parse and apply conversion in one go instated in loop.
         if (!nodes.get(0).getKind().equals(SqlKind.IDENTIFIER)) {
           for (SqlNode col : nodes) {
             if (!col.getKind().equals(SqlKind.SCALAR_QUERY) && col instanceof SqlBasicCall && !col.getKind().equals(SqlKind.IS_NOT_NULL)) {
               String colName = ((SqlBasicCall) col).getOperandList().get(0).toString();
-              if (tableColumns.stream().anyMatch(o -> o.getKey().equals(colName) && o.getValue().toString().equals(SqlType.VARCHAR.toString())) && !((SqlBasicCall) col).getOperandList().get(1).toString().contains("'")) {
+              //Removed below column type checking from if condition as we are not getting correct actual table column list
+              //tableColumns.stream().anyMatch(o -> o.getKey().equals(colName) && o.getValue().toString().equals(SqlType.VARCHAR.toString())) &&
+              if (((SqlBasicCall) col).getOperandList().size() > 1 && !((SqlBasicCall) col).getOperandList().get(1).toString().contains("'") && !((SqlBasicCall) col).getOperandList().get(1).toString().contains("?")) {
                 originalSql = convertWhereCondition(originalSql, ((SqlBasicCall) col).getOperator().toString(), colName, ((SqlBasicCall) col).getOperandList().get(1).toString());
               }
             }
           }
         } else {
-          if (nodes.size() > 1 && tableColumns.stream().anyMatch(o -> o.getKey().equals(nodes.get(0).toString()) && o.getValue().toString().equals(SqlType.VARCHAR.toString())) && nodes.get(1).toString().indexOf('\'') == -1 && !nodes.get(1).toString().equals("NULL")) {
-            String sqlOperator = ((SqlBasicCall) ((SqlSelect) tempParsed.getQueryNode()).getWhere()).getOperator().toString();
+          //&& tableColumns.stream().anyMatch(o -> o.getKey().equals(nodes.get(0).toString()) && o.getValue().toString().equals(SqlType.VARCHAR.toString()))
+          if (nodes.size() > 1 && nodes.get(1).toString().indexOf('\'') == -1 && !nodes.get(1).toString().equals("NULL") && !nodes.get(1).toString().equals("?")) {
+            String sqlOperator = tempParsed.query instanceof SqlSelect ? ((SqlBasicCall) ((SqlSelect) tempParsed.getQueryNode()).getWhere()).getOperator().toString() :
+                    ((SqlBasicCall) ((SqlSelect) ((SqlOrderBy) tempParsed.getQueryNode()).query).getWhere()).getOperator().toString();
             originalSql = convertWhereCondition(originalSql, sqlOperator, nodes.get(0).toString(), nodes.get(1).toString());
           }
         }
