@@ -129,7 +129,7 @@ public class OnheapIncrementalIndex extends IncrementalIndex
 
     countLogPrints++;
     if (countLogPrints< 6000) {
-      log.error("debasatwa: static long getMaxBytesPerRowForAggregators");
+      //log.error("debasatwa: static long getMaxBytesPerRowForAggregators");
     }
 
     //log.error("debasatwa:before inside getMaxBytesPerRowForAggregators");
@@ -162,7 +162,7 @@ public class OnheapIncrementalIndex extends IncrementalIndex
   {
     countLogPrints++;
     if (countLogPrints< 6000) {
-      log.error("debasatwa: initAggs");
+      //log.error("debasatwa: initAggs");
     }
     //log.error("debasatwa:before inside initAggs");
     selectors = new HashMap<>();
@@ -273,7 +273,7 @@ public class OnheapIncrementalIndex extends IncrementalIndex
   {
     countLogPrints++;
     if (countLogPrints< 6000) {
-      log.error("debasatwa: estimateRowSizeInBytes");
+      //log.error("debasatwa: estimateRowSizeInBytes");
     }
     //log.error("debasatwa: inside estimateRowSizeInBytes");
     return ROUGH_OVERHEAD_PER_MAP_ENTRY + key.estimateBytesInMemory() + maxBytesPerRowForAggregators;
@@ -294,7 +294,7 @@ public class OnheapIncrementalIndex extends IncrementalIndex
   {
     countLogPrints++;
     if (countLogPrints< 6000) {
-      log.error("debasatwa: factorizeAggs");
+      //log.error("debasatwa: factorizeAggs");
     }
     //log.error("debasatwa:before inside factorizeAggs");
     rowContainer.set(row);
@@ -315,7 +315,7 @@ public class OnheapIncrementalIndex extends IncrementalIndex
   {
     countLogPrints++;
     if (countLogPrints< 6000) {
-      log.error("debasatwa: doAggregate");
+      //log.error("debasatwa: doAggregate");
     }
     //log.error("debasatwa:before inside doAggregate");
     rowContainer.set(row);
@@ -341,7 +341,7 @@ public class OnheapIncrementalIndex extends IncrementalIndex
   {
     countLogPrints++;
     if (countLogPrints< 6000) {
-      log.error("debasatwa: closeAggregators");
+      //log.error("debasatwa: closeAggregators");
     }
     //log.error("debasatwa:before inside closeAggregators");
     Closer closer = Closer.create();
@@ -363,7 +363,7 @@ public class OnheapIncrementalIndex extends IncrementalIndex
   {
     countLogPrints++;
     if (countLogPrints< 6000) {
-      log.error("debasatwa: OnheapIncrementalIndex concurrentGet");
+      //log.error("debasatwa: OnheapIncrementalIndex concurrentGet");
     }
     // All get operations should be fine
     return aggregators.get(offset);
@@ -384,7 +384,7 @@ public class OnheapIncrementalIndex extends IncrementalIndex
   {
     countLogPrints++;
     if (countLogPrints< 6000) {
-      log.error("debasatwa: boolean canAppendRow");
+      //log.error("debasatwa: boolean canAppendRow");
     }
     //log.error("debasatwa:before inside canAppendRow");
     final boolean countCheck = size() < maxRowCount;
@@ -457,7 +457,7 @@ public class OnheapIncrementalIndex extends IncrementalIndex
   {
     countLogPrints++;
     if (countLogPrints< 6000) {
-      log.error("debasatwa: iterableWithPostAggregations");
+      //log.error("debasatwa: iterableWithPostAggregations");
     }
     final AggregatorFactory[] metrics = getMetricAggs();
 

@@ -137,7 +137,7 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
       @Override
       public ColumnValueSelector<?> makeColumnValueSelector(final String column)
       {
-        log.error("debasatwa: inside makeColumnValueSelector");
+        //log.error("debasatwa: inside makeColumnValueSelector");
         final boolean isComplexMetric = agg.getIntermediateType().is(ValueType.COMPLEX);
 
         final ColumnValueSelector selector = baseSelectorFactory.makeColumnValueSelector(column);
@@ -355,7 +355,7 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
               ColumnHolder.TIME_COLUMN_NAME,
               ColumnCapabilitiesImpl.createSimpleNumericColumnCapabilities(ColumnType.LONG)
       );
-      log.error("debasatwa:before if (enableInMemoryBitmap) 358 incrementalindex %s", enableInMemoryBitmap);
+      //log.error("debasatwa:before if (enableInMemoryBitmap) 358 incrementalindex %s", enableInMemoryBitmap);
       if (enableInMemoryBitmap) {
         columns.put(
                 ColumnHolder.TIME_COLUMN_NAME,
@@ -511,7 +511,7 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
   @Override
   public ColumnCapabilities getColumnCapabilities(String columnName)
   {
-    log.error("debasatwa: inside getColumnCapabilities");
+    //log.error("debasatwa: inside getColumnCapabilities");
     if (timeAndMetricsColumnCapabilities.containsKey(columnName)) {
       return timeAndMetricsColumnCapabilities.get(columnName);
     }
@@ -537,7 +537,7 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
    */
   public IncrementalIndexAddResult add(InputRow row) throws IndexSizeExceededException
   {
-    log.error("debasatwa: inside IncrementalIndexAddResult add (InputRow row)");
+    //log.error("debasatwa: inside IncrementalIndexAddResult add (InputRow row)");
     return add(row, false);
   }
 
@@ -556,7 +556,7 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
    */
   public IncrementalIndexAddResult add(InputRow row, boolean skipMaxRowsInMemoryCheck) throws IndexSizeExceededException
   {
-    log.error("debasatwa: inside add(InputRow row, boolean skipMaxRowsInMemoryCheck)");
+    //log.error("debasatwa: inside add(InputRow row, boolean skipMaxRowsInMemoryCheck)");
     IncrementalIndexRowResult incrementalIndexRowResult = toIncrementalIndexRow(row);
     final AddToFactsResult addToFactsResult = addToFacts(
         row,
@@ -581,7 +581,7 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
   @VisibleForTesting
   IncrementalIndexRowResult toIncrementalIndexRow(InputRow row)
   {
-    log.error("debasatwa: inside toIncrementalIndexRow");
+    //log.error("debasatwa: inside toIncrementalIndexRow");
     row = formatRow(row);
     if (row.getTimestampFromEpoch() < minTimestamp) {
       throw new IAE("Cannot add row[%s] because it is below the minTimestamp[%s]", row, DateTimes.utc(minTimestamp));
@@ -722,7 +722,7 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
       @Nullable List<String> aggParseExceptionMessages
   )
   {
-    log.error("debasatwa: inside getCombinedParseException");
+    //log.error("debasatwa: inside getCombinedParseException");
     int numAdded = 0;
     StringBuilder stringBuilder = new StringBuilder();
     final List<String> details = new ArrayList<>();
@@ -765,7 +765,7 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
 
   private static String getSimplifiedEventStringFromRow(InputRow inputRow)
   {
-    log.error("debasatwa: inside getSimplifiedEventStringFromRow");
+    //log.error("debasatwa: inside getSimplifiedEventStringFromRow");
     if (inputRow instanceof MapBasedInputRow) {
       return ((MapBasedInputRow) inputRow).getEvent().toString();
     }
@@ -868,7 +868,7 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
 
   public ColumnValueSelector<?> makeMetricColumnValueSelector(String metric, IncrementalIndexRowHolder currEntry)
   {
-    log.error("debasatwa: inside makeMetricColumnValueSelector");
+    //log.error("debasatwa: inside makeMetricColumnValueSelector");
     MetricDesc metricDesc = metricDescs.get(metric);
     if (metricDesc == null) {
       return NilColumnValueSelector.instance();
@@ -924,7 +924,7 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
 
   private ColumnCapabilitiesImpl makeDefaultCapabilitiesFromValueType(ColumnType type)
   {
-    log.error("debasatwa: inside makeDefaultCapabilitiesFromValueType");
+    //log.error("debasatwa: inside makeDefaultCapabilitiesFromValueType");
     switch (type.getType()) {
       case STRING:
         // we start out as not having multiple values, but this might change as we encounter them
@@ -950,7 +950,7 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
       Map<String, ColumnCapabilities> oldColumnCapabilities
   )
   {
-    log.error("debasatwa: inside loadDimensionIterable");
+    //log.error("debasatwa: inside loadDimensionIterable");
     synchronized (dimensionDescs) {
       if (!dimensionDescs.isEmpty()) {
         throw new ISE("Cannot load dimension order when existing order[%s] is not empty.", dimensionDescs.keySet());
@@ -1003,7 +1003,7 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
 
   private static AggregatorFactory[] getCombiningAggregators(AggregatorFactory[] aggregators)
   {
-    log.error("debasatwa: inside getCombiningAggregators");
+    //log.error("debasatwa: inside getCombiningAggregators");
     AggregatorFactory[] combiningAggregators = new AggregatorFactory[aggregators.length];
     for (int i = 0; i < aggregators.length; i++) {
       combiningAggregators[i] = aggregators[i].getCombiningFactory();
@@ -1149,7 +1149,7 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
     @Override
     public int compare(IncrementalIndexRow lhs, IncrementalIndexRow rhs)
     {
-      log.error("debasatwa: inside int compare(IncrementalIndexRow lhs");
+      //log.error("debasatwa: inside int compare(IncrementalIndexRow lhs");
       int retVal = Longs.compare(lhs.timestamp, rhs.timestamp);
       int numComparisons = Math.min(lhs.dims.length, rhs.dims.length);
 
@@ -1313,7 +1313,7 @@ public abstract class IncrementalIndex extends AbstractIndex implements Iterable
     @Override
     public Iterable<IncrementalIndexRow> timeRangeIterable(boolean descending, long timeStart, long timeEnd)
     {
-      log.error("debasatwa: inside timeRangeIterable");
+      //log.error("debasatwa: inside timeRangeIterable");
       if (!sortFacts) {
         throw new UnsupportedOperationException("can't get timeRange from unsorted facts data.");
       }

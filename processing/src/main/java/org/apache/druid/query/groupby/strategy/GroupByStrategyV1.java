@@ -156,7 +156,7 @@ public class GroupByStrategyV1 implements GroupByStrategy
   {
     countLogPrints++;
     if (countLogPrints< 6000) {
-      log.error("debasatwa: first line processSubqueryResult in GroupByStrategyV1 ");
+      //log.error("debasatwa: first line processSubqueryResult in GroupByStrategyV1 ");
     }
     final Set<AggregatorFactory> aggs = new HashSet<>();
 
@@ -221,7 +221,7 @@ public class GroupByStrategyV1 implements GroupByStrategy
     );
 
     if (countLogPrints< 6000) {
-      log.error("debasatwa: before IncrementalIndexStorageAdapter is created ");
+      //log.error("debasatwa: before IncrementalIndexStorageAdapter is created ");
     }
 
     //Outer query might have multiple intervals, but they are expected to be non-overlapping and sorted which

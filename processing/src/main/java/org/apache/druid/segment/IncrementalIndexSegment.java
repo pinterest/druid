@@ -63,7 +63,7 @@ public class IncrementalIndexSegment implements Segment
   {
     countLogPrints++;
     if (countLogPrints< 6000) {
-      log.error("debasatwa: first line asStorageAdapter creating new IncrementalIndexStorageAdapter");
+      //log.error("debasatwa: first line asStorageAdapter creating new IncrementalIndexStorageAdapter");
     }
     return new IncrementalIndexStorageAdapter(index);
   }

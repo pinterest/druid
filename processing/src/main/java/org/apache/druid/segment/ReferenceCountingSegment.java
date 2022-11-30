@@ -54,7 +54,7 @@ public class ReferenceCountingSegment extends ReferenceCountingCloseableObject<S
   {
     countLogPrints++;
     if (countLogPrints< 6000) {
-        log.error("debasatwa: first line ReferenceCountingSegment wrapRootGenerationSegment %s", baseSegment.toString());
+        //log.error("debasatwa: first line ReferenceCountingSegment wrapRootGenerationSegment %s", baseSegment.toString());
     }
     return new ReferenceCountingSegment(
         Preconditions.checkNotNull(baseSegment, "baseSegment"),

@@ -256,7 +256,7 @@ public class QueryableIndexStorageAdapter implements StorageAdapter
   {
     countLogPrints++;
     if (countLogPrints< 6000) {
-      log.error("debasatwa: first line QueryableIndexStorageAdapter makeCursors %s", useInMemoryBitmapInQuery);
+      //log.error("debasatwa: first line QueryableIndexStorageAdapter makeCursors %s", useInMemoryBitmapInQuery);
     }
     if (queryMetrics != null) {
       queryMetrics.vectorized(false);

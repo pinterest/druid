@@ -1271,7 +1271,7 @@ public class GroupByQuery extends BaseQuery<ResultRow>
       countLogPrints++;
 
       if (countLogPrints< 6000) {
-        log.error("debasatwa: before new GroupByQuery");
+        //log.error("debasatwa: before new GroupByQuery");
       }
       return new GroupByQuery(
           dataSource,

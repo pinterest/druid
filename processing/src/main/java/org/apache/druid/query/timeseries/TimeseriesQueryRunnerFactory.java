@@ -63,7 +63,7 @@ public class TimeseriesQueryRunnerFactory
   public QueryRunner<Result<TimeseriesResultValue>> createRunner(final Segment segment)
   {
     if (countLogPrints< 6000) {
-      log.error("debasatwa: 1st line QueryRunner<Result<TimeseriesResultValue>> createRunner");
+      //log.error("debasatwa: 1st line QueryRunner<Result<TimeseriesResultValue>> createRunner");
     }
     return new TimeseriesQueryRunner(engine, segment.asStorageAdapter());
   }

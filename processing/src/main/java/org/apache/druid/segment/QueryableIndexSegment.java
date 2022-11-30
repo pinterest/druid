@@ -63,7 +63,7 @@ public class QueryableIndexSegment implements Segment
   {
     countLogPrints++;
     if (countLogPrints< 6000) {
-      log.error("debasatwa: first line asStorageAdapter returns QueryableIndexStorageAdapter object");
+      //log.error("debasatwa: first line asStorageAdapter returns QueryableIndexStorageAdapter object");
     }
     return storageAdapter;
   }
