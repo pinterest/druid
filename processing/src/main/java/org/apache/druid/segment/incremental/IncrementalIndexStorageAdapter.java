@@ -153,7 +153,7 @@ public class IncrementalIndexStorageAdapter implements StorageAdapter
   @Override
   public int getDimensionCardinality(String dimension)
   {
-    log.error("debasatwa: first line getDimensionCardinality IncrementalIndexStorageAdapter");
+    //log.error("debasatwa: first line getDimensionCardinality IncrementalIndexStorageAdapter");
     if (dimension.equals(ColumnHolder.TIME_COLUMN_NAME)) {
       return Integer.MAX_VALUE;
     }
@@ -190,7 +190,7 @@ public class IncrementalIndexStorageAdapter implements StorageAdapter
   @Override
   public Comparable getMinValue(String column)
   {
-    log.error("debasatwa: first line getMinValue IncrementalIndexStorageAdapter");
+    //log.error("debasatwa: first line getMinValue IncrementalIndexStorageAdapter");
     IncrementalIndex.DimensionDesc desc = index.getDimension(column);
     if (desc == null) {
       return null;
@@ -204,7 +204,7 @@ public class IncrementalIndexStorageAdapter implements StorageAdapter
   @Override
   public Comparable getMaxValue(String column)
   {
-    log.error("debasatwa: first line getMaxValue IncrementalIndexStorageAdapter");
+    //log.error("debasatwa: first line getMaxValue IncrementalIndexStorageAdapter");
     IncrementalIndex.DimensionDesc desc = index.getDimension(column);
     if (desc == null) {
       return null;
@@ -230,7 +230,7 @@ public class IncrementalIndexStorageAdapter implements StorageAdapter
     // to the StringDimensionIndexer so the selector built on top of it can produce values from the snapshot state of
     // multi-valuedness at cursor creation time, instead of the latest state, and getSnapshotColumnCapabilities could
     // be removed.
-    log.error("debasatwa: first line getColumnCapabilities IncrementalIndexStorageAdapter");
+    //log.error("debasatwa: first line getColumnCapabilities IncrementalIndexStorageAdapter");
     return ColumnCapabilitiesImpl.snapshot(
         index.getColumnCapabilities(column),
         STORAGE_ADAPTER_CAPABILITIES_COERCE_LOGIC
@@ -245,7 +245,7 @@ public class IncrementalIndexStorageAdapter implements StorageAdapter
    */
   public ColumnCapabilities getSnapshotColumnCapabilities(String column)
   {
-    log.error("debasatwa: first line getSnapshotColumnCapabilities IncrementalIndexStorageAdapter");
+    //log.error("debasatwa: first line getSnapshotColumnCapabilities IncrementalIndexStorageAdapter");
     return ColumnCapabilitiesImpl.snapshot(
         index.getColumnCapabilities(column),
         SNAPSHOT_STORAGE_ADAPTER_CAPABILITIES_COERCE_LOGIC
@@ -255,7 +255,7 @@ public class IncrementalIndexStorageAdapter implements StorageAdapter
   @Override
   public DateTime getMaxIngestedEventTime()
   {
-    log.error("debasatwa: first line getMaxIngestedEventTime IncrementalIndexStorageAdapter");
+    //log.error("debasatwa: first line getMaxIngestedEventTime IncrementalIndexStorageAdapter");
     return index.getMaxIngestedEventTime();
   }
 
@@ -270,7 +270,7 @@ public class IncrementalIndexStorageAdapter implements StorageAdapter
       final boolean useInMemoryBitmapInQuery
   )
   {
-    log.error("debasatwa: first line IncrementalIndexStorageAdapter makeCursors %s", useInMemoryBitmapInQuery);
+    //log.error("debasatwa: first line IncrementalIndexStorageAdapter makeCursors %s", useInMemoryBitmapInQuery);
     if (index.isEmpty()) {
       return Sequences.empty();
     }
@@ -285,14 +285,14 @@ public class IncrementalIndexStorageAdapter implements StorageAdapter
     if (descending) {
       intervals = Lists.reverse(ImmutableList.copyOf(intervals));
     }
-    log.error("debasatwa: before if(!index.isEnableInMemoryBitmap() || !useInMemoryBitmapInQuery IncrementalIndexStorageAdapter");
+    //log.error("debasatwa: before if(!index.isEnableInMemoryBitmap() || !useInMemoryBitmapInQuery IncrementalIndexStorageAdapter");
     if (!index.isEnableInMemoryBitmap() || !useInMemoryBitmapInQuery) {
-      log.error("debasatwa: inside of (!index.isEnableInMemoryBitmap() || !useInMemoryBitmapInQuery IncrementalIndexStorageAdapter");
+      //log.error("debasatwa: inside of (!index.isEnableInMemoryBitmap() || !useInMemoryBitmapInQuery IncrementalIndexStorageAdapter");
       return Sequences
           .simple(intervals)
           .map(i -> new IncrementalIndexCursor(virtualColumns, descending, filter, i, actualInterval, gran));
     } else {
-      log.error("debasatwa: in the else of (!index.isEnableInMemoryBitmap() || !useInMemoryBitmapInQuery IncrementalIndexStorageAdapter");
+      //log.error("debasatwa: in the else of (!index.isEnableInMemoryBitmap() || !useInMemoryBitmapInQuery IncrementalIndexStorageAdapter");
       final ColumnSelectorBitmapIndexSelector bitmapIndexSelector = makeBitmapIndexSelector(virtualColumns);
       final QueryableIndexStorageAdapter.FilterAnalysis filterAnalysis = QueryableIndexStorageAdapter
           .analyzeFilter(filter, bitmapIndexSelector, queryMetrics);
@@ -317,7 +317,7 @@ public class IncrementalIndexStorageAdapter implements StorageAdapter
 
   private ColumnSelectorBitmapIndexSelector makeBitmapIndexSelector(final VirtualColumns virtualColumns)
   {
-    log.error("debasatwa: first line makeBitmapIndexSelector IncrementalIndexStorageAdapter");
+    //log.error("debasatwa: first line makeBitmapIndexSelector IncrementalIndexStorageAdapter");
     return new ColumnSelectorBitmapIndexSelector(
         index.inMemoryBitmapFactory,
         virtualColumns,
@@ -328,7 +328,7 @@ public class IncrementalIndexStorageAdapter implements StorageAdapter
   @Override
   public Metadata getMetadata()
   {
-    log.error("debasatwa: first line getMetadata IncrementalIndexStorageAdapter");
+    //log.error("debasatwa: first line getMetadata IncrementalIndexStorageAdapter");
     return index.getMetadata();
   }
 
@@ -392,7 +392,7 @@ public class IncrementalIndexStorageAdapter implements StorageAdapter
     @Override
     public void advance()
     {
-      log.error("debasatwa: first line advance IncrementalIndexStorageAdapter");
+      //log.error("debasatwa: first line advance IncrementalIndexStorageAdapter");
       if (!baseIter.hasNext()) {
         done = true;
         return;
@@ -419,7 +419,7 @@ public class IncrementalIndexStorageAdapter implements StorageAdapter
     @Override
     public void advanceUninterruptibly()
     {
-      log.error("debasatwa: first line advanceUninterruptibly IncrementalIndexStorageAdapter");
+      //log.error("debasatwa: first line advanceUninterruptibly IncrementalIndexStorageAdapter");
       if (!baseIter.hasNext()) {
         done = true;
         return;
@@ -454,14 +454,14 @@ public class IncrementalIndexStorageAdapter implements StorageAdapter
     @Override
     public boolean isDoneOrInterrupted()
     {
-      log.error("debasatwa: first line isDoneOrInterrupted IncrementalIndexStorageAdapter");
+      //log.error("debasatwa: first line isDoneOrInterrupted IncrementalIndexStorageAdapter");
       return isDone() || Thread.currentThread().isInterrupted();
     }
 
     @Override
     public void reset()
     {
-      log.error("debasatwa: first line reset IncrementalIndexStorageAdapter");
+      //log.error("debasatwa: first line reset IncrementalIndexStorageAdapter");
       baseIter = cursorIterable.iterator();
 
       if (numAdvanced == -1) {
@@ -493,7 +493,7 @@ public class IncrementalIndexStorageAdapter implements StorageAdapter
 
     private boolean beyondMaxRowIndex(int rowIndex)
     {
-      log.error("debasatwa: first line beyondMaxRowIndex IncrementalIndexStorageAdapter");
+      //log.error("debasatwa: first line beyondMaxRowIndex IncrementalIndexStorageAdapter");
       // ignore rows whose rowIndex is beyond the maxRowIndex
       // rows are order by timestamp, not rowIndex,
       // so we still need to go through all rows to skip rows added after cursor created
