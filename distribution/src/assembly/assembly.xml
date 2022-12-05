@@ -49,88 +49,53 @@
             <outputDirectory>conf</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>../conf/druid/_common</directory>
+            <directory>../../conf/druid/_common</directory>
             <includes>
                 <include>*</include>
             </includes>
             <outputDirectory>conf/druid/_common</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>../conf/druid/broker</directory>
+            <directory>../../conf/druid/broker</directory>
             <includes>
                 <include>*</include>
             </includes>
             <outputDirectory>conf/druid/broker</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>../conf/druid/coordinator</directory>
+            <directory>../../conf/druid/coordinator</directory>
             <includes>
                 <include>*</include>
             </includes>
             <outputDirectory>conf/druid/coordinator</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>../conf/druid/historical</directory>
+            <directory>../../conf/druid/historical</directory>
             <includes>
                 <include>*</include>
             </includes>
             <outputDirectory>conf/druid/historical</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>../conf/druid/overlord</directory>
+            <directory>../../conf/druid/overlord</directory>
             <includes>
                 <include>*</include>
             </includes>
             <outputDirectory>conf/druid/overlord</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>../conf/druid/router</directory>
+            <directory>../../conf/druid/router</directory>
             <includes>
                 <include>*</include>
             </includes>
             <outputDirectory>conf/druid/router</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>../conf/druid/middleManager</directory>
+            <directory>../../conf/druid/middleManager</directory>
             <includes>
                 <include>*</include>
             </includes>
             <outputDirectory>conf/druid/middleManager</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>../examples/quickstart/</directory>
-            <includes>
-                <include>*</include>
-            </includes>
-            <outputDirectory>quickstart</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>../examples/quickstart/tutorial</directory>
-            <includes>
-                <include>*</include>
-            </includes>
-            <outputDirectory>quickstart/tutorial</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>../examples/quickstart/tutorial/hadoop</directory>
-            <includes>
-                <include>*</include>
-            </includes>
-            <outputDirectory>quickstart/tutorial/hadoop</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>../examples/quickstart/tutorial/hadoop/docker</directory>
-            <includes>
-                <include>*</include>
-            </includes>
-            <outputDirectory>quickstart/tutorial/hadoop/docker</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>../examples/quickstart/protobuf</directory>
-            <includes>
-                <include>*</include>
-            </includes>
-            <outputDirectory>quickstart/protobuf</outputDirectory>
         </fileSet>
         <fileSet>
             <directory>../../examples/bin</directory>
@@ -149,22 +114,8 @@
     </fileSets>
     <files>
         <file>
-            <source>../LICENSE.BINARY</source>
-            <outputDirectory>.</outputDirectory>
-            <destName>LICENSE</destName>
-            <lineEnding>keep</lineEnding>
-        </file>
-        <file>
-            <source>../NOTICE.BINARY</source>
-            <outputDirectory>.</outputDirectory>
-            <destName>NOTICE</destName>
-            <lineEnding>keep</lineEnding>
-        </file>
-        <file>
-            <source>../README.BINARY</source>
-            <outputDirectory>.</outputDirectory>
-            <destName>README</destName>
-            <lineEnding>keep</lineEnding>
+            <source>Dockerfile</source>
+            <outputDirectory>/</outputDirectory>
         </file>
     </files>
     <dependencySets>
