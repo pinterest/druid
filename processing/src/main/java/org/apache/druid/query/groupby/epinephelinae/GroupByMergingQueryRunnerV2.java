@@ -95,6 +95,7 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
   private final ObjectMapper spillMapper;
   private final String processingTmpDir;
   private final int mergeBufferSize;
+  private static int countLogPrints =0;
 
   public GroupByMergingQueryRunnerV2(
       GroupByQueryConfig config,
@@ -112,6 +113,10 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
     this.queryProcessingPool = queryProcessingPool;
     this.queryWatcher = queryWatcher;
     this.queryables = Iterables.unmodifiableIterable(Iterables.filter(queryables, Predicates.notNull()));
+    countLogPrints++;
+    if (countLogPrints< 2000) {
+      log.error("debasatwa7: new GroupByMergingQueryRunnerV2 concurrencyHint: [%s]", concurrencyHint);
+    }
     this.concurrencyHint = concurrencyHint;
     this.mergeBufferPool = mergeBufferPool;
     this.spillMapper = spillMapper;
@@ -249,8 +254,13 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
                                         throw e;
                                       }
                                       catch (Exception e) {
-                                        log.error(e, "Exception with one of the sequences! "
-                                            + "caused by: %s", Throwables.getStackTraceAsString(e));
+                                        countLogPrints++;
+                                        //dont comment out this log.error
+                                        if (countLogPrints< 2000) {
+                                          //dont comment out this log.error
+                                          log.error(e, "debasatwa7: GroupByMergingQueryRunnerV2 Exception with one of the sequences! "
+                                                  + "caused by: %s", Throwables.getStackTraceAsString(e));
+                                        }
                                         throw new RuntimeException(e);
                                       }
                                     }
