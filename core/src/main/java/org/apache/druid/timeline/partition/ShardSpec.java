@@ -40,6 +40,7 @@ import java.util.Map;
     @JsonSubTypes.Type(name = ShardSpec.Type.NUMBERED, value = NumberedShardSpec.class),
     @JsonSubTypes.Type(name = ShardSpec.Type.HASHED, value = HashBasedNumberedShardSpec.class),
     @JsonSubTypes.Type(name = ShardSpec.Type.NUMBERED_OVERWRITE, value = NumberedOverwriteShardSpec.class),
+    @JsonSubTypes.Type(name = ShardSpec.Type.NAMED_NUMBERED, value = NamedNumberedShardSpec.class),
     // BuildingShardSpecs are the shardSpec with missing numCorePartitions, and thus must not be published.
     // See BuildingShardSpec for more details.
     @JsonSubTypes.Type(name = ShardSpec.Type.BUILDING_NUMBERED, value = BuildingNumberedShardSpec.class),
@@ -51,8 +52,17 @@ import java.util.Map;
     // See BucketShardSpec for more details.
     @JsonSubTypes.Type(name = ShardSpec.Type.BUCKET_HASH, value = HashBucketShardSpec.class),
     @JsonSubTypes.Type(name = ShardSpec.Type.BUCKET_SINGLE_DIM, value = SingleDimensionRangeBucketShardSpec.class),
+    @JsonSubTypes.Type(name = ShardSpec.Type.SINGLE_EVEN_SIZE_V2, value = SingleDimensionEvenSizeV2ShardSpec.class),
+    @JsonSubTypes.Type(name = ShardSpec.Type.SINGLE_EVEN_SIZE_NAMED_V2, value = SingleDimensionEvenSizeNamedV2ShardSpec.class),
+    @JsonSubTypes.Type(name = ShardSpec.Type.STREAM_FANOUT_HASHED, value = StreamFanOutHashBasedNumberedShardSpec.class),
+    @JsonSubTypes.Type(name = ShardSpec.Type.STREAM_HASHED, value = StreamHashBasedNumberedShardSpec.class),
     @JsonSubTypes.Type(name = ShardSpec.Type.BUCKET_RANGE, value = DimensionRangeBucketShardSpec.class)
+    //Adding the below ShardSpec type leads to some unwanted bugs, we need to review the below changes and
+    //and then we need to fix the issues appropriately.
+    //@JsonSubTypes.Type(name = ShardSpec.Type.STREAM_EVEN_HASHED, value = SingleDimensionEvenSizeShardSpec.class),
+    //@JsonSubTypes.Type(name = ShardSpec.Type.STREAM_EVEN_SIZE_NAMED, value = SingleDimensionEvenSizeNamedShardSpec.class)
 })
+
 public interface ShardSpec
 {
   @JsonIgnore
@@ -124,6 +134,15 @@ public interface ShardSpec
   boolean possibleInDomain(Map<String, RangeSet<String>> domain);
 
   /**
+   * Added in for NamedNumberedShardSpec
+   * @return unique identifier for ShardSpec
+   */
+  default Object getIdentifier()
+  {
+    return this.getPartitionNum();
+  }
+
+  /**
    * Get the type name of this ShardSpec.
    */
   @JsonIgnore
@@ -159,6 +178,7 @@ public interface ShardSpec
     String HASHED = "hashed";
 
     String NUMBERED_OVERWRITE = "numbered_overwrite";
+    String NAMED_NUMBERED = "named_numbered";
 
     String BUILDING_NUMBERED = "building_numbered";
     String BUILDING_HASHED = "building_hashed";
@@ -168,5 +188,14 @@ public interface ShardSpec
     String BUCKET_HASH = "bucket_hash";
     String BUCKET_SINGLE_DIM = "bucket_single_dim";
     String BUCKET_RANGE = "bucket_range";
+
+    String SINGLE_EVEN_SIZE_V2 = "single_even_size_v2";
+    String SINGLE_EVEN_SIZE_NAMED_V2 = "single_even_size_named_v2";
+
+    String STREAM_FANOUT_HASHED = "stream_fanout_hashed";
+    String STREAM_HASHED = "stream_hashed";
+
+    String STREAM_EVEN_HASHED = "single_even_size";
+    String STREAM_EVEN_SIZE_NAMED = "single_even_size_named";
   }
 }

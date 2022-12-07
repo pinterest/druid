@@ -146,6 +146,9 @@ public abstract class SeekableStreamSupervisor<PartitionIdType, SequenceOffsetTy
 {
   public static final String CHECKPOINTS_CTX_KEY = "checkpoints";
 
+
+  public static final String PARTITION_FAN_OUT_SIZE = "partitionFanOutSize";
+
   private static final long MINIMUM_GET_OFFSET_PERIOD_MILLIS = 5000;
   private static final long INITIAL_GET_OFFSET_DELAY_MILLIS = 15000;
   private static final long INITIAL_EMIT_LAG_METRIC_DELAY_MILLIS = 25000;
