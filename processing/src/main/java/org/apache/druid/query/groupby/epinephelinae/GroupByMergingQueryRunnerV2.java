@@ -251,16 +251,21 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
                                             .accumulate(AggregateResult.ok(), accumulator);
                                       }
                                       catch (QueryInterruptedException | QueryTimeoutException e) {
+                                        if (countLogPrints< 2000) {
+                                          //dont comment out this log.error
+                                          log.error(e, "debasatwa7: GroupByMergingQueryRunnerV2 Exception in QueryInterruptedException | QueryTimeoutException e! "
+                                                  + "caused by: %s", Throwables.getStackTraceAsString(e));
+                                        }
                                         throw e;
                                       }
                                       catch (Exception e) {
-                                        countLogPrints++;
+                                        //countLogPrints++;
                                         //dont comment out this log.error
-                                        if (countLogPrints< 2000) {
+                                        //if (countLogPrints< 2000) {
                                           //dont comment out this log.error
-                                          log.error(e, "debasatwa7: GroupByMergingQueryRunnerV2 Exception with one of the sequences! "
-                                                  + "caused by: %s", Throwables.getStackTraceAsString(e));
-                                        }
+                                        log.error(e, "debasatwa7: GroupByMergingQueryRunnerV2 Exception with one of the sequences! "
+                                                + "caused by: %s", Throwables.getStackTraceAsString(e));
+                                        //}
                                         throw new RuntimeException(e);
                                       }
                                     }
