@@ -198,7 +198,7 @@ public class GroupByQueryConfig
   {
     countLogPrints++;
     if (countLogPrints< 2000) {
-      log.error("debasatwa8: new GroupByMergingQueryRunnerV2 numParallelCombineThreads: [%s]", numParallelCombineThreads);
+      log.error("debasatwa11: new GroupByMergingQueryRunnerV2 numParallelCombineThreads: [%s]", numParallelCombineThreads);
     }
     return numParallelCombineThreads;
   }
@@ -267,7 +267,7 @@ public class GroupByQueryConfig
     );
     countLogPrints++;
     if (countLogPrints< 2000) {
-      log.error("debasatwa8: new GroupByMergingQueryRunnerV2 newConfig.numParallelCombineThreads: [%s]", newConfig.numParallelCombineThreads);
+      log.error("debasatwa11: new GroupByMergingQueryRunnerV2 newConfig.numParallelCombineThreads: [%s]", newConfig.numParallelCombineThreads);
     }
     newConfig.vectorize = query.getContextBoolean(QueryContexts.VECTORIZE_KEY, isVectorize());
     return newConfig;

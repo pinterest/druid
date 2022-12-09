@@ -88,7 +88,7 @@ public class ReferenceCountingResourceHolder<T> implements ResourceHolder<T>
     while (true) {
       int count = this.refCount.get();
       if (count <= 0) {
-        throw new ISE("Already closed!");
+        throw new ISE("debasatwa9: Already closed! in increment()");
       }
       if (refCount.compareAndSet(count, count + 1)) {
         break;
@@ -107,7 +107,7 @@ public class ReferenceCountingResourceHolder<T> implements ResourceHolder<T>
           decrement();
           released = true;
         } else {
-          log.warn(new ISE("Already closed"), "Already closed");
+          log.warn(new ISE("Already closed in close()"), "Already closed in close()");
         }
       }
     };
@@ -122,7 +122,7 @@ public class ReferenceCountingResourceHolder<T> implements ResourceHolder<T>
     if (closed.compareAndSet(false, true)) {
       decrement();
     } else {
-      log.warn(new ISE("Already closed"), "Already closed");
+      log.warn(new ISE("debasatwa9: Already closed in close()"), "debasatwa9: Already closed in close()");
     }
   }
 
@@ -170,7 +170,7 @@ public class ReferenceCountingResourceHolder<T> implements ResourceHolder<T>
           }
           catch (Exception e) {
             try {
-              log.error(e, "Exception in closer");
+              log.error(e, "debasatwa9: Exception in closer");
             }
             catch (Exception ignore) {
               // ignore
@@ -178,7 +178,7 @@ public class ReferenceCountingResourceHolder<T> implements ResourceHolder<T>
           }
           finally {
             try {
-              log.warn("Not closed! Object was[%s]", object);
+              log.warn("debasatwa9: Not closed! Object was[%s]", object);
             }
             catch (Exception ignore) {
               // ignore

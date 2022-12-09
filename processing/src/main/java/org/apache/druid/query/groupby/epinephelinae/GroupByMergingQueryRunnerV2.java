@@ -115,7 +115,7 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
     this.queryables = Iterables.unmodifiableIterable(Iterables.filter(queryables, Predicates.notNull()));
     countLogPrints++;
     if (countLogPrints< 2000) {
-      log.error("debasatwa7: new GroupByMergingQueryRunnerV2 concurrencyHint: [%s]", concurrencyHint);
+      log.error("debasatwa10: new GroupByMergingQueryRunnerV2 concurrencyHint: [%s]", concurrencyHint);
     }
     this.concurrencyHint = concurrencyHint;
     this.mergeBufferPool = mergeBufferPool;
@@ -213,6 +213,12 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
                       timeoutAt,
                       mergeBufferSize
                   );
+
+              if (countLogPrints< 2000) {
+                //dont comment out this log.error
+                log.error("debasatwa10: GroupByMergingQueryRunnerV2 mergeBufferSize: %s hasTimeout:%s",mergeBufferSize, hasTimeout);
+              }
+
               final Grouper<RowBasedKey> grouper = pair.lhs;
               final Accumulator<AggregateResult, ResultRow> accumulator = pair.rhs;
               grouper.init();
@@ -246,6 +252,10 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
                                           @SuppressWarnings("unused")
                                           Releaser grouperReleaser = grouperHolder.increment()
                                       ) {
+                                        if (countLogPrints< 2000) {
+                                          //dont comment out this log.error
+                                          log.error("debasatwa10: GroupByMergingQueryRunnerV2 inside the try block of AggregateResult call");
+                                        }
                                         // Return true if OK, false if resources were exhausted.
                                         return input.run(queryPlusForRunners, responseContext)
                                             .accumulate(AggregateResult.ok(), accumulator);
@@ -253,7 +263,7 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
                                       catch (QueryInterruptedException | QueryTimeoutException e) {
                                         if (countLogPrints< 2000) {
                                           //dont comment out this log.error
-                                          log.error(e, "debasatwa7: GroupByMergingQueryRunnerV2 Exception in QueryInterruptedException | QueryTimeoutException e! "
+                                          log.error(e, "debasatwa10: GroupByMergingQueryRunnerV2 Exception in QueryInterruptedException | QueryTimeoutException e! "
                                                   + "caused by: %s", Throwables.getStackTraceAsString(e));
                                         }
                                         throw e;
@@ -263,7 +273,7 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
                                         //dont comment out this log.error
                                         //if (countLogPrints< 2000) {
                                           //dont comment out this log.error
-                                        log.error(e, "debasatwa7: GroupByMergingQueryRunnerV2 Exception with one of the sequences! "
+                                        log.error(e, "debasatwa10: GroupByMergingQueryRunnerV2 Exception with one of the sequences! "
                                                 + "caused by: %s", Throwables.getStackTraceAsString(e));
                                         //}
                                         throw new RuntimeException(e);
