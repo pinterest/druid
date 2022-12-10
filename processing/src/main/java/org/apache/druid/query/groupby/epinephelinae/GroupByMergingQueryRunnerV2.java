@@ -122,6 +122,9 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
     this.spillMapper = spillMapper;
     this.processingTmpDir = processingTmpDir;
     this.mergeBufferSize = mergeBufferSize;
+    if (countLogPrints< 2000) {
+      log.error("debasatwa10: new GroupByMergingQueryRunnerV2 mergeBufferSize: [%s]", mergeBufferSize);
+    }
   }
 
   @Override
@@ -162,6 +165,12 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
     // Figure out timeoutAt time now, so we can apply the timeout to both the mergeBufferPool.take and the actual
     // query processing together.
     final long queryTimeout = QueryContexts.getTimeout(query);
+
+    if (countLogPrints< 2000) {
+      //dont comment out this log.error
+      log.error("debasatwa10: GroupByMergingQueryRunnerV2 in run method QueryContexts queryTimeout: %s", queryTimeout);
+    }
+
     final boolean hasTimeout = QueryContexts.hasTimeout(query);
     final long timeoutAt = System.currentTimeMillis() + queryTimeout;
 
@@ -337,7 +346,7 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
     try {
       if (numBuffers > mergeBufferPool.maxSize()) {
         throw new ResourceLimitExceededException(
-            "Query needs " + numBuffers + " merge buffers, but only "
+            "debasatwa12: Query needs " + numBuffers + " merge buffers, but only "
             + mergeBufferPool.maxSize() + " merge buffers were configured. "
             + "Try raising druid.processing.numMergeBuffers."
         );
@@ -350,7 +359,7 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
           throw new QueryTimeoutException();
         }
         if ((mergeBufferHolder = mergeBufferPool.takeBatch(numBuffers, timeout)).isEmpty()) {
-          throw new QueryTimeoutException("Cannot acquire enough merge buffers");
+          throw new QueryTimeoutException("debasatwa12: Cannot acquire enough merge buffers");
         }
       } else {
         mergeBufferHolder = mergeBufferPool.takeBatch(numBuffers);
