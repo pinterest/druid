@@ -276,7 +276,7 @@ public class TaskLockbox
    * Acquires a lock on behalf of a task.  Blocks until the lock is acquired.
    *
    * @return {@link LockResult} containing a new or an existing lock if succeeded. Otherwise, {@link LockResult} with a
-   * {@link LockResult#revoked} flag.
+   * {@link LockResult# revoked} flag.
    *
    * @throws InterruptedException if the current thread is interrupted
    */
@@ -539,7 +539,8 @@ public class TaskLockbox
         request.getInterval(),
         request.getPartialShardSpec(),
         version,
-        request.isSkipSegmentLineageCheck()
+        request.isSkipSegmentLineageCheck(),
+        request.isAllowMixedShardSpecType()
     );
   }
 

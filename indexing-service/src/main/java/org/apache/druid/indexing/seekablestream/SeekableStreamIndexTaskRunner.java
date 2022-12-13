@@ -656,7 +656,8 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
                     true,
                     // do not allow incremental persists to happen until all the rows from this batch
                     // of rows are indexed
-                    false
+                    false,
+                    tuningConfig.isAllowMixedShardSpecType()
                 );
 
                 if (addResult.isOk()) {

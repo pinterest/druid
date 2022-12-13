@@ -68,6 +68,7 @@ public class KafkaSupervisorTuningConfig extends KafkaIndexTaskTuningConfig
         null,
         null,
         null,
+        null,
         null
     );
   }
@@ -97,7 +98,8 @@ public class KafkaSupervisorTuningConfig extends KafkaIndexTaskTuningConfig
       @JsonProperty("intermediateHandoffPeriod") Period intermediateHandoffPeriod,
       @JsonProperty("logParseExceptions") @Nullable Boolean logParseExceptions,
       @JsonProperty("maxParseExceptions") @Nullable Integer maxParseExceptions,
-      @JsonProperty("maxSavedParseExceptions") @Nullable Integer maxSavedParseExceptions
+      @JsonProperty("maxSavedParseExceptions") @Nullable Integer maxSavedParseExceptions,
+      @JsonProperty("allowMixedShardSpecType") @Nullable Boolean allowMixedShardSpecType
   )
   {
     super(
@@ -119,7 +121,8 @@ public class KafkaSupervisorTuningConfig extends KafkaIndexTaskTuningConfig
         intermediateHandoffPeriod,
         logParseExceptions,
         maxParseExceptions,
-        maxSavedParseExceptions
+        maxSavedParseExceptions,
+        allowMixedShardSpecType
     );
     this.workerThreads = workerThreads;
     this.chatThreads = chatThreads;
@@ -240,7 +243,8 @@ public class KafkaSupervisorTuningConfig extends KafkaIndexTaskTuningConfig
         getIntermediateHandoffPeriod(),
         isLogParseExceptions(),
         getMaxParseExceptions(),
-        getMaxSavedParseExceptions()
+        getMaxSavedParseExceptions(),
+        isAllowMixedShardSpecType()
     );
   }
 }

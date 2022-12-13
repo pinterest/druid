@@ -216,7 +216,7 @@ public abstract class SeekableStreamIndexTask<PartitionIdType, SequenceOffsetTyp
         new ActionBasedSegmentAllocator(
             toolbox.getTaskActionClient(),
             dataSchema,
-            (schema, row, sequenceName, previousSegmentId, skipSegmentLineageCheck) -> new SegmentAllocateAction(
+            (schema, row, sequenceName, previousSegmentId, skipSegmentLineageCheck, allowMixedShardSpecType) -> new SegmentAllocateAction(
                 schema.getDataSource(),
                 row.getTimestamp(),
                 schema.getGranularitySpec().getQueryGranularity(),
@@ -226,7 +226,8 @@ public abstract class SeekableStreamIndexTask<PartitionIdType, SequenceOffsetTyp
                 skipSegmentLineageCheck,
                 NumberedPartialShardSpec.instance(),
                 lockGranularityToUse,
-                lockTypeToUse
+                lockTypeToUse,
+                allowMixedShardSpecType
             )
         ),
         toolbox.getSegmentHandoffNotifierFactory(),

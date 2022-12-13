@@ -41,6 +41,7 @@ public interface TuningConfig
   int DEFAULT_MAX_ROWS_IN_MEMORY = 1_000_000;
   boolean DEFAULT_SKIP_BYTES_IN_MEMORY_OVERHEAD_CHECK = false;
   long DEFAULT_AWAIT_SEGMENT_AVAILABILITY_TIMEOUT_MILLIS = 0L;
+  boolean DEFAULT_ALLOW_MIXED_SHARD_SPEC_TYPE = false;
 
   /**
    * The incremental index implementation to use

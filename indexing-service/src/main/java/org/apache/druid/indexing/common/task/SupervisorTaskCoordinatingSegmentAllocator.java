@@ -53,7 +53,8 @@ public class SupervisorTaskCoordinatingSegmentAllocator implements SegmentAlloca
       InputRow row,
       String sequenceName,
       String previousSegmentId,
-      boolean skipSegmentLineageCheck
+      boolean skipSegmentLineageCheck,
+      boolean allowMixedShardSpecType
   ) throws IOException
   {
     if (useLineageBasedSegmentAllocation) {

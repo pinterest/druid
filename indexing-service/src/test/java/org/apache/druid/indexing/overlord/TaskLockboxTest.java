@@ -993,7 +993,8 @@ public class TaskLockboxTest
           partialShardSpec,
           StringUtils.format("%s_%d", baseSequenceName, i),
           null,
-          true
+          true,
+          false
       );
       assertAllocatedSegments(request, lockbox.tryLock(task, request));
     }

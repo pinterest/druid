@@ -797,7 +797,7 @@ public class AppenderatorDriverRealtimeIndexTask extends AbstractTask implements
         new ActionBasedSegmentAllocator(
             toolbox.getTaskActionClient(),
             dataSchema,
-            (schema, row, sequenceName, previousSegmentId, skipSegmentLineageCheck) -> new SegmentAllocateAction(
+            (schema, row, sequenceName, previousSegmentId, skipSegmentLineageCheck, allowMixedShardSpecType) -> new SegmentAllocateAction(
                 schema.getDataSource(),
                 row.getTimestamp(),
                 schema.getGranularitySpec().getQueryGranularity(),
@@ -807,7 +807,8 @@ public class AppenderatorDriverRealtimeIndexTask extends AbstractTask implements
                 skipSegmentLineageCheck,
                 NumberedPartialShardSpec.instance(),
                 LockGranularity.TIME_CHUNK,
-                lockType
+                lockType,
+                allowMixedShardSpecType
             )
         ),
         toolbox.getSegmentHandoffNotifierFactory(),

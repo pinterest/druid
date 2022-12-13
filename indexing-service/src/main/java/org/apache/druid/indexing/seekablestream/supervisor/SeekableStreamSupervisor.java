@@ -145,8 +145,8 @@ import java.util.stream.Stream;
 public abstract class SeekableStreamSupervisor<PartitionIdType, SequenceOffsetType, RecordType extends ByteEntity> implements Supervisor
 {
   public static final String CHECKPOINTS_CTX_KEY = "checkpoints";
-
-
+  public static final String PARTITION_DIMENSIONS_CTX_KEY = "partitionDimensions";
+  public static final String STREAM_PARTITIONS_CTX_KEY = "streamPartitions";
   public static final String PARTITION_FAN_OUT_SIZE = "partitionFanOutSize";
 
   private static final long MINIMUM_GET_OFFSET_PERIOD_MILLIS = 5000;

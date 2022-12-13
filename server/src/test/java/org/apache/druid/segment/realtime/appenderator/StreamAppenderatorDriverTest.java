@@ -142,7 +142,7 @@ public class StreamAppenderatorDriverTest extends EasyMockSupport
 
     for (int i = 0; i < ROWS.size(); i++) {
       committerSupplier.setMetadata(i + 1);
-      Assert.assertTrue(driver.add(ROWS.get(i), "dummy", committerSupplier, false, true).isOk());
+      Assert.assertTrue(driver.add(ROWS.get(i), "dummy", committerSupplier, false, true, false).isOk());
     }
 
     final SegmentsAndCommitMetadata published = driver.publish(
@@ -188,7 +188,7 @@ public class StreamAppenderatorDriverTest extends EasyMockSupport
               2.0
           )
       );
-      final AppenderatorDriverAddResult addResult = driver.add(row, "dummy", committerSupplier, false, true);
+      final AppenderatorDriverAddResult addResult = driver.add(row, "dummy", committerSupplier, false, true, false);
       Assert.assertTrue(addResult.isOk());
       if (addResult.getNumRowsInSegment() > MAX_ROWS_PER_SEGMENT) {
         driver.moveSegmentOut("dummy", ImmutableList.of(addResult.getSegmentIdentifier()));
@@ -221,7 +221,7 @@ public class StreamAppenderatorDriverTest extends EasyMockSupport
 
     for (int i = 0; i < ROWS.size(); i++) {
       committerSupplier.setMetadata(i + 1);
-      Assert.assertTrue(driver.add(ROWS.get(i), "dummy", committerSupplier, false, true).isOk());
+      Assert.assertTrue(driver.add(ROWS.get(i), "dummy", committerSupplier, false, true, false).isOk());
     }
 
     final SegmentsAndCommitMetadata published = driver.publish(
@@ -247,7 +247,7 @@ public class StreamAppenderatorDriverTest extends EasyMockSupport
     // Add the first row and publish immediately
     {
       committerSupplier.setMetadata(1);
-      Assert.assertTrue(driver.add(ROWS.get(0), "dummy", committerSupplier, false, true).isOk());
+      Assert.assertTrue(driver.add(ROWS.get(0), "dummy", committerSupplier, false, true, false).isOk());
 
       final SegmentsAndCommitMetadata segmentsAndCommitMetadata = driver.publishAndRegisterHandoff(
           makeOkPublisher(),
@@ -268,7 +268,7 @@ public class StreamAppenderatorDriverTest extends EasyMockSupport
     // Add the second and third rows and publish immediately
     for (int i = 1; i < ROWS.size(); i++) {
       committerSupplier.setMetadata(i + 1);
-      Assert.assertTrue(driver.add(ROWS.get(i), "dummy", committerSupplier, false, true).isOk());
+      Assert.assertTrue(driver.add(ROWS.get(i), "dummy", committerSupplier, false, true, false).isOk());
 
       final SegmentsAndCommitMetadata segmentsAndCommitMetadata = driver.publishAndRegisterHandoff(
           makeOkPublisher(),
@@ -313,11 +313,11 @@ public class StreamAppenderatorDriverTest extends EasyMockSupport
     Assert.assertNull(driver.startJob(null));
 
     committerSupplier.setMetadata(1);
-    Assert.assertTrue(driver.add(ROWS.get(0), "sequence_0", committerSupplier, false, true).isOk());
+    Assert.assertTrue(driver.add(ROWS.get(0), "sequence_0", committerSupplier, false, true, false).isOk());
 
     for (int i = 1; i < ROWS.size(); i++) {
       committerSupplier.setMetadata(i + 1);
-      Assert.assertTrue(driver.add(ROWS.get(i), "sequence_1", committerSupplier, false, true).isOk());
+      Assert.assertTrue(driver.add(ROWS.get(i), "sequence_1", committerSupplier, false, true, false).isOk());
     }
 
     final ListenableFuture<SegmentsAndCommitMetadata> futureForSequence0 = driver.publishAndRegisterHandoff(
@@ -428,7 +428,8 @@ public class StreamAppenderatorDriverTest extends EasyMockSupport
         final InputRow row,
         final String sequenceName,
         final String previousSegmentId,
-        final boolean skipSegmentLineageCheck
+        final boolean skipSegmentLineageCheck,
+        final boolean allowMixedShardSpecType
     )
     {
       synchronized (counters) {

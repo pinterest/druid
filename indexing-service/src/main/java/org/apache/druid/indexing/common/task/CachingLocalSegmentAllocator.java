@@ -130,7 +130,8 @@ public class CachingLocalSegmentAllocator implements SegmentAllocatorForBatch
       InputRow row,
       String sequenceName,
       String previousSegmentId,
-      boolean skipSegmentLineageCheck
+      boolean skipSegmentLineageCheck,
+      boolean IndexTaskSegmentAllocator
   )
   {
     return sequenceNameToSegmentId.computeIfAbsent(

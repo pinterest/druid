@@ -174,6 +174,7 @@ public interface IndexerMetadataStorageCoordinator
    *                                identifier may have a version lower than this one, but will not have one higher.
    * @param skipSegmentLineageCheck if true, perform lineage validation using previousSegmentId for this sequence.
    *                                Should be set to false if replica tasks would index events in same order
+   * @param allowMixedShardSpecType Whether to allow mixed shard spec types
    *
    * @return the pending segment identifier, or null if it was impossible to allocate a new segment
    */
@@ -184,7 +185,8 @@ public interface IndexerMetadataStorageCoordinator
       Interval interval,
       PartialShardSpec partialShardSpec,
       String maxVersion,
-      boolean skipSegmentLineageCheck
+      boolean skipSegmentLineageCheck,
+      boolean allowMixedShardSpecType
   );
 
   /**

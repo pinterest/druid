@@ -157,6 +157,7 @@ public class KinesisSupervisor extends SeekableStreamSupervisor<String, String, 
       String baseSequenceName,
       ObjectMapper sortingMapper,
       TreeMap<Integer, Map<String, String>> sequenceOffsets,
+      Integer streamPartitions,
       SeekableStreamIndexTaskIOConfig taskIoConfig,
       SeekableStreamIndexTaskTuningConfig taskTuningConfig,
       RowIngestionMetersFactory rowIngestionMetersFactory

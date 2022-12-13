@@ -47,6 +47,7 @@ public interface SegmentAllocator
       InputRow row,
       String sequenceName,
       @Nullable String previousSegmentId,
-      boolean skipSegmentLineageCheck
+      boolean skipSegmentLineageCheck,
+      boolean allowMixedShardSpecType
   ) throws IOException;
 }

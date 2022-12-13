@@ -486,7 +486,8 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
       final Interval interval,
       final PartialShardSpec partialShardSpec,
       final String maxVersion,
-      final boolean skipSegmentLineageCheck
+      final boolean skipSegmentLineageCheck,
+      final boolean allowMixedShardSpecType
   )
   {
     Preconditions.checkNotNull(dataSource, "dataSource");
@@ -504,7 +505,8 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
                 sequenceName,
                 allocateInterval,
                 partialShardSpec,
-                maxVersion
+                maxVersion,
+                allowMixedShardSpecType
             );
           } else {
             return allocatePendingSegmentWithSegmentLineageCheck(
@@ -514,7 +516,8 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
                 previousSegmentId,
                 allocateInterval,
                 partialShardSpec,
-                maxVersion
+                maxVersion,
+                allowMixedShardSpecType
             );
           }
         }
@@ -529,7 +532,8 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
       @Nullable final String previousSegmentId,
       final Interval interval,
       final PartialShardSpec partialShardSpec,
-      final String maxVersion
+      final String maxVersion,
+      final boolean allowMixedShardSpecType
   ) throws IOException
   {
     final String previousSegmentIdNotNull = previousSegmentId == null ? "" : previousSegmentId;
@@ -561,7 +565,8 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
         dataSource,
         interval,
         partialShardSpec,
-        maxVersion
+        maxVersion,
+        allowMixedShardSpecType
     );
     if (newIdentifier == null) {
       return null;
@@ -603,7 +608,8 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
       final String sequenceName,
       final Interval interval,
       final PartialShardSpec partialShardSpec,
-      final String maxVersion
+      final String maxVersion,
+      final boolean allowMixedShardSpecType
   ) throws IOException
   {
     final CheckExistingSegmentIdResult result = checkAndGetExistingSegmentId(
@@ -637,7 +643,8 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
         dataSource,
         interval,
         partialShardSpec,
-        maxVersion
+        maxVersion,
+        allowMixedShardSpecType
     );
     if (newIdentifier == null) {
       return null;
@@ -794,7 +801,8 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
       final String dataSource,
       final Interval interval,
       final PartialShardSpec partialShardSpec,
-      final String existingVersion
+      final String existingVersion,
+      final boolean allowMixedShardSpecType
   ) throws IOException
   {
     // Get the time chunk and associated data segments for the given interval, if any

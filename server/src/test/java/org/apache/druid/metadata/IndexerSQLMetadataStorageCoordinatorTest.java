@@ -1318,6 +1318,7 @@ public class IndexerSQLMetadataStorageCoordinatorTest
         interval,
         partialShardSpec,
         "version",
+        false,
         false
     );
 
@@ -1330,6 +1331,7 @@ public class IndexerSQLMetadataStorageCoordinatorTest
         interval,
         partialShardSpec,
         identifier.getVersion(),
+        false,
         false
     );
 
@@ -1342,6 +1344,7 @@ public class IndexerSQLMetadataStorageCoordinatorTest
         interval,
         partialShardSpec,
         identifier1.getVersion(),
+        false,
         false
     );
 
@@ -1354,6 +1357,7 @@ public class IndexerSQLMetadataStorageCoordinatorTest
         interval,
         partialShardSpec,
         identifier1.getVersion(),
+        false,
         false
     );
 
@@ -1367,7 +1371,8 @@ public class IndexerSQLMetadataStorageCoordinatorTest
         interval,
         partialShardSpec,
         "version",
-        false
+        false,
+            false
     );
 
     Assert.assertEquals("ds_2017-01-01T00:00:00.000Z_2017-02-01T00:00:00.000Z_version_3", identifier4.toString());
@@ -1383,7 +1388,7 @@ public class IndexerSQLMetadataStorageCoordinatorTest
    * - Later, the compacted segment got dropped due to a drop rule
    * - Later, after the above was dropped, another segment on same interval was created by the stream but this
    *   time there was an integrity violation in the pending segments table because the
-   *   {@link IndexerSQLMetadataStorageCoordinator#createNewSegment(Handle, String, Interval, PartialShardSpec, String)}
+   *   {@link IndexerSQLMetadataStorageCoordinator# createNewSegment(Handle, String, Interval, PartialShardSpec, String)}
    *   method returned an segment id that already existed in the pending segments table
    */
   @Test
@@ -1402,7 +1407,8 @@ public class IndexerSQLMetadataStorageCoordinatorTest
         interval,
         partialShardSpec,
         "version",
-        true
+        true,
+        false
     );
     Assert.assertEquals("ds_2017-01-01T00:00:00.000Z_2017-02-01T00:00:00.000Z_version", identifier.toString());
 
@@ -1414,7 +1420,8 @@ public class IndexerSQLMetadataStorageCoordinatorTest
         interval,
         partialShardSpec,
         maxVersion,
-        true
+        true,
+        false
     );
     Assert.assertEquals("ds_2017-01-01T00:00:00.000Z_2017-02-01T00:00:00.000Z_version_1", identifier1.toString());
 
@@ -1426,7 +1433,8 @@ public class IndexerSQLMetadataStorageCoordinatorTest
         interval,
         partialShardSpec,
         maxVersion,
-        true
+        true,
+        false
     );
     Assert.assertEquals("ds_2017-01-01T00:00:00.000Z_2017-02-01T00:00:00.000Z_version_2", identifier2.toString());
 
@@ -1454,7 +1462,8 @@ public class IndexerSQLMetadataStorageCoordinatorTest
         interval,
         partialShardSpec,
         maxVersion,
-        true
+        true,
+        false
     );
     Assert.assertEquals("ds_2017-01-01T00:00:00.000Z_2017-02-01T00:00:00.000Z_version_new_1", identifier3.toString());
 
@@ -1470,7 +1479,8 @@ public class IndexerSQLMetadataStorageCoordinatorTest
         interval,
         partialShardSpec,
         maxVersion,
-        true
+        true,
+        false
     );
     Assert.assertEquals("ds_2017-01-01T00:00:00.000Z_2017-02-01T00:00:00.000Z_version_new_2", identifier4.toString());
 
@@ -1502,7 +1512,8 @@ public class IndexerSQLMetadataStorageCoordinatorTest
         interval,
         partialShardSpec,
         "A",
-        true
+        true,
+        false
     );
     Assert.assertEquals("ds_2017-01-01T00:00:00.000Z_2017-02-01T00:00:00.000Z_A", identifier.toString());
     // Assume it publishes; create its corresponding segment
@@ -1530,7 +1541,8 @@ public class IndexerSQLMetadataStorageCoordinatorTest
         interval,
         partialShardSpec,
         maxVersion,
-        true
+        true,
+        false
     );
     Assert.assertEquals("ds_2017-01-01T00:00:00.000Z_2017-02-01T00:00:00.000Z_A_1", identifier1.toString());
     // Assume it publishes; create its corresponding segment
@@ -1558,7 +1570,8 @@ public class IndexerSQLMetadataStorageCoordinatorTest
         interval,
         partialShardSpec,
         maxVersion,
-        true
+        true,
+        false
     );
     Assert.assertEquals("ds_2017-01-01T00:00:00.000Z_2017-02-01T00:00:00.000Z_A_2", identifier2.toString());
     // Assume it publishes; create its corresponding segment
@@ -1612,7 +1625,8 @@ public class IndexerSQLMetadataStorageCoordinatorTest
         interval,
         partialShardSpec,
         maxVersion,
-        true
+        true,
+        false
     );
     Assert.assertEquals("ds_2017-01-01T00:00:00.000Z_2017-02-01T00:00:00.000Z_B_1", identifier3.toString());
     // no corresponding segment, pending aborted
@@ -1646,7 +1660,8 @@ public class IndexerSQLMetadataStorageCoordinatorTest
         interval,
         partialShardSpec,
         maxVersion,
-        true
+        true,
+        false
     );
     // maxid = B_1 -> new partno = 2
     // versionofexistingchunk=A
@@ -1708,7 +1723,8 @@ public class IndexerSQLMetadataStorageCoordinatorTest
         interval,
         partialShardSpec,
         maxVersion,
-        true
+        true,
+        false
     );
     Assert.assertEquals("ds_2017-01-01T00:00:00.000Z_2017-02-01T00:00:00.000Z_A_1", identifier.toString());
     
@@ -1734,6 +1750,7 @@ public class IndexerSQLMetadataStorageCoordinatorTest
           interval,
           partialShardSpec,
           "version",
+          false,
           false
       );
       prevSegmentId = identifier.toString();
@@ -1749,6 +1766,7 @@ public class IndexerSQLMetadataStorageCoordinatorTest
           interval,
           partialShardSpec,
           "version",
+          false,
           false
       );
       prevSegmentId = identifier.toString();
@@ -1776,6 +1794,7 @@ public class IndexerSQLMetadataStorageCoordinatorTest
           interval,
           new NumberedOverwritePartialShardSpec(0, 1, (short) (i + 1)),
           "version",
+          false,
           false
       );
       Assert.assertEquals(
@@ -1844,7 +1863,8 @@ public class IndexerSQLMetadataStorageCoordinatorTest
         interval,
         partialShardSpec,
         "version",
-        true
+        true,
+        false
     );
 
     HashBasedNumberedShardSpec shardSpec = (HashBasedNumberedShardSpec) id.getShardSpec();
@@ -1875,7 +1895,8 @@ public class IndexerSQLMetadataStorageCoordinatorTest
         interval,
         partialShardSpec,
         "version",
-        true
+        true,
+        false
     );
 
     shardSpec = (HashBasedNumberedShardSpec) id.getShardSpec();
@@ -1906,7 +1927,8 @@ public class IndexerSQLMetadataStorageCoordinatorTest
         interval,
         new HashBasedNumberedPartialShardSpec(null, 2, 3, null),
         "version",
-        true
+        true,
+        false
     );
 
     shardSpec = (HashBasedNumberedShardSpec) id.getShardSpec();
@@ -1953,6 +1975,7 @@ public class IndexerSQLMetadataStorageCoordinatorTest
         interval,
         NumberedPartialShardSpec.instance(),
         version,
+        false,
         false
     );
     Assert.assertNull(id);
@@ -1998,6 +2021,7 @@ public class IndexerSQLMetadataStorageCoordinatorTest
         interval,
         NumberedPartialShardSpec.instance(),
         version,
+        false,
         false
     );
     Assert.assertNull(id);

@@ -693,6 +693,7 @@ public class ParallelIndexSupervisorTaskResourceTest extends AbstractParallelInd
           new MapBasedInputRow(DateTimes.of("2017-01-01"), Collections.emptyList(), Collections.emptyMap()),
           getSubtaskSpecId(),
           null,
+          false,
           false
       );
 

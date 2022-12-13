@@ -2811,7 +2811,8 @@ public class KafkaIndexTaskTest extends SeekableStreamIndexTaskTestBase
         intermediateHandoffPeriod,
         logParseExceptions,
         maxParseExceptions,
-        maxSavedParseExceptions
+        maxSavedParseExceptions,
+      false
     );
     if (!context.containsKey(SeekableStreamSupervisor.CHECKPOINTS_CTX_KEY)) {
       final TreeMap<Integer, Map<Integer, Long>> checkpoints = new TreeMap<>();

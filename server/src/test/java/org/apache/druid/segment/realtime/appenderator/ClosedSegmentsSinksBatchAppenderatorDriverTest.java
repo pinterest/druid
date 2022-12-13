@@ -221,7 +221,8 @@ public class ClosedSegmentsSinksBatchAppenderatorDriverTest extends EasyMockSupp
         final InputRow row,
         final String sequenceName,
         final String previousSegmentId,
-        final boolean skipSegmentLineageCheck
+        final boolean skipSegmentLineageCheck,
+        final boolean allowMixedShardSpecType
     )
     {
       DateTime dateTimeTruncated = granularity.bucketStart(row.getTimestamp());

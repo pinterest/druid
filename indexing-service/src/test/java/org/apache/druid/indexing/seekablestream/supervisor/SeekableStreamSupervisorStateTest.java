@@ -1012,6 +1012,7 @@ public class SeekableStreamSupervisorStateTest extends EasyMockSupport
             null,
             null,
             null,
+            null,
             null
         )
         {
@@ -1148,6 +1149,7 @@ public class SeekableStreamSupervisorStateTest extends EasyMockSupport
         String baseSequenceName,
         ObjectMapper sortingMapper,
         TreeMap<Integer, Map<String, String>> sequenceOffsets,
+        Integer streamPartitions,
         SeekableStreamIndexTaskIOConfig taskIoConfig,
         SeekableStreamIndexTaskTuningConfig taskTuningConfig,
         RowIngestionMetersFactory rowIngestionMetersFactory

@@ -203,6 +203,7 @@ public class SeekableStreamSupervisorSpecTest extends EasyMockSupport
             String baseSequenceName,
             ObjectMapper sortingMapper,
             TreeMap<Integer, Map<String, String>> sequenceOffsets,
+            Integer streamPartitions,
             SeekableStreamIndexTaskIOConfig taskIoConfig,
             SeekableStreamIndexTaskTuningConfig taskTuningConfig,
             RowIngestionMetersFactory rowIngestionMetersFactory
@@ -482,6 +483,7 @@ public class SeekableStreamSupervisorSpecTest extends EasyMockSupport
       public SeekableStreamIndexTaskTuningConfig convertToTaskTuningConfig()
       {
         return new SeekableStreamIndexTaskTuningConfig(
+                null,
                 null,
                 null,
                 null,

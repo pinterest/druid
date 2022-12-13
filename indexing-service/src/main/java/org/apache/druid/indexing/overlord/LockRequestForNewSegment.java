@@ -44,6 +44,7 @@ public class LockRequestForNewSegment implements LockRequest
   private final String previsousSegmentId;
   private final boolean skipSegmentLineageCheck;
 
+  private final boolean allowMixedShardSpecType;
   private String version;
 
   public LockRequestForNewSegment(
@@ -56,7 +57,8 @@ public class LockRequestForNewSegment implements LockRequest
       int priority,
       String sequenceName,
       @Nullable String previsousSegmentId,
-      boolean skipSegmentLineageCheck
+      boolean skipSegmentLineageCheck,
+      boolean allowMixedShardSpecType
   )
   {
     this.lockGranularity = lockGranularity;
@@ -69,6 +71,7 @@ public class LockRequestForNewSegment implements LockRequest
     this.sequenceName = sequenceName;
     this.previsousSegmentId = previsousSegmentId;
     this.skipSegmentLineageCheck = skipSegmentLineageCheck;
+    this.allowMixedShardSpecType = allowMixedShardSpecType;
   }
 
   @VisibleForTesting
@@ -80,7 +83,8 @@ public class LockRequestForNewSegment implements LockRequest
       PartialShardSpec partialShardSpec,
       String sequenceName,
       @Nullable String previsousSegmentId,
-      boolean skipSegmentLineageCheck
+      boolean skipSegmentLineageCheck,
+      boolean allowMixedShardSpecType
   )
   {
     this(
@@ -93,7 +97,8 @@ public class LockRequestForNewSegment implements LockRequest
         task.getPriority(),
         sequenceName,
         previsousSegmentId,
-        skipSegmentLineageCheck
+        skipSegmentLineageCheck,
+        allowMixedShardSpecType
     );
   }
 
@@ -177,6 +182,10 @@ public class LockRequestForNewSegment implements LockRequest
   {
     return skipSegmentLineageCheck;
   }
+  public boolean isAllowMixedShardSpecType()
+  {
+    return allowMixedShardSpecType;
+  }
 
   @Override
   public String toString()
@@ -192,6 +201,7 @@ public class LockRequestForNewSegment implements LockRequest
            ", sequenceName='" + sequenceName + '\'' +
            ", previsousSegmentId='" + previsousSegmentId + '\'' +
            ", skipSegmentLineageCheck=" + skipSegmentLineageCheck +
+            ", allowMixedShardSpecType=" + allowMixedShardSpecType +
            '}';
   }
 }
