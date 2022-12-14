@@ -56,8 +56,20 @@ public abstract class DruidProcessingConfig extends ExecutorServiceConfig implem
       if (sizeBytesConfigured.getBytes() > Integer.MAX_VALUE) {
         throw new IAE("druid.processing.buffer.sizeBytes must be less than 2GiB");
       }
+      if (countLogPrints< 2000) {
+        log.error(
+                "debasatwa14: sizeBytesConfigured.getBytesInInt() [%,d]",
+                computedBufferSizeBytes.get()
+        );
+      }
       return sizeBytesConfigured.getBytesInInt();
     } else if (computedBufferSizeBytes.get() != null) {
+      if (countLogPrints< 2000) {
+        log.error(
+                "debasatwa14: computedBufferSizeBytes.get() [%,d]",
+                computedBufferSizeBytes.get()
+        );
+      }
       return computedBufferSizeBytes.get();
     }
 
