@@ -51,7 +51,8 @@ public abstract class DruidProcessingConfig extends ExecutorServiceConfig implem
 
   public int intermediateComputeSizeBytes()
   {
-    HumanReadableBytes sizeBytesConfigured = intermediateComputeSizeBytesConfigured();
+    //HumanReadableBytes sizeBytesConfigured = intermediateComputeSizeBytesConfigured();
+    HumanReadableBytes sizeBytesConfigured = HumanReadableBytes.valueOf(2147483647);
     if (!DEFAULT_PROCESSING_BUFFER_SIZE_BYTES.equals(sizeBytesConfigured)) {
       if (sizeBytesConfigured.getBytes() > Integer.MAX_VALUE) {
         throw new IAE("druid.processing.buffer.sizeBytes must be less than 2GiB");
