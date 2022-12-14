@@ -59,7 +59,7 @@ public abstract class DruidProcessingConfig extends ExecutorServiceConfig implem
       if (countLogPrints< 2000) {
         log.error(
                 "debasatwa14: sizeBytesConfigured.getBytesInInt() [%,d]",
-                computedBufferSizeBytes.get()
+                sizeBytesConfigured.getBytesInInt()
         );
       }
       return sizeBytesConfigured.getBytesInInt();
