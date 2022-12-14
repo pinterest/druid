@@ -123,7 +123,7 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
     this.processingTmpDir = processingTmpDir;
     this.mergeBufferSize = mergeBufferSize;
     if (countLogPrints< 2000) {
-      log.error("debasatwa10: new GroupByMergingQueryRunnerV2 mergeBufferSize: [%s]", mergeBufferSize);
+      log.error("debasatwa13: new GroupByMergingQueryRunnerV2 mergeBufferSize: [%s]", mergeBufferSize);
     }
   }
 
@@ -132,6 +132,12 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
   {
     final GroupByQuery query = (GroupByQuery) queryPlus.getQuery();
     final GroupByQueryConfig querySpecificConfig = config.withOverrides(query);
+
+
+    if (countLogPrints< 2000) {
+      //dont comment out this log.error
+      log.error("debasatwa10: GroupByMergingQueryRunnerV2 run GroupByQuery query: %s",query.toString());
+    }
 
     // CTX_KEY_MERGE_RUNNERS_USING_CHAINED_EXECUTION is here because realtime servers use nested mergeRunners calls
     // (one for the entire query and one for each sink). We only want the outer call to actually do merging with a
