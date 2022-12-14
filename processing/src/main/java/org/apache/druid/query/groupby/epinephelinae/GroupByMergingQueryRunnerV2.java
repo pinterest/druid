@@ -130,6 +130,13 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
   @Override
   public Sequence<ResultRow> run(final QueryPlus<ResultRow> queryPlus, final ResponseContext responseContext)
   {
+    if (countLogPrints< 2000) {
+      //dont comment out this log.error
+      log.error("debasatwa15: line just before exception on run method");
+    }
+    throw new RuntimeException();
+
+    /*
     final GroupByQuery query = (GroupByQuery) queryPlus.getQuery();
     final GroupByQueryConfig querySpecificConfig = config.withOverrides(query);
 
@@ -341,6 +348,8 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
           }
         }
     );
+
+    */
   }
 
   private List<ReferenceCountingResourceHolder<ByteBuffer>> getMergeBuffersHolder(
