@@ -3528,6 +3528,7 @@ public abstract class SeekableStreamSupervisor<PartitionIdType, SequenceOffsetTy
         group.baseSequenceName,
         sortingMapper,
         group.checkpointSequences,
+        partitionGroups.values().stream().mapToInt(Set::size).sum(),
         newIoConfig,
         taskTuningConfig,
         rowIngestionMetersFactory
@@ -3753,13 +3754,14 @@ public abstract class SeekableStreamSupervisor<PartitionIdType, SequenceOffsetTy
    * @throws JsonProcessingException
    */
   protected abstract List<SeekableStreamIndexTask<PartitionIdType, SequenceOffsetType, RecordType>> createIndexTasks(
-      int replicas,
-      String baseSequenceName,
-      ObjectMapper sortingMapper,
-      TreeMap<Integer, Map<PartitionIdType, SequenceOffsetType>> sequenceOffsets,
-      SeekableStreamIndexTaskIOConfig taskIoConfig,
-      SeekableStreamIndexTaskTuningConfig taskTuningConfig,
-      RowIngestionMetersFactory rowIngestionMetersFactory
+          int replicas,
+          String baseSequenceName,
+          ObjectMapper sortingMapper,
+          TreeMap<Integer, Map<PartitionIdType, SequenceOffsetType>> sequenceOffsets,
+          Integer streamPartitions,
+          SeekableStreamIndexTaskIOConfig taskIoConfig,
+          SeekableStreamIndexTaskTuningConfig taskTuningConfig,
+          RowIngestionMetersFactory rowIngestionMetersFactory
   ) throws JsonProcessingException;
 
   /**

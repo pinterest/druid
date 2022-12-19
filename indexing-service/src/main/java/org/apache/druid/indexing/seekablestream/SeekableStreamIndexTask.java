@@ -53,10 +53,14 @@ import org.apache.druid.segment.realtime.appenderator.StreamAppenderatorDriver;
 import org.apache.druid.segment.realtime.firehose.ChatHandler;
 import org.apache.druid.server.security.AuthorizerMapper;
 import org.apache.druid.timeline.partition.NumberedPartialShardSpec;
+import org.apache.druid.timeline.partition.PartialShardSpec;
+import org.apache.druid.timeline.partition.StreamHashBasedNumberedShardSpecFactory;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 
 public abstract class SeekableStreamIndexTask<PartitionIdType, SequenceOffsetType, RecordType extends ByteEntity>
@@ -208,9 +212,33 @@ public abstract class SeekableStreamIndexTask<PartitionIdType, SequenceOffsetTyp
   public StreamAppenderatorDriver newDriver(
       final Appenderator appenderator,
       final TaskToolbox toolbox,
-      final FireDepartmentMetrics metrics
+      final FireDepartmentMetrics metrics,
+      final List<String> partitionDimensions,
+      final Set<Integer> streamPartitionIds,
+      final Integer streamPartitions
   )
   {
+    final PartialShardSpec effectiveShardSpecFactory;
+    if (partitionDimensions != null
+            && !partitionDimensions.isEmpty()
+            && streamPartitionIds != null
+            && !streamPartitionIds.isEmpty()
+            && streamPartitions != null
+            && streamPartitions > 0) {
+    log.info(
+            "Include stream partition info in StreamHashBasedNumberedShardSpec: partitionDimensions [%s], streamPartitionIds [%s], streamPartitions [%d]",
+            partitionDimensions,
+            streamPartitionIds,
+            streamPartitions
+    );
+    effectiveShardSpecFactory = new StreamHashBasedNumberedShardSpecFactory(
+            partitionDimensions,
+            streamPartitionIds,
+            streamPartitions
+    );
+  } else {
+    effectiveShardSpecFactory = NumberedPartialShardSpec.instance();
+  }
     return new StreamAppenderatorDriver(
         appenderator,
         new ActionBasedSegmentAllocator(
@@ -224,7 +252,8 @@ public abstract class SeekableStreamIndexTask<PartitionIdType, SequenceOffsetTyp
                 sequenceName,
                 previousSegmentId,
                 skipSegmentLineageCheck,
-                NumberedPartialShardSpec.instance(),
+              //  NumberedPartialShardSpec.instance(),
+                effectiveShardSpecFactory,
                 lockGranularityToUse,
                 lockTypeToUse,
                 allowMixedShardSpecType

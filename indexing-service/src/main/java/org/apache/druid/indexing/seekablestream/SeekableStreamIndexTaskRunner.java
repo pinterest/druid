@@ -421,7 +421,20 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
         toolbox.getDruidNodeAnnouncer().announce(discoveryDruidNode);
       }
       appenderator = task.newAppenderator(toolbox, fireDepartmentMetrics, rowIngestionMeters, parseExceptionHandler);
-      driver = task.newDriver(appenderator, toolbox, fireDepartmentMetrics);
+      final List<String> partitionDimensions = task.getContextValue(SeekableStreamSupervisor.PARTITION_DIMENSIONS_CTX_KEY);
+      final Integer streamPartitions = task.getContextValue(SeekableStreamSupervisor.STREAM_PARTITIONS_CTX_KEY);
+      // Only support single sequence for now
+      final Set<PartitionIdType> rawStreamPartitionIds = sequences.size() == 1
+              ? sequences.get(0).startOffsets.keySet()
+              : null;
+      // Only support stream partition ids of type integer for now
+      final Set<Integer> streamPartitionIds = rawStreamPartitionIds != null
+              && !rawStreamPartitionIds.isEmpty()
+              && rawStreamPartitionIds.stream().allMatch(Integer.class::isInstance)
+              ? (Set<Integer>) rawStreamPartitionIds
+              : null;
+
+      driver = task.newDriver(appenderator, toolbox, fireDepartmentMetrics,partitionDimensions, streamPartitionIds, streamPartitions);
 
       // Start up, set up initial sequences.
       final Object restoredMetadata = driver.startJob(

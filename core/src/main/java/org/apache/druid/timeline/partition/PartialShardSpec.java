@@ -39,6 +39,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
     @Type(name = HashBasedNumberedPartialShardSpec.TYPE, value = HashBasedNumberedPartialShardSpec.class),
     @Type(name = "single_dim", value = SingleDimensionPartialShardSpec.class),
     @Type(name = "numbered_overwrite", value = NumberedOverwritePartialShardSpec.class),
+    @JsonSubTypes.Type(name = "named_numbered", value = NamedNumberedShardSpecFactory.class),
+    @JsonSubTypes.Type(name = "stream_hashed", value = StreamHashBasedNumberedShardSpecFactory.class)
 })
 public interface PartialShardSpec
 {
