@@ -21,6 +21,7 @@ package org.apache.druid.query.groupby.epinephelinae;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Predicates;
+import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
@@ -28,7 +29,9 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.druid.collections.BlockingPool;
 import org.apache.druid.collections.ReferenceCountingResourceHolder;
 import org.apache.druid.common.guava.GuavaUtils;
+import org.apache.druid.java.util.common.Pair;
 import org.apache.druid.java.util.common.StringUtils;
+import org.apache.druid.java.util.common.guava.Accumulator;
 import org.apache.druid.java.util.common.guava.BaseSequence;
 import org.apache.druid.java.util.common.guava.Sequence;
 import org.apache.druid.java.util.common.io.Closer;
@@ -210,9 +213,7 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
                 log.error("debasatwa15: line just before exception on make method");
               }
               countLogPrints++;
-              throw new RuntimeException();
 
-              /*
               final ReferenceCountingResourceHolder<ByteBuffer> mergeBufferHolder = mergeBufferHolders.get(0);
               final ReferenceCountingResourceHolder<ByteBuffer> combineBufferHolder = numMergeBuffers == 2 ?
                                                                                       mergeBufferHolders.get(1) :
@@ -248,6 +249,8 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
                   ReferenceCountingResourceHolder.fromCloseable(grouper);
               resources.register(grouperHolder);
 
+              throw new RuntimeException();
+              /*
               List<ListenableFuture<AggregateResult>> futures = Lists.newArrayList(
                       Iterables.transform(
                           queryables,
