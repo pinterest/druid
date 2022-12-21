@@ -21,6 +21,7 @@ package org.apache.druid.query.groupby.epinephelinae;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Predicates;
+import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
@@ -28,7 +29,9 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.druid.collections.BlockingPool;
 import org.apache.druid.collections.ReferenceCountingResourceHolder;
 import org.apache.druid.common.guava.GuavaUtils;
+import org.apache.druid.java.util.common.Pair;
 import org.apache.druid.java.util.common.StringUtils;
+import org.apache.druid.java.util.common.guava.Accumulator;
 import org.apache.druid.java.util.common.guava.BaseSequence;
 import org.apache.druid.java.util.common.guava.Sequence;
 import org.apache.druid.java.util.common.io.Closer;
@@ -217,8 +220,8 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
                                                                                       mergeBufferHolders.get(1) :
                                                                                       null;
 
-              throw new RuntimeException();
-/*
+              //throw new RuntimeException(); //throws exception at this state results in 1000-2000 ms for all queries.
+
               Pair<Grouper<RowBasedKey>, Accumulator<AggregateResult, ResultRow>> pair =
                   RowBasedGrouperHelper.createGrouperAccumulatorPair(
                       query,
@@ -236,6 +239,8 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
                       mergeBufferSize
                   );
 
+              throw new RuntimeException();
+/*
               if (countLogPrints< 2000) {
                 //dont comment out this log.error
                 log.error("debasatwa10: GroupByMergingQueryRunnerV2 mergeBufferSize: %s hasTimeout:%s",mergeBufferSize, hasTimeout);
