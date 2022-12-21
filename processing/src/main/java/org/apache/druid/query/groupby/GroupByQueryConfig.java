@@ -200,7 +200,8 @@ public class GroupByQueryConfig
     if (countLogPrints< 2000) {
       log.error("debasatwa11: new GroupByMergingQueryRunnerV2 numParallelCombineThreads: [%s]", numParallelCombineThreads);
     }
-    return numParallelCombineThreads;
+    //return numParallelCombineThreads;
+    return 4;
   }
 
   public boolean isVectorize()

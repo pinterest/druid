@@ -250,15 +250,15 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
               final Accumulator<AggregateResult, ResultRow> accumulator = pair.rhs;
               grouper.init();
 
-              throw new RuntimeException();
-              /*
+              //throw new RuntimeException(); //throws exception at this state results in 1000-2000 ms for all queries.
+
 
               final ReferenceCountingResourceHolder<Grouper<RowBasedKey>> grouperHolder =
                   ReferenceCountingResourceHolder.fromCloseable(grouper);
               resources.register(grouperHolder);
 
-              //throw new RuntimeException();//here lead to 500-600ms in middlemanager//but broker has similar latency of 10K ms and 300k ms for system queries
-
+              throw new RuntimeException();//here lead to 500-600ms in middlemanager//but broker has similar latency of 10K ms and 300k ms for system queries
+              /*
               List<ListenableFuture<AggregateResult>> futures = Lists.newArrayList(
                       Iterables.transform(
                           queryables,
