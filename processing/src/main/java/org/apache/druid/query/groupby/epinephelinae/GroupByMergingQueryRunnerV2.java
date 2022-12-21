@@ -239,8 +239,8 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
                       mergeBufferSize
                   );
 
-              throw new RuntimeException();
-/*
+              //throw new RuntimeException(); //throws exception at this state results in 1000-2000 ms for all queries.
+
               if (countLogPrints< 2000) {
                 //dont comment out this log.error
                 log.error("debasatwa10: GroupByMergingQueryRunnerV2 mergeBufferSize: %s hasTimeout:%s",mergeBufferSize, hasTimeout);
@@ -249,6 +249,9 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
               final Grouper<RowBasedKey> grouper = pair.lhs;
               final Accumulator<AggregateResult, ResultRow> accumulator = pair.rhs;
               grouper.init();
+
+              throw new RuntimeException();
+              /*
 
               final ReferenceCountingResourceHolder<Grouper<RowBasedKey>> grouperHolder =
                   ReferenceCountingResourceHolder.fromCloseable(grouper);
