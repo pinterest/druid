@@ -43,7 +43,7 @@ public abstract class ExecutorServiceConfig
       //return numThreadsConfigured;
       if (countLogPrints< 2000) {
         //dont comment out this log.error
-        log.error("debasatwa16: before return 4 in getNumThreas");
+        log.error("debasatwa18: before return 4 in getNumThreas %s", numThreadsConfigured);
       }
       return 4;
     } else {
