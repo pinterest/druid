@@ -171,8 +171,8 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
 
     // Figure out timeoutAt time now, so we can apply the timeout to both the mergeBufferPool.take and the actual
     // query processing together.
-    final long queryTimeout = QueryContexts.getTimeout(query);
-    //final long queryTimeout = 5000;
+    //final long queryTimeout = QueryContexts.getTimeout(query);
+    final long queryTimeout = 4000;
 
     if (countLogPrints< 2000) {
       //dont comment out this log.error
