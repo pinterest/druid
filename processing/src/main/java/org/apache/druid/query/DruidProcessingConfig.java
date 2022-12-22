@@ -57,7 +57,7 @@ public abstract class DruidProcessingConfig extends ExecutorServiceConfig implem
       if (sizeBytesConfigured.getBytes() > Integer.MAX_VALUE) {
         throw new IAE("druid.processing.buffer.sizeBytes must be less than 2GiB");
       }
-      if (countLogPrints< 2000) {
+      if (countLogPrints< 500) {
         log.error(
                 "debasatwa15: sizeBytesConfigured.getBytesInInt() [%,d]",
                 sizeBytesConfigured.getBytesInInt()
@@ -65,7 +65,7 @@ public abstract class DruidProcessingConfig extends ExecutorServiceConfig implem
       }
       return sizeBytesConfigured.getBytesInInt();
     } else if (computedBufferSizeBytes.get() != null) {
-      if (countLogPrints< 2000) {
+      if (countLogPrints< 500) {
         log.error(
                 "debasatwa14: computedBufferSizeBytes.get() [%,d]",
                 computedBufferSizeBytes.get()
@@ -77,7 +77,7 @@ public abstract class DruidProcessingConfig extends ExecutorServiceConfig implem
     long directSizeBytes;
     try {
       directSizeBytes = JvmUtils.getRuntimeInfo().getDirectMemorySizeBytes();
-      if (countLogPrints< 2000) {
+      if (countLogPrints< 500) {
         log.error(
                 "debasatwa14: Detected max direct memory size of [%,d] bytes",
                 directSizeBytes
@@ -87,7 +87,7 @@ public abstract class DruidProcessingConfig extends ExecutorServiceConfig implem
     catch (UnsupportedOperationException e) {
       // max direct memory defaults to max heap size on recent JDK version, unless set explicitly
       directSizeBytes = computeMaxMemoryFromMaxHeapSize();
-      if (countLogPrints< 2000) {
+      if (countLogPrints< 500) {
         log.error(
                 "debasatwa14: Defaulting to at most [%,d] bytes (25%% of max heap size) of direct memory for computation buffers",
                 directSizeBytes
@@ -99,7 +99,7 @@ public abstract class DruidProcessingConfig extends ExecutorServiceConfig implem
     int numMergeBuffers = getNumMergeBuffers();
     int totalNumBuffers = numMergeBuffers + numProcessingThreads;
     int sizePerBuffer = (int) ((double) directSizeBytes / (double) (totalNumBuffers + 1));
-    if (countLogPrints< 2000) {
+    if (countLogPrints< 500) {
       log.error(
               "debasatwa14: sizePerBuffer [%,d]  each for directSizeBytes [%,d] and totalNumBuffers [%,d] ",
               sizePerBuffer,
@@ -110,7 +110,7 @@ public abstract class DruidProcessingConfig extends ExecutorServiceConfig implem
 
     final int computedSizePerBuffer = Math.min(sizePerBuffer, MAX_DEFAULT_PROCESSING_BUFFER_SIZE_BYTES);
     if (computedBufferSizeBytes.compareAndSet(null, computedSizePerBuffer)) {
-      if (countLogPrints< 2000) {
+      if (countLogPrints< 500) {
         log.error(
                 "debasatwa14: Auto sizing buffers to [%,d] bytes each for [%,d] processing and [%,d] merge buffers",
                 computedSizePerBuffer,

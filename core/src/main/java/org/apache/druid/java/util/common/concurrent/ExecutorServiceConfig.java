@@ -41,18 +41,19 @@ public abstract class ExecutorServiceConfig
     int numThreadsConfigured = getNumThreadsConfigured();
     if (numThreadsConfigured != DEFAULT_NUM_THREADS) {
       //return numThreadsConfigured;
-      if (countLogPrints< 2000) {
+      if (countLogPrints< 500) {
         //dont comment out this log.error
         log.error("debasatwa18: before return 4 in getNumThreas %s", numThreadsConfigured);
       }
       return 4;
     } else {
       //return 4;
-      if (countLogPrints< 2000) {
+      if (countLogPrints< 550) {
         //dont comment out this log.error
         log.error("debasatwa16: Math.max(JvmUtils.getRuntimeInfo().getAvailableProcessors() - 1, 1):%s",Math.max(JvmUtils.getRuntimeInfo().getAvailableProcessors() - 1, 1));
       }
-      return Math.max(JvmUtils.getRuntimeInfo().getAvailableProcessors() - 1, 1);
+      return 4;
+      //return Math.max(JvmUtils.getRuntimeInfo().getAvailableProcessors() - 1, 1);
     }
   }
 

@@ -197,7 +197,7 @@ public class GroupByQueryConfig
   public int getNumParallelCombineThreads()
   {
     countLogPrints++;
-    if (countLogPrints< 2000) {
+    if (countLogPrints< 500) {
       log.error("debasatwa17: new GroupByMergingQueryRunnerV2 numParallelCombineThreads: [%s]", numParallelCombineThreads);
     }
     //return numParallelCombineThreads;
@@ -267,7 +267,7 @@ public class GroupByQueryConfig
         getNumParallelCombineThreads()
     );
     countLogPrints++;
-    if (countLogPrints< 2000) {
+    if (countLogPrints< 500) {
       log.error("debasatwa11: new GroupByMergingQueryRunnerV2 newConfig.numParallelCombineThreads: [%s]", newConfig.numParallelCombineThreads);
     }
     newConfig.vectorize = query.getContextBoolean(QueryContexts.VECTORIZE_KEY, isVectorize());

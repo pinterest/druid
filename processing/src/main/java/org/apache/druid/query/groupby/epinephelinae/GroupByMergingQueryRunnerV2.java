@@ -107,7 +107,7 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
     this.queryWatcher = queryWatcher;
     this.queryables = Iterables.unmodifiableIterable(Iterables.filter(queryables, Predicates.notNull()));
     countLogPrints++;
-    if (countLogPrints< 2000) {
+    if (countLogPrints< 500) {
       log.error("debasatwa17: new GroupByMergingQueryRunnerV2 concurrencyHint: [%s]", concurrencyHint);
     }
     this.concurrencyHint = concurrencyHint;
@@ -115,7 +115,7 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
     this.spillMapper = spillMapper;
     this.processingTmpDir = processingTmpDir;
     this.mergeBufferSize = mergeBufferSize;
-    if (countLogPrints< 2000) {
+    if (countLogPrints< 500) {
       log.error("debasatwa17: new GroupByMergingQueryRunnerV2 mergeBufferSize: [%s]", mergeBufferSize);
     }
   }
@@ -135,7 +135,7 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
     final GroupByQueryConfig querySpecificConfig = config.withOverrides(query);
 
 
-    if (countLogPrints< 2000) {
+    if (countLogPrints< 500) {
       //dont comment out this log.error
       log.error("debasatwa10: GroupByMergingQueryRunnerV2 run GroupByQuery query: %s",query.toString());
     }
@@ -174,7 +174,7 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
     //final long queryTimeout = QueryContexts.getTimeout(query);
     final long queryTimeout = 4000;
 
-    if (countLogPrints< 2000) {
+    if (countLogPrints< 500) {
       //dont comment out this log.error
       log.error("debasatwa10: GroupByMergingQueryRunnerV2 in run method QueryContexts queryTimeout: %s", queryTimeout);
     }
@@ -241,7 +241,7 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
 
               //throw new RuntimeException(); //throws exception at this state results in 1000-2000 ms for all queries.
 
-              if (countLogPrints< 2000) {
+              if (countLogPrints< 500) {
                 //dont comment out this log.error
                 log.error("debasatwa10: GroupByMergingQueryRunnerV2 mergeBufferSize: %s hasTimeout:%s",mergeBufferSize, hasTimeout);
               }
