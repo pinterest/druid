@@ -19,7 +19,8 @@
 
 package org.apache.druid.java.util.common.concurrent;
 
-//import org.apache.druid.utils.JvmUtils;
+import org.apache.druid.java.util.common.logger.Logger;
+import org.apache.druid.utils.JvmUtils;
 import org.skife.config.Config;
 import org.skife.config.Default;
 
@@ -28,6 +29,8 @@ import org.skife.config.Default;
 public abstract class ExecutorServiceConfig
 {
   public static final int DEFAULT_NUM_THREADS = -1;
+  private static int countLogPrints =0;
+  private static final Logger log = new Logger(ExecutorServiceConfig.class);
 
   @Config(value = "${base_path}.formatString")
   @Default("processing-%s")
@@ -38,10 +41,18 @@ public abstract class ExecutorServiceConfig
     int numThreadsConfigured = getNumThreadsConfigured();
     if (numThreadsConfigured != DEFAULT_NUM_THREADS) {
       //return numThreadsConfigured;
+      if (countLogPrints< 2000) {
+        //dont comment out this log.error
+        log.error("debasatwa16: before return 4 in getNumThreas");
+      }
       return 4;
     } else {
-      return 4;
-      //return Math.max(JvmUtils.getRuntimeInfo().getAvailableProcessors() - 1, 1);
+      //return 4;
+      if (countLogPrints< 2000) {
+        //dont comment out this log.error
+        log.error("debasatwa16: Math.max(JvmUtils.getRuntimeInfo().getAvailableProcessors() - 1, 1):%s",Math.max(JvmUtils.getRuntimeInfo().getAvailableProcessors() - 1, 1));
+      }
+      return Math.max(JvmUtils.getRuntimeInfo().getAvailableProcessors() - 1, 1);
     }
   }
 

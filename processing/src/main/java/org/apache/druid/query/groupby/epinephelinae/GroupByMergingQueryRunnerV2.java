@@ -108,7 +108,7 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
     this.queryables = Iterables.unmodifiableIterable(Iterables.filter(queryables, Predicates.notNull()));
     countLogPrints++;
     if (countLogPrints< 2000) {
-      log.error("debasatwa10: new GroupByMergingQueryRunnerV2 concurrencyHint: [%s]", concurrencyHint);
+      log.error("debasatwa17: new GroupByMergingQueryRunnerV2 concurrencyHint: [%s]", concurrencyHint);
     }
     this.concurrencyHint = concurrencyHint;
     this.mergeBufferPool = mergeBufferPool;
@@ -116,7 +116,7 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
     this.processingTmpDir = processingTmpDir;
     this.mergeBufferSize = mergeBufferSize;
     if (countLogPrints< 2000) {
-      log.error("debasatwa13: new GroupByMergingQueryRunnerV2 mergeBufferSize: [%s]", mergeBufferSize);
+      log.error("debasatwa17: new GroupByMergingQueryRunnerV2 mergeBufferSize: [%s]", mergeBufferSize);
     }
   }
 
