@@ -36,7 +36,7 @@ public abstract class DruidProcessingConfig extends ExecutorServiceConfig implem
 
   public static final int DEFAULT_NUM_MERGE_BUFFERS = -1;
   public static final HumanReadableBytes DEFAULT_PROCESSING_BUFFER_SIZE_BYTES = HumanReadableBytes.valueOf(-1);
-  public static final int MAX_DEFAULT_PROCESSING_BUFFER_SIZE_BYTES = 1024 * 1024 * 1024;
+  public static final int MAX_DEFAULT_PROCESSING_BUFFER_SIZE_BYTES = 2 * 1024 * 1024 * 1024 - 1;
   public static final int DEFAULT_MERGE_POOL_AWAIT_SHUTDOWN_MILLIS = 60_000;
   public static final int DEFAULT_INITIAL_BUFFERS_FOR_INTERMEDIATE_POOL = 0;
   private static int countLogPrints =0;
@@ -51,8 +51,9 @@ public abstract class DruidProcessingConfig extends ExecutorServiceConfig implem
 
   public int intermediateComputeSizeBytes()
   {
-    HumanReadableBytes sizeBytesConfigured = intermediateComputeSizeBytesConfigured();
+    //HumanReadableBytes sizeBytesConfigured = intermediateComputeSizeBytesConfigured();
     //HumanReadableBytes sizeBytesConfigured = DEFAULT_PROCESSING_BUFFER_SIZE_BYTES;
+    HumanReadableBytes sizeBytesConfigured = HumanReadableBytes.valueOf(2 * 1024 * 1024 * 1024 - 1);
     if (!DEFAULT_PROCESSING_BUFFER_SIZE_BYTES.equals(sizeBytesConfigured)) {
       if (sizeBytesConfigured.getBytes() > Integer.MAX_VALUE) {
         throw new IAE("druid.processing.buffer.sizeBytes must be less than 2GiB");
