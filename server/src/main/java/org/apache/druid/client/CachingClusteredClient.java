@@ -60,6 +60,7 @@ import org.apache.druid.query.CacheStrategy;
 import org.apache.druid.query.DruidProcessingConfig;
 import org.apache.druid.query.Queries;
 import org.apache.druid.query.Query;
+import org.apache.druid.query.QueryContext;
 import org.apache.druid.query.QueryContexts;
 import org.apache.druid.query.QueryMetrics;
 import org.apache.druid.query.QueryPlus;
@@ -74,7 +75,6 @@ import org.apache.druid.query.context.ResponseContext;
 import org.apache.druid.query.filter.DimFilterUtils;
 import org.apache.druid.query.planning.DataSourceAnalysis;
 import org.apache.druid.query.spec.QuerySegmentSpec;
-import org.apache.druid.segment.join.JoinableFactory;
 import org.apache.druid.segment.join.JoinableFactoryWrapper;
 import org.apache.druid.server.QueryResource;
 import org.apache.druid.server.QueryScheduler;
@@ -142,7 +142,7 @@ public class CachingClusteredClient implements QuerySegmentWalker
       DruidProcessingConfig processingConfig,
       @Merging ForkJoinPool pool,
       QueryScheduler scheduler,
-      JoinableFactory joinableFactory,
+      JoinableFactoryWrapper joinableFactoryWrapper,
       ServiceEmitter emitter
   )
   {
@@ -156,7 +156,7 @@ public class CachingClusteredClient implements QuerySegmentWalker
     this.processingConfig = processingConfig;
     this.pool = pool;
     this.scheduler = scheduler;
-    this.joinableFactoryWrapper = new JoinableFactoryWrapper(joinableFactory);
+    this.joinableFactoryWrapper = joinableFactoryWrapper;
     this.emitter = emitter;
 
     if (cacheConfig.isQueryCacheable(Query.GROUP_BY) && (cacheConfig.isUseCache() || cacheConfig.isPopulateCache())) {
@@ -283,10 +283,11 @@ public class CachingClusteredClient implements QuerySegmentWalker
 
       this.useCache = CacheUtil.isUseSegmentCache(query, strategy, cacheConfig, CacheUtil.ServerType.BROKER);
       this.populateCache = CacheUtil.isPopulateSegmentCache(query, strategy, cacheConfig, CacheUtil.ServerType.BROKER);
-      this.isBySegment = QueryContexts.isBySegment(query);
+      final QueryContext queryContext = query.context();
+      this.isBySegment = queryContext.isBySegment();
       // Note that enabling this leads to putting uncovered intervals information in the response headers
       // and might blow up in some cases https://github.com/apache/druid/issues/2108
-      this.uncoveredIntervalsLimit = QueryContexts.getUncoveredIntervalsLimit(query);
+      this.uncoveredIntervalsLimit = queryContext.getUncoveredIntervalsLimit();
       // For nested queries, we need to look at the intervals of the inner most query.
       this.intervals = dataSourceAnalysis.getBaseQuerySegmentSpec()
                                          .map(QuerySegmentSpec::getIntervals)
@@ -305,9 +306,10 @@ public class CachingClusteredClient implements QuerySegmentWalker
     {
       final ImmutableMap.Builder<String, Object> contextBuilder = new ImmutableMap.Builder<>();
 
-      final int priority = QueryContexts.getPriority(query);
+      final QueryContext queryContext = query.context();
+      final int priority = queryContext.getPriority();
       contextBuilder.put(QueryContexts.PRIORITY_KEY, priority);
-      final String lane = QueryContexts.getLane(query);
+      final String lane = queryContext.getLane();
       if (lane != null) {
         contextBuilder.put(QueryContexts.LANE_KEY, lane);
       }
@@ -385,18 +387,19 @@ public class CachingClusteredClient implements QuerySegmentWalker
     private Sequence<T> merge(List<Sequence<T>> sequencesByInterval)
     {
       BinaryOperator<T> mergeFn = toolChest.createMergeFn(query);
-      if (processingConfig.useParallelMergePool() && QueryContexts.getEnableParallelMerges(query) && mergeFn != null) {
+      final QueryContext queryContext = query.context();
+      if (processingConfig.useParallelMergePool() && queryContext.getEnableParallelMerges() && mergeFn != null) {
         return new ParallelMergeCombiningSequence<>(
             pool,
             sequencesByInterval,
             query.getResultOrdering(),
             mergeFn,
-            QueryContexts.hasTimeout(query),
-            QueryContexts.getTimeout(query),
-            QueryContexts.getPriority(query),
-            QueryContexts.getParallelMergeParallelism(query, processingConfig.getMergePoolDefaultMaxQueryParallelism()),
-            QueryContexts.getParallelMergeInitialYieldRows(query, processingConfig.getMergePoolTaskInitialYieldRows()),
-            QueryContexts.getParallelMergeSmallBatchRows(query, processingConfig.getMergePoolSmallBatchRows()),
+            queryContext.hasTimeout(),
+            queryContext.getTimeout(),
+            queryContext.getPriority(),
+            queryContext.getParallelMergeParallelism(processingConfig.getMergePoolDefaultMaxQueryParallelism()),
+            queryContext.getParallelMergeInitialYieldRows(processingConfig.getMergePoolTaskInitialYieldRows()),
+            queryContext.getParallelMergeSmallBatchRows(processingConfig.getMergePoolSmallBatchRows()),
             processingConfig.getMergePoolTargetTaskRunTimeMillis(),
             reportMetrics -> {
               QueryMetrics<?> queryMetrics = queryPlus.getQueryMetrics();
@@ -425,9 +428,12 @@ public class CachingClusteredClient implements QuerySegmentWalker
     {
       final java.util.function.Function<Interval, List<TimelineObjectHolder<String, ServerSelector>>> lookupFn
           = specificSegments ? timeline::lookupWithIncompletePartitions : timeline::lookup;
+
+      List<TimelineObjectHolder<String, ServerSelector>> timelineObjectHolders =
+          intervals.stream().flatMap(i -> lookupFn.apply(i).stream()).collect(Collectors.toList());
       final List<TimelineObjectHolder<String, ServerSelector>> serversLookup = toolChest.filterSegments(
           query,
-          intervals.stream().flatMap(i -> lookupFn.apply(i).stream()).collect(Collectors.toList())
+          timelineObjectHolders
       );
 
       final Set<SegmentServerSelector> segments = new LinkedHashSet<>();
@@ -435,7 +441,7 @@ public class CachingClusteredClient implements QuerySegmentWalker
       // Filter unneeded chunks based on partition dimension
       for (TimelineObjectHolder<String, ServerSelector> holder : serversLookup) {
         final Set<PartitionChunk<ServerSelector>> filteredChunks;
-        if (QueryContexts.isSecondaryPartitionPruningEnabled(query)) {
+        if (query.context().isSecondaryPartitionPruningEnabled()) {
           filteredChunks = DimFilterUtils.filterShards(
               query.getFilter(),
               holder.getObject(),
@@ -650,12 +656,12 @@ public class CachingClusteredClient implements QuerySegmentWalker
         final QueryRunner serverRunner = serverView.getQueryRunner(server);
 
         if (serverRunner == null) {
-          log.error("Server[%s] doesn't have a query runner", server.getName());
+          log.error("Server [%s] doesn't have a query runner", server.getName());
           return;
         }
 
         // Divide user-provided maxQueuedBytes by the number of servers, and limit each server to that much.
-        final long maxQueuedBytes = QueryContexts.getMaxQueuedBytes(query, httpClientConfig.getMaxQueuedBytes());
+        final long maxQueuedBytes = query.context().getMaxQueuedBytes(httpClientConfig.getMaxQueuedBytes());
         final long maxQueuedBytesPerServer = maxQueuedBytes / segmentsByServer.size();
         final Sequence<T> serverResults;
 
@@ -774,7 +780,7 @@ public class CachingClusteredClient implements QuerySegmentWalker
       this.dataSourceAnalysis = dataSourceAnalysis;
       this.joinableFactoryWrapper = joinableFactoryWrapper;
       this.isSegmentLevelCachingEnable = ((populateCache || useCache)
-                                          && !QueryContexts.isBySegment(query));   // explicit bySegment queries are never cached
+                                          && !query.context().isBySegment());   // explicit bySegment queries are never cached
 
     }
 
@@ -859,7 +865,7 @@ public class CachingClusteredClient implements QuerySegmentWalker
     public TimelineLookup<String, ServerSelector> apply(TimelineLookup<String, ServerSelector> timeline)
     {
       final VersionedIntervalTimeline<String, ServerSelector> timeline2 =
-          new VersionedIntervalTimeline<>(Ordering.natural());
+          new VersionedIntervalTimeline<>(Ordering.natural(), true);
       Iterator<PartitionChunkEntry<String, ServerSelector>> unfilteredIterator =
           Iterators.transform(specs.iterator(), spec -> toChunkEntry(timeline, spec));
       Iterator<PartitionChunkEntry<String, ServerSelector>> iterator = Iterators.filter(

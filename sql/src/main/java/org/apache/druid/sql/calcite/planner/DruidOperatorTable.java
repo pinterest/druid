@@ -33,11 +33,13 @@ import org.apache.calcite.sql.validate.SqlNameMatcher;
 import org.apache.druid.java.util.common.ISE;
 import org.apache.druid.java.util.common.StringUtils;
 import org.apache.druid.sql.calcite.aggregation.SqlAggregator;
+import org.apache.druid.sql.calcite.aggregation.builtin.ArrayConcatSqlAggregator;
 import org.apache.druid.sql.calcite.aggregation.builtin.ArraySqlAggregator;
 import org.apache.druid.sql.calcite.aggregation.builtin.AvgSqlAggregator;
 import org.apache.druid.sql.calcite.aggregation.builtin.BitwiseSqlAggregator;
 import org.apache.druid.sql.calcite.aggregation.builtin.BuiltinApproxCountDistinctSqlAggregator;
 import org.apache.druid.sql.calcite.aggregation.builtin.EarliestLatestAnySqlAggregator;
+import org.apache.druid.sql.calcite.aggregation.builtin.EarliestLatestBySqlAggregator;
 import org.apache.druid.sql.calcite.aggregation.builtin.GroupingSqlAggregator;
 import org.apache.druid.sql.calcite.aggregation.builtin.MaxSqlAggregator;
 import org.apache.druid.sql.calcite.aggregation.builtin.MinSqlAggregator;
@@ -63,6 +65,7 @@ import org.apache.druid.sql.calcite.expression.builtin.ArrayOrdinalOfOperatorCon
 import org.apache.druid.sql.calcite.expression.builtin.ArrayOrdinalOperatorConversion;
 import org.apache.druid.sql.calcite.expression.builtin.ArrayOverlapOperatorConversion;
 import org.apache.druid.sql.calcite.expression.builtin.ArrayPrependOperatorConversion;
+import org.apache.druid.sql.calcite.expression.builtin.ArrayQuantileOperatorConversion;
 import org.apache.druid.sql.calcite.expression.builtin.ArraySliceOperatorConversion;
 import org.apache.druid.sql.calcite.expression.builtin.ArrayToStringOperatorConversion;
 import org.apache.druid.sql.calcite.expression.builtin.BTrimOperatorConversion;
@@ -85,6 +88,8 @@ import org.apache.druid.sql.calcite.expression.builtin.LeftOperatorConversion;
 import org.apache.druid.sql.calcite.expression.builtin.LikeOperatorConversion;
 import org.apache.druid.sql.calcite.expression.builtin.MillisToTimestampOperatorConversion;
 import org.apache.druid.sql.calcite.expression.builtin.MultiValueStringOperatorConversions;
+import org.apache.druid.sql.calcite.expression.builtin.MultiValueStringToArrayOperatorConversion;
+import org.apache.druid.sql.calcite.expression.builtin.NestedDataOperatorConversions;
 import org.apache.druid.sql.calcite.expression.builtin.ParseLongOperatorConversion;
 import org.apache.druid.sql.calcite.expression.builtin.PositionOperatorConversion;
 import org.apache.druid.sql.calcite.expression.builtin.RPadOperatorConversion;
@@ -112,6 +117,7 @@ import org.apache.druid.sql.calcite.expression.builtin.TimeShiftOperatorConversi
 import org.apache.druid.sql.calcite.expression.builtin.TimestampToMillisOperatorConversion;
 import org.apache.druid.sql.calcite.expression.builtin.TrimOperatorConversion;
 import org.apache.druid.sql.calcite.expression.builtin.TruncateOperatorConversion;
+import org.apache.druid.sql.calcite.planner.convertlet.DruidConvertletTable;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -133,12 +139,15 @@ public class DruidOperatorTable implements SqlOperatorTable
                    .add(EarliestLatestAnySqlAggregator.EARLIEST)
                    .add(EarliestLatestAnySqlAggregator.LATEST)
                    .add(EarliestLatestAnySqlAggregator.ANY_VALUE)
+                   .add(EarliestLatestBySqlAggregator.EARLIEST_BY)
+                   .add(EarliestLatestBySqlAggregator.LATEST_BY)
                    .add(new MinSqlAggregator())
                    .add(new MaxSqlAggregator())
                    .add(new SumSqlAggregator())
                    .add(new SumZeroSqlAggregator())
                    .add(new GroupingSqlAggregator())
                    .add(new ArraySqlAggregator())
+                   .add(new ArrayConcatSqlAggregator())
                    .add(new StringSqlAggregator())
                    .add(new BitwiseSqlAggregator(BitwiseSqlAggregator.Op.AND))
                    .add(new BitwiseSqlAggregator(BitwiseSqlAggregator.Op.OR))
@@ -217,6 +226,7 @@ public class DruidOperatorTable implements SqlOperatorTable
                    .add(new ArrayOrdinalOperatorConversion())
                    .add(new ArrayOffsetOfOperatorConversion())
                    .add(new ArrayOrdinalOfOperatorConversion())
+                   .add(new ArrayQuantileOperatorConversion())
                    .add(new ArraySliceOperatorConversion())
                    .add(new ArrayToStringOperatorConversion())
                    .add(new StringToArrayOperatorConversion())
@@ -239,6 +249,7 @@ public class DruidOperatorTable implements SqlOperatorTable
                    .add(new MultiValueStringOperatorConversions.StringToMultiString())
                    .add(new MultiValueStringOperatorConversions.FilterOnly())
                    .add(new MultiValueStringOperatorConversions.FilterNone())
+                   .add(new MultiValueStringToArrayOperatorConversion())
                    .build();
 
   private static final List<SqlOperatorConversion> REDUCTION_OPERATOR_CONVERSIONS =
@@ -286,6 +297,21 @@ public class DruidOperatorTable implements SqlOperatorTable
                            "bitwiseConvertLongBitsToDouble"
                        )
                    )
+                   .build();
+
+  private static final List<SqlOperatorConversion> NESTED_DATA_OPERATOR_CONVERSIONS =
+      ImmutableList.<SqlOperatorConversion>builder()
+                   .add(new NestedDataOperatorConversions.JsonKeysOperatorConversion())
+                   .add(new NestedDataOperatorConversions.JsonPathsOperatorConversion())
+                   .add(new NestedDataOperatorConversions.JsonQueryOperatorConversion())
+                   .add(new NestedDataOperatorConversions.JsonValueAnyOperatorConversion())
+                   .add(new NestedDataOperatorConversions.JsonValueBigintOperatorConversion())
+                   .add(new NestedDataOperatorConversions.JsonValueDoubleOperatorConversion())
+                   .add(new NestedDataOperatorConversions.JsonValueVarcharOperatorConversion())
+                   .add(new NestedDataOperatorConversions.JsonObjectOperatorConversion())
+                   .add(new NestedDataOperatorConversions.ToJsonStringOperatorConversion())
+                   .add(new NestedDataOperatorConversions.ParseJsonOperatorConversion())
+                   .add(new NestedDataOperatorConversions.TryParseJsonOperatorConversion())
                    .build();
 
   private static final List<SqlOperatorConversion> STANDARD_OPERATOR_CONVERSIONS =
@@ -361,6 +387,7 @@ public class DruidOperatorTable implements SqlOperatorTable
                    .addAll(FORMAT_OPERATOR_CONVERSIONS)
                    .addAll(BITWISE_OPERATOR_CONVERSIONS)
                    .addAll(CUSTOM_MATH_OPERATOR_CONVERSIONS)
+                   .addAll(NESTED_DATA_OPERATOR_CONVERSIONS)
                    .build();
 
   // Operators that have no conversion, but are handled in the convertlet table, so they still need to exist.

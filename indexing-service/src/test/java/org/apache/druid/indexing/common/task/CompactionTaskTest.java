@@ -38,8 +38,6 @@ import com.google.common.collect.Maps;
 import org.apache.druid.client.coordinator.CoordinatorClient;
 import org.apache.druid.client.indexing.ClientCompactionTaskGranularitySpec;
 import org.apache.druid.client.indexing.ClientCompactionTaskTransformSpec;
-import org.apache.druid.client.indexing.IndexingServiceClient;
-import org.apache.druid.client.indexing.NoopIndexingServiceClient;
 import org.apache.druid.common.guava.SettableSupplier;
 import org.apache.druid.data.input.InputSource;
 import org.apache.druid.data.input.impl.DimensionSchema;
@@ -82,6 +80,8 @@ import org.apache.druid.java.util.common.granularity.Granularities;
 import org.apache.druid.java.util.common.granularity.Granularity;
 import org.apache.druid.java.util.common.granularity.PeriodGranularity;
 import org.apache.druid.java.util.common.guava.Comparators;
+import org.apache.druid.java.util.emitter.core.NoopEmitter;
+import org.apache.druid.java.util.emitter.service.ServiceEmitter;
 import org.apache.druid.query.aggregation.AggregatorFactory;
 import org.apache.druid.query.aggregation.CountAggregatorFactory;
 import org.apache.druid.query.aggregation.DoubleMaxAggregatorFactory;
@@ -101,24 +101,24 @@ import org.apache.druid.segment.QueryableIndex;
 import org.apache.druid.segment.SegmentUtils;
 import org.apache.druid.segment.SimpleQueryableIndex;
 import org.apache.druid.segment.column.BaseColumn;
-import org.apache.druid.segment.column.BitmapIndex;
 import org.apache.druid.segment.column.ColumnCapabilities;
 import org.apache.druid.segment.column.ColumnCapabilitiesImpl;
 import org.apache.druid.segment.column.ColumnHolder;
+import org.apache.druid.segment.column.ColumnIndexSupplier;
 import org.apache.druid.segment.column.ColumnType;
-import org.apache.druid.segment.column.SpatialIndex;
 import org.apache.druid.segment.column.ValueType;
 import org.apache.druid.segment.data.CompressionFactory.LongEncodingStrategy;
 import org.apache.druid.segment.data.CompressionStrategy;
 import org.apache.druid.segment.data.ListIndexed;
 import org.apache.druid.segment.data.RoaringBitmapSerdeFactory;
 import org.apache.druid.segment.incremental.RowIngestionMetersFactory;
+import org.apache.druid.segment.indexing.BatchIOConfig;
 import org.apache.druid.segment.indexing.DataSchema;
-import org.apache.druid.segment.indexing.IOConfig;
 import org.apache.druid.segment.indexing.RealtimeTuningConfig;
 import org.apache.druid.segment.indexing.TuningConfig;
 import org.apache.druid.segment.indexing.granularity.UniformGranularitySpec;
 import org.apache.druid.segment.join.NoopJoinableFactory;
+import org.apache.druid.segment.loading.SegmentCacheManager;
 import org.apache.druid.segment.loading.SegmentLoadingException;
 import org.apache.druid.segment.realtime.appenderator.AppenderatorsManager;
 import org.apache.druid.segment.realtime.firehose.ChatHandlerProvider;
@@ -152,6 +152,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -181,7 +182,6 @@ public class CompactionTaskTest
   private static final TestUtils TEST_UTILS = new TestUtils();
   private static final Map<DataSegment, File> SEGMENT_MAP = new HashMap<>();
   private static final CoordinatorClient COORDINATOR_CLIENT = new TestCoordinatorClient(SEGMENT_MAP);
-  private static final IndexingServiceClient INDEXING_SERVICE_CLIENT = new NoopIndexingServiceClient();
   private static final ObjectMapper OBJECT_MAPPER = setupInjectablesInObjectMapper(new DefaultObjectMapper());
   private static final RetryPolicyFactory RETRY_POLICY_FACTORY = new RetryPolicyFactory(new RetryPolicyConfig());
   private static final String CONFLICTING_SEGMENT_GRANULARITY_FORMAT =
@@ -282,9 +282,9 @@ public class CompactionTaskTest
                   binder.bind(ChatHandlerProvider.class).toInstance(new NoopChatHandlerProvider());
                   binder.bind(RowIngestionMetersFactory.class).toInstance(TEST_UTILS.getRowIngestionMetersFactory());
                   binder.bind(CoordinatorClient.class).toInstance(COORDINATOR_CLIENT);
-                  binder.bind(SegmentCacheManagerFactory.class).toInstance(new SegmentCacheManagerFactory(objectMapper));
+                  binder.bind(SegmentCacheManagerFactory.class)
+                        .toInstance(new SegmentCacheManagerFactory(objectMapper));
                   binder.bind(AppenderatorsManager.class).toInstance(new TestAppenderatorsManager());
-                  binder.bind(IndexingServiceClient.class).toInstance(INDEXING_SERVICE_CLIENT);
                 }
             )
         )
@@ -361,7 +361,7 @@ public class CompactionTaskTest
   public void setup()
   {
     final IndexIO testIndexIO = new TestIndexIO(OBJECT_MAPPER, SEGMENT_MAP);
-    toolbox = new TestTaskToolbox(
+    toolbox = makeTaskToolbox(
         new TestTaskActionClient(new ArrayList<>(SEGMENT_MAP.keySet())),
         testIndexIO,
         SEGMENT_MAP
@@ -397,6 +397,27 @@ public class CompactionTaskTest
     );
   }
 
+  @Test
+  public void testCompactionTaskEmitter()
+  {
+    final Builder builder = new Builder(
+        DATA_SOURCE,
+        segmentCacheManagerFactory,
+        RETRY_POLICY_FACTORY
+    );
+    builder.inputSpec(new CompactionIntervalSpec(COMPACTION_INTERVAL, SegmentUtils.hashIds(SEGMENTS)));
+    builder.tuningConfig(createTuningConfig());
+    builder.segmentGranularity(Granularities.HOUR);
+    final CompactionTask taskCreatedWithSegmentGranularity = builder.build();
+
+    // null emitter should work
+    taskCreatedWithSegmentGranularity.emitCompactIngestionModeMetrics(null, false);
+    // non-null should also work
+    ServiceEmitter noopEmitter = new ServiceEmitter("service", "host", new NoopEmitter());
+    taskCreatedWithSegmentGranularity.emitCompactIngestionModeMetrics(noopEmitter, false);
+    taskCreatedWithSegmentGranularity.emitCompactIngestionModeMetrics(noopEmitter, true);
+  }
+
   @Test(expected = IAE.class)
   public void testCreateCompactionTaskWithConflictingGranularitySpecAndSegmentGranularityShouldThrowIAE()
   {
@@ -429,7 +450,8 @@ public class CompactionTaskTest
   @Test
   public void testCreateCompactionTaskWithTransformSpec()
   {
-    ClientCompactionTaskTransformSpec transformSpec = new ClientCompactionTaskTransformSpec(new SelectorDimFilter("dim1", "foo", null));
+    ClientCompactionTaskTransformSpec transformSpec =
+        new ClientCompactionTaskTransformSpec(new SelectorDimFilter("dim1", "foo", null));
     final Builder builder = new Builder(
         DATA_SOURCE,
         segmentCacheManagerFactory,
@@ -442,6 +464,25 @@ public class CompactionTaskTest
     Assert.assertEquals(
         transformSpec,
         taskCreatedWithTransformSpec.getTransformSpec()
+    );
+  }
+
+  @Test
+  public void testCreateCompactionTaskWithMetricsSpec()
+  {
+    AggregatorFactory[] aggregatorFactories = new AggregatorFactory[]{new CountAggregatorFactory("cnt")};
+    final Builder builder = new Builder(
+        DATA_SOURCE,
+        segmentCacheManagerFactory,
+        RETRY_POLICY_FACTORY
+    );
+    builder.inputSpec(new CompactionIntervalSpec(COMPACTION_INTERVAL, SegmentUtils.hashIds(SEGMENTS)));
+    builder.tuningConfig(createTuningConfig());
+    builder.metricsSpec(aggregatorFactories);
+    final CompactionTask taskCreatedWithTransformSpec = builder.build();
+    Assert.assertArrayEquals(
+        aggregatorFactories,
+        taskCreatedWithTransformSpec.getMetricsSpec()
     );
   }
 
@@ -876,7 +917,7 @@ public class CompactionTaskTest
         COORDINATOR_CLIENT,
         segmentCacheManagerFactory,
         RETRY_POLICY_FACTORY,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
     final List<DimensionsSpec> expectedDimensionsSpec = getExpectedDimensionsSpecForAutoGeneration();
 
@@ -890,11 +931,11 @@ public class CompactionTaskTest
     assertIngestionSchema(
         ingestionSpecs,
         expectedDimensionsSpec,
-        AGGREGATORS,
+        AGGREGATORS.stream().map(AggregatorFactory::getCombiningFactory).collect(Collectors.toList()),
         SEGMENT_INTERVALS,
         Granularities.MONTH,
         Granularities.NONE,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
   }
 
@@ -950,7 +991,7 @@ public class CompactionTaskTest
         COORDINATOR_CLIENT,
         segmentCacheManagerFactory,
         RETRY_POLICY_FACTORY,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
     final List<DimensionsSpec> expectedDimensionsSpec = getExpectedDimensionsSpecForAutoGeneration();
 
@@ -964,12 +1005,12 @@ public class CompactionTaskTest
     assertIngestionSchema(
         ingestionSpecs,
         expectedDimensionsSpec,
-        AGGREGATORS,
+        AGGREGATORS.stream().map(AggregatorFactory::getCombiningFactory).collect(Collectors.toList()),
         SEGMENT_INTERVALS,
         tuningConfig,
         Granularities.MONTH,
         Granularities.NONE,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
   }
 
@@ -1025,7 +1066,7 @@ public class CompactionTaskTest
         COORDINATOR_CLIENT,
         segmentCacheManagerFactory,
         RETRY_POLICY_FACTORY,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
     final List<DimensionsSpec> expectedDimensionsSpec = getExpectedDimensionsSpecForAutoGeneration();
 
@@ -1039,12 +1080,12 @@ public class CompactionTaskTest
     assertIngestionSchema(
         ingestionSpecs,
         expectedDimensionsSpec,
-        AGGREGATORS,
+        AGGREGATORS.stream().map(AggregatorFactory::getCombiningFactory).collect(Collectors.toList()),
         SEGMENT_INTERVALS,
         tuningConfig,
         Granularities.MONTH,
         Granularities.NONE,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
   }
 
@@ -1100,7 +1141,7 @@ public class CompactionTaskTest
         COORDINATOR_CLIENT,
         segmentCacheManagerFactory,
         RETRY_POLICY_FACTORY,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
     final List<DimensionsSpec> expectedDimensionsSpec = getExpectedDimensionsSpecForAutoGeneration();
 
@@ -1114,12 +1155,12 @@ public class CompactionTaskTest
     assertIngestionSchema(
         ingestionSpecs,
         expectedDimensionsSpec,
-        AGGREGATORS,
+        AGGREGATORS.stream().map(AggregatorFactory::getCombiningFactory).collect(Collectors.toList()),
         SEGMENT_INTERVALS,
         tuningConfig,
         Granularities.MONTH,
         Granularities.NONE,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
   }
 
@@ -1165,7 +1206,7 @@ public class CompactionTaskTest
         COORDINATOR_CLIENT,
         segmentCacheManagerFactory,
         RETRY_POLICY_FACTORY,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
 
     ingestionSpecs.sort(
@@ -1180,11 +1221,11 @@ public class CompactionTaskTest
     assertIngestionSchema(
         ingestionSpecs,
         dimensionsSpecs,
-        AGGREGATORS,
+        AGGREGATORS.stream().map(AggregatorFactory::getCombiningFactory).collect(Collectors.toList()),
         SEGMENT_INTERVALS,
         Granularities.MONTH,
         Granularities.NONE,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
   }
 
@@ -1210,7 +1251,7 @@ public class CompactionTaskTest
         COORDINATOR_CLIENT,
         segmentCacheManagerFactory,
         RETRY_POLICY_FACTORY,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
 
     final List<DimensionsSpec> expectedDimensionsSpec = getExpectedDimensionsSpecForAutoGeneration();
@@ -1229,7 +1270,7 @@ public class CompactionTaskTest
         SEGMENT_INTERVALS,
         Granularities.MONTH,
         Granularities.NONE,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
   }
 
@@ -1248,7 +1289,7 @@ public class CompactionTaskTest
         COORDINATOR_CLIENT,
         segmentCacheManagerFactory,
         RETRY_POLICY_FACTORY,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
     final List<DimensionsSpec> expectedDimensionsSpec = getExpectedDimensionsSpecForAutoGeneration();
 
@@ -1262,11 +1303,11 @@ public class CompactionTaskTest
     assertIngestionSchema(
         ingestionSpecs,
         expectedDimensionsSpec,
-        AGGREGATORS,
+        AGGREGATORS.stream().map(AggregatorFactory::getCombiningFactory).collect(Collectors.toList()),
         SEGMENT_INTERVALS,
         Granularities.MONTH,
         Granularities.NONE,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
   }
 
@@ -1292,7 +1333,7 @@ public class CompactionTaskTest
         COORDINATOR_CLIENT,
         segmentCacheManagerFactory,
         RETRY_POLICY_FACTORY,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
   }
 
@@ -1317,7 +1358,7 @@ public class CompactionTaskTest
         COORDINATOR_CLIENT,
         segmentCacheManagerFactory,
         RETRY_POLICY_FACTORY,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
   }
 
@@ -1354,7 +1395,7 @@ public class CompactionTaskTest
         COORDINATOR_CLIENT,
         segmentCacheManagerFactory,
         RETRY_POLICY_FACTORY,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
     final List<DimensionsSpec> expectedDimensionsSpec = ImmutableList.of(
         new DimensionsSpec(getDimensionSchema(new DoubleDimensionSchema("string_to_double")))
@@ -1370,11 +1411,11 @@ public class CompactionTaskTest
     assertIngestionSchema(
         ingestionSpecs,
         expectedDimensionsSpec,
-        AGGREGATORS,
+        AGGREGATORS.stream().map(AggregatorFactory::getCombiningFactory).collect(Collectors.toList()),
         Collections.singletonList(COMPACTION_INTERVAL),
         new PeriodGranularity(Period.months(3), null, null),
         Granularities.NONE,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
   }
 
@@ -1393,7 +1434,7 @@ public class CompactionTaskTest
         COORDINATOR_CLIENT,
         segmentCacheManagerFactory,
         RETRY_POLICY_FACTORY,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
     final List<DimensionsSpec> expectedDimensionsSpec = getExpectedDimensionsSpecForAutoGeneration();
 
@@ -1407,11 +1448,11 @@ public class CompactionTaskTest
     assertIngestionSchema(
         ingestionSpecs,
         expectedDimensionsSpec,
-        AGGREGATORS,
+        AGGREGATORS.stream().map(AggregatorFactory::getCombiningFactory).collect(Collectors.toList()),
         SEGMENT_INTERVALS,
         Granularities.MONTH,
         new PeriodGranularity(Period.months(3), null, null),
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
   }
 
@@ -1434,7 +1475,7 @@ public class CompactionTaskTest
         COORDINATOR_CLIENT,
         segmentCacheManagerFactory,
         RETRY_POLICY_FACTORY,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
     final List<DimensionsSpec> expectedDimensionsSpec = ImmutableList.of(
         new DimensionsSpec(getDimensionSchema(new DoubleDimensionSchema("string_to_double")))
@@ -1450,11 +1491,11 @@ public class CompactionTaskTest
     assertIngestionSchema(
         ingestionSpecs,
         expectedDimensionsSpec,
-        AGGREGATORS,
+        AGGREGATORS.stream().map(AggregatorFactory::getCombiningFactory).collect(Collectors.toList()),
         Collections.singletonList(COMPACTION_INTERVAL),
         new PeriodGranularity(Period.months(3), null, null),
         new PeriodGranularity(Period.months(3), null, null),
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
   }
 
@@ -1473,7 +1514,7 @@ public class CompactionTaskTest
         COORDINATOR_CLIENT,
         segmentCacheManagerFactory,
         RETRY_POLICY_FACTORY,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
     final List<DimensionsSpec> expectedDimensionsSpec = getExpectedDimensionsSpecForAutoGeneration();
 
@@ -1487,11 +1528,11 @@ public class CompactionTaskTest
     assertIngestionSchema(
         ingestionSpecs,
         expectedDimensionsSpec,
-        AGGREGATORS,
+        AGGREGATORS.stream().map(AggregatorFactory::getCombiningFactory).collect(Collectors.toList()),
         SEGMENT_INTERVALS,
         Granularities.MONTH,
         Granularities.NONE,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
   }
 
@@ -1511,7 +1552,7 @@ public class CompactionTaskTest
         COORDINATOR_CLIENT,
         segmentCacheManagerFactory,
         RETRY_POLICY_FACTORY,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
     final List<DimensionsSpec> expectedDimensionsSpec = getExpectedDimensionsSpecForAutoGeneration();
 
@@ -1525,11 +1566,11 @@ public class CompactionTaskTest
     assertIngestionSchema(
         ingestionSpecs,
         expectedDimensionsSpec,
-        AGGREGATORS,
+        AGGREGATORS.stream().map(AggregatorFactory::getCombiningFactory).collect(Collectors.toList()),
         SEGMENT_INTERVALS,
         Granularities.MONTH,
         Granularities.NONE,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
   }
 
@@ -1549,7 +1590,7 @@ public class CompactionTaskTest
         COORDINATOR_CLIENT,
         segmentCacheManagerFactory,
         RETRY_POLICY_FACTORY,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
 
     Assert.assertEquals(6, ingestionSpecs.size());
@@ -1574,7 +1615,7 @@ public class CompactionTaskTest
         COORDINATOR_CLIENT,
         segmentCacheManagerFactory,
         RETRY_POLICY_FACTORY,
-        IOConfig.DEFAULT_DROP_EXISTING
+        BatchIOConfig.DEFAULT_DROP_EXISTING
     );
     Assert.assertEquals(6, ingestionSpecs.size());
     for (ParallelIndexIngestionSpec indexIngestionSpec : ingestionSpecs) {
@@ -1591,6 +1632,7 @@ public class CompactionTaskTest
         Granularities.SECOND,
         Granularities.MINUTE,
         Granularities.SIX_HOUR,
+        Granularities.EIGHT_HOUR,
         Granularities.DAY,
         null,
         Granularities.ALL,
@@ -1607,6 +1649,7 @@ public class CompactionTaskTest
         Granularities.SECOND,
         Granularities.MINUTE,
         Granularities.SIX_HOUR,
+        Granularities.EIGHT_HOUR,
         Granularities.NONE,
         Granularities.DAY,
         Granularities.NONE,
@@ -1877,11 +1920,7 @@ public class CompactionTaskTest
       );
 
       // metrics
-      final List<AggregatorFactory> expectedAggregators = expectedMetricsSpec
-          .stream()
-          .map(AggregatorFactory::getCombiningFactory)
-          .collect(Collectors.toList());
-      Assert.assertEquals(expectedAggregators, Arrays.asList(dataSchema.getAggregators()));
+      Assert.assertEquals(expectedMetricsSpec, Arrays.asList(dataSchema.getAggregators()));
       Assert.assertEquals(
           new UniformGranularitySpec(
               expectedSegmentGranularity,
@@ -1895,7 +1934,10 @@ public class CompactionTaskTest
       // assert ioConfig
       final ParallelIndexIOConfig ioConfig = ingestionSchema.getIOConfig();
       Assert.assertFalse(ioConfig.isAppendToExisting());
-      Assert.assertEquals(expectedDropExisting, ioConfig.isDropExisting());
+      Assert.assertEquals(
+          expectedDropExisting,
+          ioConfig.isDropExisting()
+      );
       final InputSource inputSource = ioConfig.getInputSource();
       Assert.assertTrue(inputSource instanceof DruidInputSource);
       final DruidInputSource druidInputSource = (DruidInputSource) inputSource;
@@ -1928,81 +1970,86 @@ public class CompactionTaskTest
     }
   }
 
-  private static class TestTaskToolbox extends TaskToolbox
+  private static TaskToolbox makeTaskToolbox(
+      TaskActionClient taskActionClient,
+      IndexIO indexIO,
+      Map<DataSegment, File> segments
+  )
   {
-    private final Map<DataSegment, File> segmentFileMap;
-
-    TestTaskToolbox(
-        TaskActionClient taskActionClient,
-        IndexIO indexIO,
-        Map<DataSegment, File> segmentFileMap
-    )
+    final SegmentCacheManager segmentCacheManager = new SegmentCacheManager()
     {
-      super(
-          new TaskConfig(
-              null,
-              null,
-              null,
-              null,
-              null,
-              false,
-              null,
-              null,
-              null,
-              false,
-              false,
-              TaskConfig.BATCH_PROCESSING_MODE_DEFAULT.name()
-          ),
-          null,
-          taskActionClient,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          NoopJoinableFactory.INSTANCE,
-          null,
-          null,
-          null,
-          null,
-          indexIO,
-          null,
-          null,
-          null,
-          new IndexMergerV9(OBJECT_MAPPER, indexIO, OffHeapMemorySegmentWriteOutMediumFactory.instance()),
-          null,
-          null,
-          null,
-          null,
-          new NoopTestTaskReportFileWriter(),
-          null,
-          AuthTestUtils.TEST_AUTHORIZER_MAPPER,
-          new NoopChatHandlerProvider(),
-          TEST_UTILS.getRowIngestionMetersFactory(),
-          new TestAppenderatorsManager(),
-          INDEXING_SERVICE_CLIENT,
-          COORDINATOR_CLIENT,
-          null,
-          null
-      );
-      this.segmentFileMap = segmentFileMap;
-    }
-
-    @Override
-    public Map<DataSegment, File> fetchSegments(List<DataSegment> segments)
-    {
-      final Map<DataSegment, File> submap = Maps.newHashMapWithExpectedSize(segments.size());
-      for (DataSegment segment : segments) {
-        final File file = Preconditions.checkNotNull(segmentFileMap.get(segment));
-        submap.put(segment, file);
+      @Override
+      public boolean isSegmentCached(DataSegment segment)
+      {
+        throw new UnsupportedOperationException();
       }
-      return submap;
-    }
+
+      @Override
+      public File getSegmentFiles(DataSegment segment)
+      {
+        return Preconditions.checkNotNull(segments.get(segment));
+      }
+
+      @Override
+      public boolean reserve(DataSegment segment)
+      {
+        throw new UnsupportedOperationException();
+      }
+
+      @Override
+      public boolean release(DataSegment segment)
+      {
+        throw new UnsupportedOperationException();
+      }
+
+      @Override
+      public void cleanup(DataSegment segment)
+      {
+        throw new UnsupportedOperationException();
+      }
+
+      @Override
+      public void loadSegmentIntoPageCache(DataSegment segment, ExecutorService exec)
+      {
+        throw new UnsupportedOperationException();
+      }
+    };
+
+    return new TaskToolbox.Builder()
+        .config(
+            new TaskConfig(
+                null,
+                null,
+                null,
+                null,
+                null,
+                false,
+                null,
+                null,
+                null,
+                false,
+                false,
+                TaskConfig.BATCH_PROCESSING_MODE_DEFAULT.name(),
+                null
+            )
+        )
+        .taskActionClient(taskActionClient)
+        .joinableFactory(NoopJoinableFactory.INSTANCE)
+        .indexIO(indexIO)
+        .indexMergerV9(new IndexMergerV9(
+            OBJECT_MAPPER,
+            indexIO,
+            OffHeapMemorySegmentWriteOutMediumFactory.instance(),
+            true
+        ))
+        .taskReportFileWriter(new NoopTestTaskReportFileWriter())
+        .authorizerMapper(AuthTestUtils.TEST_AUTHORIZER_MAPPER)
+        .chatHandlerProvider(new NoopChatHandlerProvider())
+        .rowIngestionMetersFactory(TEST_UTILS.getRowIngestionMetersFactory())
+        .appenderatorsManager(new TestAppenderatorsManager())
+        .coordinatorClient(COORDINATOR_CLIENT)
+        .segmentCacheManager(segmentCacheManager)
+        .build();
   }
 
   private static class TestTaskActionClient implements TaskActionClient
@@ -2162,23 +2209,19 @@ public class CompactionTaskTest
       return null;
     }
 
+    @Nullable
+    @Override
+    public ColumnIndexSupplier getIndexSupplier()
+    {
+      return null;
+    }
+
     @Override
     public SettableColumnValueSelector<?> makeNewSettableColumnValueSelector()
     {
       return null;
     }
 
-    @Override
-    public BitmapIndex getBitmapIndex()
-    {
-      return null;
-    }
-
-    @Override
-    public SpatialIndex getSpatialIndex()
-    {
-      return null;
-    }
   }
 
   /**
@@ -2225,7 +2268,7 @@ public class CompactionTaskTest
         @JacksonInject AppenderatorsManager appenderatorsManager
     )
     {
-      super(getOrMakeId(id, "compact", dataSource), null, taskResource, dataSource, context);
+      super(getOrMakeId(id, "compact", dataSource), null, taskResource, dataSource, context, IngestionMode.REPLACE_LEGACY);
       this.interval = interval;
       this.segments = segments;
       this.dimensionsSpec = dimensionsSpec;

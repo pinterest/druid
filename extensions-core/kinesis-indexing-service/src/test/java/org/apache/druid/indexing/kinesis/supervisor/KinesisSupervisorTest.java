@@ -19,6 +19,8 @@
 
 package org.apache.druid.indexing.kinesis.supervisor;
 
+import com.amazonaws.services.kinesis.model.SequenceNumberRange;
+import com.amazonaws.services.kinesis.model.Shard;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -106,6 +108,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -119,6 +122,9 @@ public class KinesisSupervisorTest extends EasyMockSupport
   private static final InputFormat INPUT_FORMAT = new JsonInputFormat(
       new JSONPathSpec(true, ImmutableList.of()),
       ImmutableMap.of(),
+      false,
+      false,
+      false,
       false
   );
   private static final String DATASOURCE = "testDS";
@@ -196,7 +202,8 @@ public class KinesisSupervisorTest extends EasyMockSupport
         null,
         null,
         null,
-        5000,
+        null,
+        null,
         null,
         null,
         null,
@@ -527,7 +534,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             false
     );
 
-    AutoScalerConfig autoscalerConfigNull = kinesisSupervisorIOConfigWithNullAutoScalerConfig.getAutoscalerConfig();
+    AutoScalerConfig autoscalerConfigNull = kinesisSupervisorIOConfigWithNullAutoScalerConfig.getAutoScalerConfig();
     Assert.assertNull(autoscalerConfigNull);
 
     // create KinesisSupervisorIOConfig with autoScalerConfig Empty
@@ -554,7 +561,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             false
     );
 
-    AutoScalerConfig autoscalerConfig = kinesisSupervisorIOConfigWithEmptyAutoScalerConfig.getAutoscalerConfig();
+    AutoScalerConfig autoscalerConfig = kinesisSupervisorIOConfigWithEmptyAutoScalerConfig.getAutoScalerConfig();
     Assert.assertNotNull(autoscalerConfig);
     Assert.assertTrue(autoscalerConfig instanceof LagBasedAutoScalerConfig);
     Assert.assertFalse(autoscalerConfig.getEnableTaskAutoScaler());
@@ -826,6 +833,9 @@ public class KinesisSupervisorTest extends EasyMockSupport
     EasyMock.expect(supervisorRecordSupplier.getLatestSequenceNumber(EasyMock.anyObject())).andReturn("100").anyTimes();
     supervisorRecordSupplier.seek(EasyMock.anyObject(), EasyMock.anyString());
     EasyMock.expectLastCall().anyTimes();
+    EasyMock.expect(supervisorRecordSupplier.isOffsetAvailable(EasyMock.anyObject(), EasyMock.anyObject()))
+            .andReturn(true)
+            .anyTimes();
 
     Capture<KinesisIndexTask> captured = Capture.newInstance();
     EasyMock.expect(taskMaster.getTaskQueue()).andReturn(Optional.of(taskQueue)).anyTimes();
@@ -880,6 +890,15 @@ public class KinesisSupervisorTest extends EasyMockSupport
     EasyMock.expect(supervisorRecordSupplier.getLatestSequenceNumber(EasyMock.anyObject())).andReturn("100").anyTimes();
     supervisorRecordSupplier.seek(EasyMock.anyObject(), EasyMock.anyString());
     EasyMock.expectLastCall().anyTimes();
+    // Any sequence number greater than or equal to 0 must be available
+    EasyMock.expect(supervisorRecordSupplier.isOffsetAvailable(EasyMock.anyObject(),
+                                                               EasyMock.eq(KinesisSequenceNumber.of("101"))))
+            .andReturn(true)
+            .anyTimes();
+    EasyMock.expect(supervisorRecordSupplier.isOffsetAvailable(EasyMock.anyObject(),
+                                                               EasyMock.eq(KinesisSequenceNumber.of("-1"))))
+            .andReturn(false)
+            .anyTimes();
 
 
     EasyMock.expect(taskMaster.getTaskRunner()).andReturn(Optional.absent()).anyTimes();
@@ -2242,7 +2261,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             .andReturn(Futures.immediateFailedFuture(new RuntimeException())).times(2);
     taskQueue.shutdown(
         EasyMock.contains("sequenceName-0"),
-        EasyMock.eq("An exception occured while waiting for task [%s] to pause: [%s]"),
+        EasyMock.eq("An exception occurred while waiting for task [%s] to pause: [%s]"),
         EasyMock.contains("sequenceName-0"),
         EasyMock.anyString()
     );
@@ -2753,6 +2772,19 @@ public class KinesisSupervisorTest extends EasyMockSupport
     EasyMock.expect(supervisorRecordSupplier.getLatestSequenceNumber(EasyMock.anyObject())).andReturn("400").anyTimes();
     supervisorRecordSupplier.seek(EasyMock.anyObject(), EasyMock.anyString());
     EasyMock.expectLastCall().anyTimes();
+    // Only sequence numbers >= 300 are available
+    EasyMock.expect(supervisorRecordSupplier.isOffsetAvailable(EasyMock.anyObject(),
+                                                               EasyMock.eq(KinesisSequenceNumber.of("400"))))
+            .andReturn(true)
+            .anyTimes();
+    EasyMock.expect(supervisorRecordSupplier.isOffsetAvailable(EasyMock.anyObject(),
+                                                               EasyMock.eq(KinesisSequenceNumber.of("200"))))
+            .andReturn(false)
+            .anyTimes();
+    EasyMock.expect(supervisorRecordSupplier.isOffsetAvailable(EasyMock.anyObject(),
+                                                               EasyMock.eq(KinesisSequenceNumber.of("100"))))
+            .andReturn(false)
+            .anyTimes();
 
     EasyMock.expect(taskStorage.getActiveTasksByDatasource(DATASOURCE)).andReturn(ImmutableList.of()).anyTimes();
     EasyMock.expect(taskMaster.getTaskQueue()).andReturn(Optional.of(taskQueue)).anyTimes();
@@ -3933,12 +3965,13 @@ public class KinesisSupervisorTest extends EasyMockSupport
         null,
         null,
         null,
-        5000,
         null,
         null,
         null,
         null,
         42, // This property is different from tuningConfig
+        null,
+        null,
         null,
         null,
         null
@@ -4066,6 +4099,9 @@ public class KinesisSupervisorTest extends EasyMockSupport
     EasyMock.expect(supervisorRecordSupplier.getLatestSequenceNumber(EasyMock.anyObject())).andReturn("100").anyTimes();
     supervisorRecordSupplier.seek(EasyMock.anyObject(), EasyMock.anyString());
     EasyMock.expectLastCall().anyTimes();
+    EasyMock.expect(supervisorRecordSupplier.isOffsetAvailable(EasyMock.anyObject(), EasyMock.anyObject()))
+            .andReturn(true)
+            .anyTimes();
 
     Capture<Task> captured = Capture.newInstance(CaptureType.ALL);
     EasyMock.expect(taskMaster.getTaskQueue()).andReturn(Optional.of(taskQueue)).anyTimes();
@@ -4349,6 +4385,9 @@ public class KinesisSupervisorTest extends EasyMockSupport
 
     supervisorRecordSupplier.seek(EasyMock.anyObject(), EasyMock.anyString());
     EasyMock.expectLastCall().anyTimes();
+    EasyMock.expect(supervisorRecordSupplier.isOffsetAvailable(EasyMock.anyObject(), EasyMock.anyObject()))
+            .andReturn(true)
+            .anyTimes();
 
     Capture<Task> postSplitCaptured = Capture.newInstance(CaptureType.ALL);
 
@@ -4782,6 +4821,9 @@ public class KinesisSupervisorTest extends EasyMockSupport
     EasyMock.expect(supervisorRecordSupplier.getEarliestSequenceNumber(EasyMock.anyObject())).andReturn("0").anyTimes();
     EasyMock.expect(supervisorRecordSupplier.getLatestSequenceNumber(new StreamPartition<>(STREAM, SHARD_ID2)))
             .andReturn("200").anyTimes();
+    EasyMock.expect(supervisorRecordSupplier.isOffsetAvailable(EasyMock.anyObject(), EasyMock.anyObject()))
+            .andReturn(true)
+            .anyTimes();
 
     supervisorRecordSupplier.seek(EasyMock.anyObject(), EasyMock.anyString());
     EasyMock.expectLastCall().anyTimes();
@@ -4883,6 +4925,55 @@ public class KinesisSupervisorTest extends EasyMockSupport
     );
     Assert.assertEquals(expectedPartitionGroups, supervisor.getPartitionGroups());
     Assert.assertEquals(expectedPartitionOffsets, supervisor.getPartitionOffsets());
+  }
+
+  @Test
+  public void testGetIgnorablePartitionIds()
+  {
+    supervisor = getTestableSupervisor(1, 2, true, "PT1H", null, null);
+    supervisor.setupRecordSupplier();
+    supervisor.tryInit();
+    String stream = supervisor.getKinesisSupervisorSpec().getSource();
+    SequenceNumberRange openShardRange = new SequenceNumberRange().withEndingSequenceNumber(null);
+    SequenceNumberRange closedShardRange = new SequenceNumberRange().withEndingSequenceNumber("non-null");
+
+    Shard openShard = new Shard().withShardId("openShard")
+                                 .withSequenceNumberRange(openShardRange);
+    Shard emptyClosedShard = new Shard().withShardId("emptyClosedShard")
+                                        .withSequenceNumberRange(closedShardRange);
+    Shard nonEmptyClosedShard = new Shard().withShardId("nonEmptyClosedShard")
+                                           .withSequenceNumberRange(closedShardRange);
+
+    EasyMock.expect(supervisorRecordSupplier.getShards(stream))
+            .andReturn(ImmutableSet.of(openShard, nonEmptyClosedShard, emptyClosedShard)).once()
+            .andReturn(ImmutableSet.of(openShard, nonEmptyClosedShard, emptyClosedShard)).once()
+            .andReturn(ImmutableSet.of(openShard, emptyClosedShard)).once()
+            .andReturn(ImmutableSet.of(openShard)).once()
+            .andReturn(ImmutableSet.of(openShard, nonEmptyClosedShard, emptyClosedShard)).once();
+
+    // The following calls happen twice, once during the first call since there was no cache,
+    // and once during the last since the cache was cleared prior to it
+    EasyMock.expect(supervisorRecordSupplier.isClosedShardEmpty(stream, emptyClosedShard.getShardId()))
+            .andReturn(true).times(2);
+    EasyMock.expect(supervisorRecordSupplier.isClosedShardEmpty(stream, nonEmptyClosedShard.getShardId()))
+            .andReturn(false).times(2);
+
+    EasyMock.replay(supervisorRecordSupplier);
+
+    // ActiveShards = {open, empty-closed, nonEmpty-closed}, IgnorableShards = {empty-closed}
+    // {empty-closed, nonEmpty-closed} added to cache
+    Assert.assertEquals(Collections.singleton(emptyClosedShard.getShardId()), supervisor.computeIgnorablePartitionIds());
+    // ActiveShards = {open, empty-closed, nonEmpty-closed}, IgnorableShards = {empty-closed}
+    Assert.assertEquals(Collections.singleton(emptyClosedShard.getShardId()), supervisor.computeIgnorablePartitionIds());
+    // ActiveShards = {open, empty-closed}, IgnorableShards = {empty-closed}
+    // {nonEmpty-closed} removed from cache
+    Assert.assertEquals(Collections.singleton(emptyClosedShard.getShardId()), supervisor.computeIgnorablePartitionIds());
+    // ActiveShards = {open}, IgnorableShards = {}
+    // {empty-closed} removed from cache
+    Assert.assertEquals(new HashSet<>(), supervisor.computeIgnorablePartitionIds());
+    // ActiveShards = {open, empty-closed, nonEmpty-closed}, IgnorableShards = {empty-closed}
+    // {empty-closed, nonEmpty-closed} re-added to cache
+    Assert.assertEquals(Collections.singleton(emptyClosedShard.getShardId()), supervisor.computeIgnorablePartitionIds());
   }
 
   private TestableKinesisSupervisor getTestableSupervisor(
@@ -4987,7 +5078,8 @@ public class KinesisSupervisorTest extends EasyMockSupport
         null,
         null,
         null,
-        5000,
+        null,
+        null,
         null,
         null,
         null,
@@ -5322,11 +5414,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
     return new DataSchema(
         dataSource,
         new TimestampSpec("timestamp", "iso", null),
-        new DimensionsSpec(
-            dimensions,
-            null,
-            null
-        ),
+        new DimensionsSpec(dimensions),
         new AggregatorFactory[]{new CountAggregatorFactory("rows")},
         new UniformGranularitySpec(
             Granularities.HOUR,
@@ -5414,6 +5502,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             false
         ),
         Collections.emptyMap(),
+        false,
         null
     );
   }

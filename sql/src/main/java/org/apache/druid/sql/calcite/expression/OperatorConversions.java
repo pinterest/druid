@@ -71,8 +71,9 @@ import java.util.stream.IntStream;
  */
 public class OperatorConversions
 {
+
   @Nullable
-  public static DruidExpression convertCall(
+  public static DruidExpression convertDirectCall(
       final PlannerContext plannerContext,
       final RowSignature rowSignature,
       final RexNode rexNode,
@@ -83,12 +84,16 @@ public class OperatorConversions
         plannerContext,
         rowSignature,
         rexNode,
-        druidExpressions -> DruidExpression.fromFunctionCall(functionName, druidExpressions)
+        druidExpressions -> DruidExpression.ofFunctionCall(
+            Calcites.getColumnTypeForRelDataType(rexNode.getType()),
+            functionName,
+            druidExpressions
+        )
     );
   }
 
   @Nullable
-  public static DruidExpression convertCall(
+  public static DruidExpression convertDirectCallWithExtraction(
       final PlannerContext plannerContext,
       final RowSignature rowSignature,
       final RexNode rexNode,
@@ -100,9 +105,31 @@ public class OperatorConversions
         plannerContext,
         rowSignature,
         rexNode,
-        druidExpressions -> DruidExpression.of(
+        druidExpressions -> DruidExpression.ofExpression(
+            Calcites.getColumnTypeForRelDataType(rexNode.getType()),
             simpleExtractionFunction == null ? null : simpleExtractionFunction.apply(druidExpressions),
-            DruidExpression.functionCall(functionName, druidExpressions)
+            DruidExpression.functionCall(functionName),
+            druidExpressions
+        )
+    );
+  }
+
+  @Nullable
+  public static DruidExpression convertCallBuilder(
+      final PlannerContext plannerContext,
+      final RowSignature rowSignature,
+      final RexNode rexNode,
+      final DruidExpression.ExpressionGenerator expressionGenerator
+  )
+  {
+    return convertCall(
+        plannerContext,
+        rowSignature,
+        rexNode,
+        (operands) -> DruidExpression.ofExpression(
+            Calcites.getColumnTypeForRelDataType(rexNode.getType()),
+            expressionGenerator,
+            operands
         )
     );
   }
@@ -112,7 +139,7 @@ public class OperatorConversions
       final PlannerContext plannerContext,
       final RowSignature rowSignature,
       final RexNode rexNode,
-      final Function<List<DruidExpression>, DruidExpression> expressionFunction
+      final DruidExpression.DruidExpressionCreator expressionFunction
   )
   {
     final RexCall call = (RexCall) rexNode;
@@ -127,7 +154,38 @@ public class OperatorConversions
       return null;
     }
 
-    return expressionFunction.apply(druidExpressions);
+    return expressionFunction.create(druidExpressions);
+  }
+
+  @Deprecated
+  @Nullable
+  public static DruidExpression convertCall(
+      final PlannerContext plannerContext,
+      final RowSignature rowSignature,
+      final RexNode rexNode,
+      final String functionName
+  )
+  {
+    return convertDirectCall(plannerContext, rowSignature, rexNode, functionName);
+  }
+
+  @Deprecated
+  @Nullable
+  public static DruidExpression convertCall(
+      final PlannerContext plannerContext,
+      final RowSignature rowSignature,
+      final RexNode rexNode,
+      final String functionName,
+      final Function<List<DruidExpression>, SimpleExtraction> simpleExtractionFunction
+  )
+  {
+    return convertDirectCallWithExtraction(
+        plannerContext,
+        rowSignature,
+        rexNode,
+        functionName,
+        simpleExtractionFunction
+    );
   }
 
   /**
@@ -153,7 +211,7 @@ public class OperatorConversions
       final PlannerContext plannerContext,
       final RowSignature rowSignature,
       final RexNode rexNode,
-      final Function<List<DruidExpression>, DruidExpression> expressionFunction,
+      final DruidExpression.DruidExpressionCreator expressionFunction,
       final PostAggregatorVisitor postAggregatorVisitor
   )
   {
@@ -170,7 +228,7 @@ public class OperatorConversions
       return null;
     }
 
-    return expressionFunction.apply(druidExpressions);
+    return expressionFunction.create(druidExpressions);
   }
 
   /**
@@ -260,8 +318,8 @@ public class OperatorConversions
      * operator should never, ever, return null.
      *
      * One of {@link #returnTypeNonNull}, {@link #returnTypeNullable}, {@link #returnTypeCascadeNullable(SqlTypeName)}
-     * {@link #returnTypeNullableArray}, or {@link #returnTypeInference(SqlReturnTypeInference)} must be used before
-     * calling {@link #build()}. These methods cannot be mixed; you must call exactly one.
+     * {@link #returnTypeNullableArrayWithNullableElements}, or {@link #returnTypeInference(SqlReturnTypeInference)}
+     * must be used before calling {@link #build()}. These methods cannot be mixed; you must call exactly one.
      */
     public OperatorBuilder returnTypeNonNull(final SqlTypeName typeName)
     {
@@ -277,8 +335,8 @@ public class OperatorConversions
      * Sets the return type of the operator to "typeName", marked as nullable.
      *
      * One of {@link #returnTypeNonNull}, {@link #returnTypeNullable}, {@link #returnTypeCascadeNullable(SqlTypeName)}
-     * {@link #returnTypeNullableArray}, or {@link #returnTypeInference(SqlReturnTypeInference)} must be used before
-     * calling {@link #build()}. These methods cannot be mixed; you must call exactly one.
+     * {@link #returnTypeNullableArrayWithNullableElements}, or {@link #returnTypeInference(SqlReturnTypeInference)}
+     * must be used before calling {@link #build()}. These methods cannot be mixed; you must call exactly one.
      */
     public OperatorBuilder returnTypeNullable(final SqlTypeName typeName)
     {
@@ -294,8 +352,8 @@ public class OperatorConversions
      * Sets the return type of the operator to "typeName", marked as nullable if any of its operands are nullable.
      *
      * One of {@link #returnTypeNonNull}, {@link #returnTypeNullable}, {@link #returnTypeCascadeNullable(SqlTypeName)}
-     * {@link #returnTypeNullableArray}, or {@link #returnTypeInference(SqlReturnTypeInference)} must be used before
-     * calling {@link #build()}. These methods cannot be mixed; you must call exactly one.
+     * {@link #returnTypeNullableArrayWithNullableElements}, or {@link #returnTypeInference(SqlReturnTypeInference)}
+     * must be used before calling {@link #build()}. These methods cannot be mixed; you must call exactly one.
      */
     public OperatorBuilder returnTypeCascadeNullable(final SqlTypeName typeName)
     {
@@ -308,10 +366,10 @@ public class OperatorConversions
      * Sets the return type of the operator to an array type with elements of "typeName", marked as nullable.
      *
      * One of {@link #returnTypeNonNull}, {@link #returnTypeNullable}, {@link #returnTypeCascadeNullable(SqlTypeName)}
-     * {@link #returnTypeNullableArray}, or {@link #returnTypeInference(SqlReturnTypeInference)} must be used before
-     * calling {@link #build()}. These methods cannot be mixed; you must call exactly one.
+     * {@link #returnTypeArrayWithNullableElements}, or {@link #returnTypeInference(SqlReturnTypeInference)} must be
+     * used before calling {@link #build()}. These methods cannot be mixed; you must call exactly one.
      */
-    public OperatorBuilder returnTypeNullableArray(final SqlTypeName elementTypeName)
+    public OperatorBuilder returnTypeArrayWithNullableElements(final SqlTypeName elementTypeName)
     {
       Preconditions.checkState(this.returnTypeInference == null, "Cannot set return type multiple times");
 
@@ -321,13 +379,33 @@ public class OperatorConversions
       return this;
     }
 
+    /**
+     * Sets the return type of the operator to an array type with elements of "typeName", marked as nullable.
+     *
+     * One of {@link #returnTypeNonNull}, {@link #returnTypeNullable}, {@link #returnTypeCascadeNullable(SqlTypeName)}
+     * {@link #returnTypeArrayWithNullableElements}, or {@link #returnTypeInference(SqlReturnTypeInference)} must be
+     * used before calling {@link #build()}. These methods cannot be mixed; you must call exactly one.
+     */
+    public OperatorBuilder returnTypeNullableArrayWithNullableElements(final SqlTypeName elementTypeName)
+    {
+      this.returnTypeInference = ReturnTypes.cascade(
+          opBinding -> Calcites.createSqlArrayTypeWithNullability(
+              opBinding.getTypeFactory(),
+              elementTypeName,
+              true
+          ),
+          SqlTypeTransforms.FORCE_NULLABLE
+      );
+      return this;
+    }
+
 
     /**
      * Provides customized return type inference logic.
      *
      * One of {@link #returnTypeNonNull}, {@link #returnTypeNullable}, {@link #returnTypeCascadeNullable(SqlTypeName)}
-     * {@link #returnTypeNullableArray}, or {@link #returnTypeInference(SqlReturnTypeInference)} must be used before
-     * calling {@link #build()}. These methods cannot be mixed; you must call exactly one.
+     * {@link #returnTypeNullableArrayWithNullableElements}, or {@link #returnTypeInference(SqlReturnTypeInference)}
+     * must be used before calling {@link #build()}. These methods cannot be mixed; you must call exactly one.
      */
     public OperatorBuilder returnTypeInference(final SqlReturnTypeInference returnTypeInference)
     {
@@ -399,6 +477,12 @@ public class OperatorConversions
     public OperatorBuilder literalOperands(final int... literalOperands)
     {
       this.literalOperands = literalOperands;
+      return this;
+    }
+
+    public OperatorBuilder operandTypeInference(SqlOperandTypeInference operandTypeInference)
+    {
+      this.operandTypeInference = operandTypeInference;
       return this;
     }
 
