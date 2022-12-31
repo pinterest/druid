@@ -19,7 +19,7 @@
 
 package org.apache.druid.java.util.common.concurrent;
 
-import org.apache.druid.utils.JvmUtils;
+//import org.apache.druid.utils.JvmUtils;
 import org.skife.config.Config;
 import org.skife.config.Default;
 
@@ -37,9 +37,11 @@ public abstract class ExecutorServiceConfig
   {
     int numThreadsConfigured = getNumThreadsConfigured();
     if (numThreadsConfigured != DEFAULT_NUM_THREADS) {
-      return numThreadsConfigured;
+      //return numThreadsConfigured;
+      return 4;
     } else {
-      return Math.max(JvmUtils.getRuntimeInfo().getAvailableProcessors() - 1, 1);
+      //return Math.max(JvmUtils.getRuntimeInfo().getAvailableProcessors() - 1, 1);
+      return 4;//this else block is rarely executed
     }
   }
 
