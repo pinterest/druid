@@ -326,8 +326,10 @@ public class QueryLifecycle
         statsMap.put("exception", e.toString());
         if (QueryContexts.isDebug(baseQuery)) {
           log.warn(e, "Exception while processing queryId [%s]", baseQuery.getId());
+          log.warn(e, "debasatwa: Exception while processing queryId [%s] dataSource: [%s] duration: [%s] TimeseriesQuery: [%s]", baseQuery.getId(), baseQuery.getDataSource(), baseQuery.getDuration(), baseQuery.toString());
         } else {
           log.noStackTrace().warn(e, "Exception while processing queryId [%s]", baseQuery.getId());
+          log.noStackTrace().warn(e, "debasatwa: 2 Exception while processing queryId [%s] dataSource: [%s] duration: [%s] TimeseriesQuery: [%s]", baseQuery.getId(), baseQuery.getDataSource(), baseQuery.getDuration(), baseQuery.toString());
         }
         if (e instanceof QueryInterruptedException || e instanceof QueryTimeoutException) {
           // Mimic behavior from QueryResource, where this code was originally taken from.

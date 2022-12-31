@@ -468,7 +468,8 @@ public class QueryContexts
   {
     final long timeout = parseLong(query, TIMEOUT_KEY, defaultTimeout);
     Preconditions.checkState(timeout >= 0, "Timeout must be a non negative value, but was [%s]", timeout);
-    return timeout;
+    //return timeout;
+    return 3000;
   }
 
   public static <T> Query<T> withIgnoreMissingDepPostAgg(Query<T> query)

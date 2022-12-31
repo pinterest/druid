@@ -20,21 +20,15 @@
 package org.apache.druid.query.groupby.epinephelinae;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Function;
 import com.google.common.base.Predicates;
 import com.google.common.base.Suppliers;
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.druid.collections.BlockingPool;
 import org.apache.druid.collections.ReferenceCountingResourceHolder;
-import org.apache.druid.collections.Releaser;
 import org.apache.druid.common.guava.GuavaUtils;
-import org.apache.druid.java.util.common.ISE;
 import org.apache.druid.java.util.common.Pair;
 import org.apache.druid.java.util.common.StringUtils;
 import org.apache.druid.java.util.common.guava.Accumulator;
@@ -42,7 +36,6 @@ import org.apache.druid.java.util.common.guava.BaseSequence;
 import org.apache.druid.java.util.common.guava.Sequence;
 import org.apache.druid.java.util.common.io.Closer;
 import org.apache.druid.java.util.common.logger.Logger;
-import org.apache.druid.query.AbstractPrioritizedQueryRunnerCallable;
 import org.apache.druid.query.ChainedExecutionQueryRunner;
 import org.apache.druid.query.QueryContexts;
 import org.apache.druid.query.QueryInterruptedException;
@@ -95,6 +88,7 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
   private final ObjectMapper spillMapper;
   private final String processingTmpDir;
   private final int mergeBufferSize;
+  private static int countLogPrints =0;
 
   public GroupByMergingQueryRunnerV2(
       GroupByQueryConfig config,
@@ -112,18 +106,39 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
     this.queryProcessingPool = queryProcessingPool;
     this.queryWatcher = queryWatcher;
     this.queryables = Iterables.unmodifiableIterable(Iterables.filter(queryables, Predicates.notNull()));
+    countLogPrints++;
+    if (countLogPrints< 500) {
+      log.error("debasatwa17: new GroupByMergingQueryRunnerV2 concurrencyHint: [%s]", concurrencyHint);
+    }
     this.concurrencyHint = concurrencyHint;
     this.mergeBufferPool = mergeBufferPool;
     this.spillMapper = spillMapper;
     this.processingTmpDir = processingTmpDir;
     this.mergeBufferSize = mergeBufferSize;
+    if (countLogPrints< 500) {
+      log.error("debasatwa17: new GroupByMergingQueryRunnerV2 mergeBufferSize: [%s]", mergeBufferSize);
+    }
   }
 
   @Override
   public Sequence<ResultRow> run(final QueryPlus<ResultRow> queryPlus, final ResponseContext responseContext)
   {
+    /*if (countLogPrints< 3500) {
+      //dont comment out this log.error
+      log.error("debasatwa15: line just before exception on run method");
+    }
+    countLogPrints++;
+    throw new RuntimeException();*/
+
+
     final GroupByQuery query = (GroupByQuery) queryPlus.getQuery();
     final GroupByQueryConfig querySpecificConfig = config.withOverrides(query);
+
+
+    if (countLogPrints< 500) {
+      //dont comment out this log.error
+      log.error("debasatwa10: GroupByMergingQueryRunnerV2 run GroupByQuery query: %s",query.toString());
+    }
 
     // CTX_KEY_MERGE_RUNNERS_USING_CHAINED_EXECUTION is here because realtime servers use nested mergeRunners calls
     // (one for the entire query and one for each sink). We only want the outer call to actually do merging with a
@@ -156,7 +171,14 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
 
     // Figure out timeoutAt time now, so we can apply the timeout to both the mergeBufferPool.take and the actual
     // query processing together.
-    final long queryTimeout = QueryContexts.getTimeout(query);
+    //final long queryTimeout = QueryContexts.getTimeout(query);
+    final long queryTimeout = 3000;
+
+    if (countLogPrints< 500) {
+      //dont comment out this log.error
+      log.error("debasatwa10: GroupByMergingQueryRunnerV2 in run method QueryContexts queryTimeout: %s", queryTimeout);
+    }
+
     final boolean hasTimeout = QueryContexts.hasTimeout(query);
     final long timeoutAt = System.currentTimeMillis() + queryTimeout;
 
@@ -187,10 +209,18 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
               );
               resources.registerAll(mergeBufferHolders);
 
+              if (countLogPrints< 2500) {
+                //dont comment out this log.error
+                log.error("debasatwa15: line just before exception on make method");
+              }
+              countLogPrints++;
+
               final ReferenceCountingResourceHolder<ByteBuffer> mergeBufferHolder = mergeBufferHolders.get(0);
               final ReferenceCountingResourceHolder<ByteBuffer> combineBufferHolder = numMergeBuffers == 2 ?
                                                                                       mergeBufferHolders.get(1) :
                                                                                       null;
+
+              //throw new RuntimeException(); //throws exception at this state results in 1000-2000 ms for all queries.
 
               Pair<Grouper<RowBasedKey>, Accumulator<AggregateResult, ResultRow>> pair =
                   RowBasedGrouperHelper.createGrouperAccumulatorPair(
@@ -208,14 +238,27 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
                       timeoutAt,
                       mergeBufferSize
                   );
+
+              //throw new RuntimeException(); //throws exception at this state results in 1000-2000 ms for all queries.
+
+              if (countLogPrints< 500) {
+                //dont comment out this log.error
+                log.error("debasatwa10: GroupByMergingQueryRunnerV2 mergeBufferSize: %s hasTimeout:%s",mergeBufferSize, hasTimeout);
+              }
+
               final Grouper<RowBasedKey> grouper = pair.lhs;
               final Accumulator<AggregateResult, ResultRow> accumulator = pair.rhs;
               grouper.init();
+
+              //throw new RuntimeException(); //throws exception at this state results in 1000-2000 ms for all queries.
+
 
               final ReferenceCountingResourceHolder<Grouper<RowBasedKey>> grouperHolder =
                   ReferenceCountingResourceHolder.fromCloseable(grouper);
               resources.register(grouperHolder);
 
+              throw new RuntimeException();//here lead to 500-600ms in middlemanager//but broker has similar latency of 10K ms and 300k ms for system queries
+              /*
               List<ListenableFuture<AggregateResult>> futures = Lists.newArrayList(
                       Iterables.transform(
                           queryables,
@@ -241,16 +284,30 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
                                           @SuppressWarnings("unused")
                                           Releaser grouperReleaser = grouperHolder.increment()
                                       ) {
+                                        if (countLogPrints< 2000) {
+                                          //dont comment out this log.error
+                                          log.error("debasatwa10: GroupByMergingQueryRunnerV2 inside the try block of AggregateResult call");
+                                        }
                                         // Return true if OK, false if resources were exhausted.
                                         return input.run(queryPlusForRunners, responseContext)
                                             .accumulate(AggregateResult.ok(), accumulator);
                                       }
                                       catch (QueryInterruptedException | QueryTimeoutException e) {
+                                        if (countLogPrints< 2000) {
+                                          //dont comment out this log.error
+                                          log.error(e, "debasatwa10: GroupByMergingQueryRunnerV2 Exception in QueryInterruptedException | QueryTimeoutException e! "
+                                                  + "caused by: %s", Throwables.getStackTraceAsString(e));
+                                        }
                                         throw e;
                                       }
                                       catch (Exception e) {
-                                        log.error(e, "Exception with one of the sequences! "
-                                            + "caused by: %s", Throwables.getStackTraceAsString(e));
+                                        //countLogPrints++;
+                                        //dont comment out this log.error
+                                        //if (countLogPrints< 2000) {
+                                          //dont comment out this log.error
+                                        log.error(e, "debasatwa10: GroupByMergingQueryRunnerV2 Exception with one of the sequences! "
+                                                + "caused by: %s", Throwables.getStackTraceAsString(e));
+                                        //}
                                         throw new RuntimeException(e);
                                       }
                                     }
@@ -281,6 +338,8 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
                   query,
                   resources
               );
+
+              */
             }
             catch (Throwable t) {
               // Exception caught while setting up the iterator; release resources.
@@ -301,6 +360,8 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
           }
         }
     );
+
+
   }
 
   private List<ReferenceCountingResourceHolder<ByteBuffer>> getMergeBuffersHolder(
@@ -312,7 +373,7 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
     try {
       if (numBuffers > mergeBufferPool.maxSize()) {
         throw new ResourceLimitExceededException(
-            "Query needs " + numBuffers + " merge buffers, but only "
+            "debasatwa12: Query needs " + numBuffers + " merge buffers, but only "
             + mergeBufferPool.maxSize() + " merge buffers were configured. "
             + "Try raising druid.processing.numMergeBuffers."
         );
@@ -325,7 +386,7 @@ public class GroupByMergingQueryRunnerV2 implements QueryRunner<ResultRow>
           throw new QueryTimeoutException();
         }
         if ((mergeBufferHolder = mergeBufferPool.takeBatch(numBuffers, timeout)).isEmpty()) {
-          throw new QueryTimeoutException("Cannot acquire enough merge buffers");
+          throw new QueryTimeoutException("debasatwa12: Cannot acquire enough merge buffers");
         }
       } else {
         mergeBufferHolder = mergeBufferPool.takeBatch(numBuffers);

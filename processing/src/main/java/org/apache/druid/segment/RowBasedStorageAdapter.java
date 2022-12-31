@@ -27,6 +27,7 @@ import org.apache.druid.java.util.common.granularity.Granularity;
 import org.apache.druid.java.util.common.guava.Sequence;
 import org.apache.druid.java.util.common.guava.Sequences;
 import org.apache.druid.java.util.common.guava.SimpleSequence;
+import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.query.QueryMetrics;
 import org.apache.druid.query.filter.Filter;
 import org.apache.druid.segment.column.ColumnCapabilities;
@@ -49,9 +50,11 @@ import java.util.List;
  */
 public class RowBasedStorageAdapter<RowType> implements StorageAdapter
 {
+  private static final Logger log = new Logger(RowBasedStorageAdapter.class);
   private final Sequence<RowType> rowSequence;
   private final RowAdapter<RowType> rowAdapter;
   private final RowSignature rowSignature;
+  private static int countLogPrints =0;
 
   RowBasedStorageAdapter(
       final Sequence<RowType> rowSequence,
@@ -166,6 +169,11 @@ public class RowBasedStorageAdapter<RowType> implements StorageAdapter
       boolean useInMemoryBitmapInQuery
   )
   {
+    countLogPrints++;
+    if (countLogPrints< 6000) {
+      //log.error("debasatwa: first line RowBasedStorageAdapter makeCursors %s", useInMemoryBitmapInQuery);
+    }
+
     final Interval actualInterval = queryInterval.overlap(new Interval(getMinTime(), gran.bucketEnd(getMaxTime())));
 
     if (actualInterval == null) {

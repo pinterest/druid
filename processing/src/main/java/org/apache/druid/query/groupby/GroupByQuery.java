@@ -41,6 +41,7 @@ import org.apache.druid.java.util.common.granularity.Granularity;
 import org.apache.druid.java.util.common.guava.Comparators;
 import org.apache.druid.java.util.common.guava.Sequence;
 import org.apache.druid.java.util.common.guava.Sequences;
+import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.query.BaseQuery;
 import org.apache.druid.query.DataSource;
 import org.apache.druid.query.PerSegmentQueryOptimizationContext;
@@ -96,6 +97,9 @@ public class GroupByQuery extends BaseQuery<ResultRow>
   public static final String CTX_TIMESTAMP_RESULT_FIELD_GRANULARITY = "timestampResultFieldGranularity";
   public static final String CTX_TIMESTAMP_RESULT_FIELD_INDEX = "timestampResultFieldInOriginalDimensions";
   private static final String CTX_KEY_FUDGE_TIMESTAMP = "fudgeTimestamp";
+  private static int countLogPrints = 0;
+
+  private static final Logger log = new Logger(GroupByQuery.class);
 
   private static final Comparator<ResultRow> NON_GRANULAR_TIME_COMP =
       (ResultRow lhs, ResultRow rhs) -> Longs.compare(lhs.getLong(0), rhs.getLong(0));
@@ -1264,7 +1268,11 @@ public class GroupByQuery extends BaseQuery<ResultRow>
       } else {
         theLimitSpec = limitSpec;
       }
+      countLogPrints++;
 
+      if (countLogPrints< 6000) {
+        //log.error("debasatwa: before new GroupByQuery");
+      }
       return new GroupByQuery(
           dataSource,
           querySegmentSpec,

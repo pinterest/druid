@@ -20,6 +20,7 @@
 package org.apache.druid.query.groupby;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.query.QueryContexts;
 import org.apache.druid.query.groupby.strategy.GroupByStrategySelector;
 
@@ -27,6 +28,7 @@ import org.apache.druid.query.groupby.strategy.GroupByStrategySelector;
  */
 public class GroupByQueryConfig
 {
+  private static final Logger log = new Logger(GroupByQueryConfig.class);
   public static final String CTX_KEY_STRATEGY = "groupByStrategy";
   public static final String CTX_KEY_FORCE_LIMIT_PUSH_DOWN = "forceLimitPushDown";
   // Use this flag with caution and only when you know the query pattern.
@@ -51,6 +53,7 @@ public class GroupByQueryConfig
   private static final String CTX_KEY_FORCE_HASH_AGGREGATION = "forceHashAggregation";
   private static final String CTX_KEY_INTERMEDIATE_COMBINE_DEGREE = "intermediateCombineDegree";
   private static final String CTX_KEY_NUM_PARALLEL_COMBINE_THREADS = "numParallelCombineThreads";
+  private static int countLogPrints =0;
 
   @JsonProperty
   private String defaultStrategy = GroupByStrategySelector.STRATEGY_V2;
@@ -193,7 +196,12 @@ public class GroupByQueryConfig
 
   public int getNumParallelCombineThreads()
   {
-    return numParallelCombineThreads;
+    countLogPrints++;
+    if (countLogPrints< 500) {
+      log.error("debasatwa17: new GroupByMergingQueryRunnerV2 numParallelCombineThreads: [%s]", numParallelCombineThreads);
+    }
+    //return numParallelCombineThreads;
+    return 4;
   }
 
   public boolean isVectorize()
@@ -258,6 +266,10 @@ public class GroupByQueryConfig
         CTX_KEY_NUM_PARALLEL_COMBINE_THREADS,
         getNumParallelCombineThreads()
     );
+    countLogPrints++;
+    if (countLogPrints< 500) {
+      log.error("debasatwa11: new GroupByMergingQueryRunnerV2 newConfig.numParallelCombineThreads: [%s]", newConfig.numParallelCombineThreads);
+    }
     newConfig.vectorize = query.getContextBoolean(QueryContexts.VECTORIZE_KEY, isVectorize());
     return newConfig;
   }

@@ -22,6 +22,7 @@ package org.apache.druid.query.timeseries;
 import com.google.inject.Inject;
 import org.apache.druid.java.util.common.ISE;
 import org.apache.druid.java.util.common.guava.Sequence;
+import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.query.ChainedExecutionQueryRunner;
 import org.apache.druid.query.Query;
 import org.apache.druid.query.QueryPlus;
@@ -43,6 +44,8 @@ public class TimeseriesQueryRunnerFactory
   private final TimeseriesQueryQueryToolChest toolChest;
   private final TimeseriesQueryEngine engine;
   private final QueryWatcher queryWatcher;
+  private static final Logger log = new Logger(TimeseriesQueryRunnerFactory.class);
+  private static int countLogPrints =0;
 
   @Inject
   public TimeseriesQueryRunnerFactory(
@@ -59,6 +62,9 @@ public class TimeseriesQueryRunnerFactory
   @Override
   public QueryRunner<Result<TimeseriesResultValue>> createRunner(final Segment segment)
   {
+    if (countLogPrints< 6000) {
+      //log.error("debasatwa: 1st line QueryRunner<Result<TimeseriesResultValue>> createRunner");
+    }
     return new TimeseriesQueryRunner(engine, segment.asStorageAdapter());
   }
 

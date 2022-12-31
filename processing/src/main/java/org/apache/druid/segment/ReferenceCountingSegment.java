@@ -21,6 +21,7 @@ package org.apache.druid.segment;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
+import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.timeline.Overshadowable;
 import org.apache.druid.timeline.SegmentId;
 import org.apache.druid.timeline.partition.ShardSpec;
@@ -42,13 +43,19 @@ import java.util.Set;
 public class ReferenceCountingSegment extends ReferenceCountingCloseableObject<Segment>
     implements SegmentReference, Overshadowable<ReferenceCountingSegment>
 {
+  private static final Logger log = new Logger(ReferenceCountingSegment.class);
   private final short startRootPartitionId;
   private final short endRootPartitionId;
   private final short minorVersion;
   private final short atomicUpdateGroupSize;
+  private static int countLogPrints =0;
 
   public static ReferenceCountingSegment wrapRootGenerationSegment(Segment baseSegment)
   {
+    countLogPrints++;
+    if (countLogPrints< 6000) {
+        //log.error("debasatwa: first line ReferenceCountingSegment wrapRootGenerationSegment %s", baseSegment.toString());
+    }
     return new ReferenceCountingSegment(
         Preconditions.checkNotNull(baseSegment, "baseSegment"),
         baseSegment.getId().getPartitionNum(),

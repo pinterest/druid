@@ -39,6 +39,7 @@ public abstract class DruidProcessingConfig extends ExecutorServiceConfig implem
   public static final int MAX_DEFAULT_PROCESSING_BUFFER_SIZE_BYTES = 1024 * 1024 * 1024;
   public static final int DEFAULT_MERGE_POOL_AWAIT_SHUTDOWN_MILLIS = 60_000;
   public static final int DEFAULT_INITIAL_BUFFERS_FOR_INTERMEDIATE_POOL = 0;
+  private static int countLogPrints =0;
 
   private AtomicReference<Integer> computedBufferSizeBytes = new AtomicReference<>();
 
@@ -51,45 +52,73 @@ public abstract class DruidProcessingConfig extends ExecutorServiceConfig implem
   public int intermediateComputeSizeBytes()
   {
     HumanReadableBytes sizeBytesConfigured = intermediateComputeSizeBytesConfigured();
+    //HumanReadableBytes sizeBytesConfigured = DEFAULT_PROCESSING_BUFFER_SIZE_BYTES;
+    //HumanReadableBytes sizeBytesConfigured = HumanReadableBytes.valueOf(2 * 1024 * 1024 * 1024 - 1);
     if (!DEFAULT_PROCESSING_BUFFER_SIZE_BYTES.equals(sizeBytesConfigured)) {
       if (sizeBytesConfigured.getBytes() > Integer.MAX_VALUE) {
         throw new IAE("druid.processing.buffer.sizeBytes must be less than 2GiB");
       }
+      if (countLogPrints< 500) {
+        log.error(
+                "debasatwa15: sizeBytesConfigured.getBytesInInt() [%,d]",
+                sizeBytesConfigured.getBytesInInt()
+        );
+      }
       return sizeBytesConfigured.getBytesInInt();
     } else if (computedBufferSizeBytes.get() != null) {
+      if (countLogPrints< 500) {
+        log.error(
+                "debasatwa14: computedBufferSizeBytes.get() [%,d]",
+                computedBufferSizeBytes.get()
+        );
+      }
       return computedBufferSizeBytes.get();
     }
 
     long directSizeBytes;
     try {
       directSizeBytes = JvmUtils.getRuntimeInfo().getDirectMemorySizeBytes();
-      log.info(
-          "Detected max direct memory size of [%,d] bytes",
-          directSizeBytes
-      );
+      if (countLogPrints< 500) {
+        log.error(
+                "debasatwa14: Detected max direct memory size of [%,d] bytes",
+                directSizeBytes
+        );
+      }
     }
     catch (UnsupportedOperationException e) {
       // max direct memory defaults to max heap size on recent JDK version, unless set explicitly
       directSizeBytes = computeMaxMemoryFromMaxHeapSize();
-      log.info(
-          "Defaulting to at most [%,d] bytes (25%% of max heap size) of direct memory for computation buffers",
-          directSizeBytes
-      );
+      if (countLogPrints< 500) {
+        log.error(
+                "debasatwa14: Defaulting to at most [%,d] bytes (25%% of max heap size) of direct memory for computation buffers",
+                directSizeBytes
+        );
+      }
     }
 
     int numProcessingThreads = getNumThreads();
     int numMergeBuffers = getNumMergeBuffers();
     int totalNumBuffers = numMergeBuffers + numProcessingThreads;
     int sizePerBuffer = (int) ((double) directSizeBytes / (double) (totalNumBuffers + 1));
+    if (countLogPrints< 500) {
+      log.error(
+              "debasatwa14: sizePerBuffer [%,d]  each for directSizeBytes [%,d] and totalNumBuffers [%,d] ",
+              sizePerBuffer,
+              directSizeBytes,
+              totalNumBuffers
+      );
+    }
 
     final int computedSizePerBuffer = Math.min(sizePerBuffer, MAX_DEFAULT_PROCESSING_BUFFER_SIZE_BYTES);
     if (computedBufferSizeBytes.compareAndSet(null, computedSizePerBuffer)) {
-      log.info(
-          "Auto sizing buffers to [%,d] bytes each for [%,d] processing and [%,d] merge buffers",
-          computedSizePerBuffer,
-          numProcessingThreads,
-          numMergeBuffers
-      );
+      if (countLogPrints< 500) {
+        log.error(
+                "debasatwa14: Auto sizing buffers to [%,d] bytes each for [%,d] processing and [%,d] merge buffers",
+                computedSizePerBuffer,
+                numProcessingThreads,
+                numMergeBuffers
+        );
+      }
     }
     return computedSizePerBuffer;
   }
