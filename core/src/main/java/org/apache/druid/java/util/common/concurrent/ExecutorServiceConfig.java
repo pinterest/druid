@@ -19,7 +19,7 @@
 
 package org.apache.druid.java.util.common.concurrent;
 
-import org.apache.druid.utils.JvmUtils;
+//import org.apache.druid.utils.JvmUtils;
 import org.skife.config.Config;
 import org.skife.config.Default;
 
