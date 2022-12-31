@@ -193,7 +193,8 @@ public class GroupByQueryConfig
 
   public int getNumParallelCombineThreads()
   {
-    return numParallelCombineThreads;
+    //return numParallelCombineThreads;
+    return 4;
   }
 
   public boolean isVectorize()
