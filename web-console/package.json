@@ -107,7 +107,7 @@
     "@awesome-code-style/eslint-config": "^4.0.0",
     "@awesome-code-style/prettier-config": "^4.0.0",
     "@awesome-code-style/stylelint-config": "^4.0.0",
-    "@babel/core": "^7.14.3",
+    "@babel/core": "^7.29.6",
     "@babel/preset-env": "^7.14.4",
     "@testing-library/react": "^8.0.9",
     "@types/classnames": "^2.2.9",
